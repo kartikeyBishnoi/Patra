@@ -3,594 +3,761 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a6e4e">
 <title>PATRA</title>
 <style>
-  /* Built for a cheap phone held in daylight by somebody who may not read
-     well. Large type, strong contrast, one thing on screen at a time, tap
-     targets you cannot miss.
+  /* Laid out like the apps this audience already uses: a fixed top bar, a
+     scrolling body of cards, a bottom tab bar, one floating action button.
+     DigiLocker and UMANG both settled on that shape, and both get criticised
+     for cramming every screen, so the rule here is one job per screen.
 
-     Research on low-literate users in India is consistent on three points:
-     they are numerate and comfortable with number keys; abstract icons are
-     semantically opaque to them while concrete pictures are not; and voice
-     plus local language matters more than any layout choice. The design
-     follows all three. */
+     Colour is saturated rather than pastel because these phones get used
+     outdoors. Green for what you can claim, amber for what is one errand
+     away, red only for a real stop. */
   :root {
-    --ink: #16202b;
-    --muted: #5d6874;
-    --line: #dde3e9;
-    --paper: #fff;
-    --tint: #f3f6f8;
-    --go: #17694a;
-    --go-tint: #e6f1eb;
-    --wait: #8f5310;
-    --wait-tint: #fbf1e2;
-    --stop: #93302a;
-    --stop-tint: #fbebe9;
-    --blue: #1a4f76;
+    --green:#0a6e4e; --green-soft:#e7f3ed;
+    --amber:#b1600b; --amber-soft:#fdf3e3;
+    --red-soft:#fbeceb;
+    --ink:#1a1d21; --grey:#5a6570; --line:#e2e6ea;
+    --bg:#f5f6f8; --card:#fff; --bar-h:62px;
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body {
-    margin: 0; background: var(--tint); color: var(--ink);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
-    font-size: 19px; line-height: 1.6;
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;
+    font-size:17px; line-height:1.55;
   }
-  .wrap { max-width: 640px; margin: 0 auto; padding: 14px 14px 80px; }
-  .hide { display: none !important; }
+  body { padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom)); }
 
-  header { display: flex; align-items: baseline; gap: 10px; padding: 16px 2px 12px; }
-  header h1 { margin: 0; font-size: 26px; letter-spacing: 1px; }
-  header span { color: var(--muted); font-size: 15px; }
-  #lang-switch {
-    margin-left: auto; font-size: 15px; padding: 8px 12px; width: auto;
-    border-radius: 999px; background: var(--paper);
+  .bar {
+    position:sticky; top:0; z-index:20; background:var(--green); color:#fff;
+    display:flex; align-items:center; gap:10px;
+    padding:14px 16px; padding-top:calc(14px + env(safe-area-inset-top));
+  }
+  .bar h1 { margin:0; font-size:20px; font-weight:700; letter-spacing:.5px; }
+  .bar .sub { font-size:13px; opacity:.85; color:#fff; }
+  .bar .lang {
+    margin-left:auto; background:rgba(255,255,255,.16); color:#fff; border:0;
+    border-radius:999px; padding:8px 14px; font:inherit; font-size:14px;
+    width:auto; cursor:pointer; margin-bottom:0;
   }
 
-  .card {
-    background: var(--paper); border: 1px solid var(--line);
-    border-radius: 14px; padding: 20px; margin-bottom: 14px;
-  }
-  .card h2 { margin: 0 0 6px; font-size: 21px; }
-  .note { color: var(--muted); font-size: 16px; margin: 0 0 16px; }
-  .privacy {
-    background: var(--go-tint); border-color: #cee2d7; color: #1c513a;
-    font-size: 16px; padding: 14px 18px;
-  }
+  .body { max-width:620px; margin:0 auto; padding:14px 14px 24px; }
+  .card { background:var(--card); border-radius:16px; padding:18px;
+          margin-bottom:12px; box-shadow:0 1px 2px rgba(20,30,40,.06); }
+  .card h2 { margin:0 0 4px; font-size:19px; }
+  .card h3 { margin:0 0 3px; font-size:17px; }
+  .sub { color:var(--grey); font-size:15px; }
+  .mt { margin-top:12px; }
 
   button {
-    font: inherit; cursor: pointer; display: block; width: 100%;
-    text-align: left; padding: 17px 18px; margin-bottom: 11px;
-    border: 2px solid var(--line); border-radius: 12px;
-    background: var(--paper); color: var(--ink);
+    font:inherit; cursor:pointer; display:block; width:100%; text-align:left;
+    padding:15px 16px; margin-bottom:10px; border:1.5px solid var(--line);
+    border-radius:13px; background:var(--card); color:var(--ink);
   }
-  button:active { transform: scale(.99); }
-  .big { text-align: center; font-weight: 600; background: var(--blue); color: #fff; border-color: var(--blue); }
-  .quiet { text-align: center; color: var(--muted); border-style: dashed; }
-  .row { display: flex; gap: 10px; }
-  .row button { margin-bottom: 0; }
+  button:active { transform:scale(.985); }
+  .cta { background:var(--green); color:#fff; border-color:var(--green);
+         text-align:center; font-weight:700; font-size:18px; padding:17px; }
+  .ghost { text-align:center; color:var(--grey); background:transparent;
+           border-style:dashed; }
+  .pair { display:flex; gap:10px; }
+  .pair button { margin-bottom:0; }
 
-  .pick { display: flex; align-items: center; gap: 14px; }
-  .pick .pic { font-size: 30px; line-height: 1; }
-  .pick.on { border-color: var(--go); background: var(--go-tint); }
-  .pick.on::after { content: "✓"; margin-left: auto; color: var(--go); font-weight: 700; font-size: 22px; }
+  .opt { display:flex; align-items:center; gap:13px; }
+  .opt .pic { font-size:27px; line-height:1; width:34px; text-align:center; }
+  .opt.on { border-color:var(--green); background:var(--green-soft); }
+  .opt.on::after { content:"✓"; margin-left:auto; color:var(--green);
+                   font-weight:800; font-size:20px; }
 
-  .qtext { font-size: 25px; line-height: 1.4; margin: 6px 0 4px; font-weight: 600; }
-  .why { color: var(--wait); font-size: 15px; margin: 0 0 14px; }
-  .speak {
-    width: auto; padding: 10px 16px; margin: 0 0 18px;
-    border-radius: 999px; font-size: 16px; color: var(--blue);
-    border-color: #cfe0ee; background: #f2f8fc;
+  .track { display:flex; gap:4px; margin-bottom:16px; }
+  .track i { flex:1; height:4px; border-radius:2px; background:var(--line); }
+  .track i.on { background:var(--green); }
+  .qtext { font-size:23px; font-weight:700; line-height:1.35; margin:0 0 6px; }
+  .qwhy { color:var(--amber); font-size:14px; margin:0 0 12px; }
+  .hear { width:auto; padding:9px 15px; margin:0 0 16px; font-size:15px;
+          border-radius:999px; color:var(--green); border-color:#bfded0;
+          background:var(--green-soft); }
+  input[type=number], input[type=text] {
+    font:inherit; font-size:22px; width:100%; padding:15px;
+    border:1.5px solid var(--line); border-radius:13px; margin-bottom:10px;
   }
-  .dots { display: flex; gap: 5px; margin-bottom: 14px; }
-  .dots i { flex: 1; height: 5px; border-radius: 3px; background: var(--line); }
-  .dots i.done { background: var(--blue); }
+  input[type=number] { text-align:center; }
 
-  input[type=number] {
-    font: inherit; font-size: 24px; width: 100%; padding: 16px;
-    border: 2px solid var(--line); border-radius: 12px; margin-bottom: 12px;
-    text-align: center;
+  .row { display:flex; gap:12px; padding:13px 0; border-top:1px solid var(--line); }
+  .row:first-of-type { border-top:0; }
+  .row .tag { flex:none; width:34px; height:34px; border-radius:10px;
+              display:grid; place-items:center; font-size:17px; }
+  .tag.ok { background:var(--green-soft); }
+  .tag.near { background:var(--amber-soft); }
+  .row .txt { min-width:0; }
+  .row .txt b { display:block; font-size:17px; }
+
+  .note { border-radius:11px; padding:11px 13px; font-size:15px; margin-top:9px; }
+  .note.ok { background:var(--green-soft); }
+  .note.warn { background:var(--amber-soft); }
+  .note.stop { background:var(--red-soft); }
+
+  ol.route { list-style:none; counter-reset:r; padding:0; margin:6px 0 0; }
+  ol.route li { counter-increment:r; position:relative; padding:0 0 18px 44px; }
+  ol.route li::before {
+    content:counter(r); position:absolute; left:0; top:0; width:30px; height:30px;
+    border-radius:50%; background:var(--green); color:#fff;
+    display:grid; place-items:center; font-weight:700; font-size:15px;
   }
+  ol.route li::after { content:""; position:absolute; left:14.5px; top:32px;
+                       bottom:6px; width:1.5px; background:var(--line); }
+  ol.route li:last-child::after { display:none; }
 
-  .item { border-left: 6px solid var(--go); padding: 2px 0 2px 16px; margin-bottom: 22px; }
-  .item.wait { border-left-color: var(--wait); }
-  .item h3 { margin: 0 0 4px; font-size: 20px; }
-  .item .body { color: var(--muted); font-size: 16px; margin-bottom: 8px; }
-  .where { font-size: 17px; }
-  .where b { font-weight: 600; }
+  details.work { border-top:1px solid var(--line); margin-top:12px; padding-top:10px; }
+  details.work summary { cursor:pointer; color:var(--green); font-weight:600;
+                         font-size:15px; list-style:none; }
+  details.work summary::-webkit-details-marker { display:none; }
+  details.work summary::before { content:"🔍 "; }
+  .step { border-left:2px solid var(--line); margin:10px 0 0 6px; padding:0 0 2px 14px; }
+  .step .how { font-size:13px; color:var(--green); font-weight:700;
+               text-transform:uppercase; letter-spacing:.4px; }
+  .step .what { font-size:15px; }
+  .step .bits { font-size:14px; color:var(--grey); }
+  .step .bits div { padding:1px 0; }
+  .qc { font-size:13px; color:var(--grey); font-style:italic; }
 
-  .box { border-radius: 10px; padding: 12px 14px; font-size: 16px; margin: 8px 0; }
-  .box.warn { background: var(--wait-tint); }
-  .box.good { background: var(--go-tint); }
-  .box.bad { background: var(--stop-tint); }
+  .tabs { position:fixed; left:0; right:0; bottom:0; z-index:20; display:flex;
+          background:var(--card); border-top:1px solid var(--line);
+          padding-bottom:env(safe-area-inset-bottom); }
+  .tabs button { flex:1; margin:0; border:0; border-radius:0; background:none;
+                 text-align:center; padding:8px 4px; color:var(--grey);
+                 font-size:12px; line-height:1.25; }
+  .tabs button .ic { display:block; font-size:21px; margin-bottom:1px; }
+  .tabs button.on { color:var(--green); font-weight:700; }
 
-  ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0; }
-  ol.steps li { counter-increment: s; position: relative; padding: 0 0 22px 48px; }
-  ol.steps li::before {
-    content: counter(s); position: absolute; left: 0; top: 2px;
-    width: 34px; height: 34px; border-radius: 50%;
-    background: var(--blue); color: #fff;
-    display: grid; place-items: center; font-weight: 700; font-size: 16px;
-  }
-  .meta { color: var(--muted); font-size: 16px; }
-  .spin { text-align: center; color: var(--muted); padding: 28px 0; }
+  .fab { position:fixed; right:16px; z-index:25; width:58px; height:58px;
+         bottom:calc(var(--bar-h) + 16px + env(safe-area-inset-bottom));
+         border-radius:50%; border:0; padding:0; margin:0; background:var(--green);
+         color:#fff; font-size:25px; box-shadow:0 4px 14px rgba(10,110,78,.4);
+         display:grid; place-items:center; }
+  .sheet { position:fixed; inset:0; z-index:40; background:var(--bg);
+           display:flex; flex-direction:column; }
+  .sheet .bar { position:static; }
+  .sheet .log { flex:1; overflow-y:auto; padding:14px; }
+  .sheet .compose { display:flex; gap:8px; padding:10px 12px;
+                    padding-bottom:calc(10px + env(safe-area-inset-bottom));
+                    background:var(--card); border-top:1px solid var(--line); }
+  .sheet .compose input { margin:0; font-size:17px; }
+  .sheet .compose button { width:auto; margin:0; padding:0 20px; }
+  .bubble { max-width:86%; padding:11px 14px; border-radius:15px;
+            margin-bottom:10px; font-size:16px; }
+  .bubble.me { margin-left:auto; background:var(--green); color:#fff;
+               border-bottom-right-radius:4px; }
+  .bubble.it { background:var(--card); border:1px solid var(--line);
+               border-bottom-left-radius:4px; }
+  .bubble.it b { display:block; margin-bottom:3px; }
+  .bubble.it .li { font-size:15px; color:var(--grey); padding:2px 0; }
+  .chip { display:inline-block; width:auto; margin:4px 6px 0 0; padding:8px 13px;
+          font-size:14px; border-radius:999px; background:var(--card); }
+  .empty { text-align:center; color:var(--grey); padding:34px 16px; }
+  .hide { display:none !important; }
 
   @media print {
-    body { background: #fff; font-size: 12pt; }
-    .wrap { max-width: none; padding: 0; }
-    button, .speak, #lang-switch, .dots { display: none !important; }
-    .card { border: none; padding: 0 0 12pt; page-break-inside: avoid; }
-    .item, ol.steps li { page-break-inside: avoid; }
-    .box { border: 1px solid #bbb; }
+    body { background:#fff; padding:0; }
+    .bar,.tabs,.fab,button,details.work { display:none !important; }
+    .card { box-shadow:none; border:1px solid #ccc; page-break-inside:avoid; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <header>
+<header class="bar">
+  <div>
     <h1 id="brand">PATRA</h1>
-    <span id="tagline"></span>
-    <button id="lang-switch" class="hide"></button>
+    <div class="sub" id="tagline"></div>
+  </div>
+  <button class="lang hide" id="lang-btn"></button>
+</header>
+
+<main class="body" id="view"></main>
+
+<button class="fab hide" id="fab" aria-label="Help">💬</button>
+
+<nav class="tabs hide" id="tabs">
+  <button data-tab="home" class="on"><span class="ic">🏠</span><span id="tab-home"></span></button>
+  <button data-tab="papers"><span class="ic">📋</span><span id="tab-papers"></span></button>
+  <button data-tab="help"><span class="ic">❓</span><span id="tab-help"></span></button>
+</nav>
+
+<div class="sheet hide" id="chat">
+  <header class="bar">
+    <div><h1 id="chat-title"></h1><div class="sub" id="chat-sub"></div></div>
+    <button class="lang" id="chat-close">✕</button>
   </header>
-
-  <!-- 1. language -->
-  <div class="card" id="s-lang">
-    <h2>Choose your language / अपनी भाषा चुनें</h2>
-    <div id="lang-list" style="margin-top:14px"></div>
+  <div class="log" id="chat-log"></div>
+  <div class="compose">
+    <input type="text" id="chat-in" autocomplete="off">
+    <button class="cta" id="chat-send">→</button>
   </div>
-
-  <!-- 2. papers already held -->
-  <div class="card hide" id="s-docs">
-    <h2 id="docs-title"></h2>
-    <p class="note" id="docs-help"></p>
-    <div id="doc-list"></div>
-    <button class="big" id="docs-go"></button>
-  </div>
-
-  <!-- 3. questions -->
-  <div class="card hide" id="s-q">
-    <div class="dots" id="dots"></div>
-    <p class="qtext" id="q-text"></p>
-    <p class="why hide" id="q-why"></p>
-    <button class="speak" id="q-speak"></button>
-    <div id="q-answers"></div>
-    <div class="row">
-      <button class="quiet" id="q-back"></button>
-      <button class="quiet" id="q-skip"></button>
-    </div>
-  </div>
-
-  <!-- 4. results -->
-  <div id="s-out"></div>
-
-  <div class="card hide" id="s-err">
-    <h2 id="err-title"></h2>
-    <p class="note" id="err-body"></p>
-  </div>
-
 </div>
 
 <script>
 "use strict";
 
-// Concrete pictures, not abstract glyphs. Research on low-literate users is
-// blunt about this: a stylised symbol means nothing, a recognisable object
-// does. These are objects people have handled.
+/* Concrete objects, not abstract glyphs. The research on low-literate users is
+   blunt: a stylised symbol carries no meaning, a recognisable thing does. */
 const PIC = {
-  aadhaar: "🪪", voter_id: "🗳️", pan_card: "💳", ration_card: "🍚",
-  birth_certificate: "👶", school_certificate: "🎓", electricity_bill: "💡",
-  domicile_certificate: "🏠", income_certificate: "💰", caste_certificate: "📜",
-  bank_account: "🏦", bank_aadhaar_seeding: "🔗", disability_certificate: "♿",
-  death_certificate: "🕯️", land_records: "🌾", job_card: "⛏️",
-  passport_photo: "📷"
+  aadhaar:"🪪", voter_id:"🗳️", pan_card:"💳", ration_card:"🍚",
+  birth_certificate:"👶", school_certificate:"🎓", electricity_bill:"💡",
+  domicile_certificate:"🏠", income_certificate:"💰", caste_certificate:"📜",
+  bank_account:"🏦", bank_aadhaar_seeding:"🔗", disability_certificate:"♿",
+  death_certificate:"🕯️", land_records:"🌾", job_card:"⛏️", passport_photo:"📷"
 };
 
-const state = {
-  lang: "en", speech: "en-IN", words: {}, langs: [],
-  facts: {}, order: [], held: new Set(), asked: 0
+const S = {
+  lang:"en", speech:"en-IN", words:{}, langs:[],
+  facts:{}, order:[], held:new Set(), asked:0,
+  result:null, tab:"home"
 };
+const KEY = "patra.lang";
 
-const REMEMBERED = "patra.lang";
-
-function remember(code) {
-  try { localStorage.setItem(REMEMBERED, code); } catch { /* private mode */ }
-}
-function recall() {
-  try { return localStorage.getItem(REMEMBERED); } catch { return null; }
-}
-
-const $ = (id) => document.getElementById(id);
-const show = (id) => $(id).classList.remove("hide");
-const hide = (id) => $(id).classList.add("hide");
-
-function t(path, vars) {
-  let node = state.words;
-  for (const key of path.split(".")) {
-    if (!node || typeof node !== "object" || !(key in node)) return "";
-    node = node[key];
-  }
-  let out = String(node ?? "");
-  if (vars) for (const [k, v] of Object.entries(vars)) out = out.split("{" + k + "}").join(v);
-  return out;
-}
-
-function el(tag, cls, text) {
+const $  = (id) => document.getElementById(id);
+const el = (tag, cls, text) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
   if (text != null) e.textContent = text;
   return e;
+};
+const show = (id) => $(id).classList.remove("hide");
+const hide = (id) => $(id).classList.add("hide");
+
+function t(path, vars) {
+  let n = S.words;
+  for (const k of path.split(".")) {
+    if (!n || typeof n !== "object" || !(k in n)) return "";
+    n = n[k];
+  }
+  let out = String(n ?? "");
+  if (vars) for (const [k, v] of Object.entries(vars)) out = out.split("{"+k+"}").join(v);
+  return out;
 }
 
-// Every network call goes through here so a dead server produces a readable
-// instruction instead of a blank page. Opening the file directly from disk is
-// the common case: there is no app behind it, only HTML.
 async function api(path, body) {
-  try {
-    const opts = body
-      ? {method: "POST", headers: {"Content-Type": "application/json"},
-         body: JSON.stringify({...body, lang: state.lang})}
-      : {};
-    const res = await fetch(path, opts);
-    if (!res.ok) throw new Error("status " + res.status);
-    return await res.json();
-  } catch (err) {
-    offline();
-    throw err;
-  }
+  const res = await fetch(path, body ? {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({...body, lang:S.lang})
+  } : {});
+  if (!res.ok) throw new Error(res.status);
+  return res.json();
 }
+
+/* Voice uses the browser's own synthesiser, so it needs no network and no
+   model. Where a language has no voice installed the button is simply quiet,
+   which is why text is never replaced by audio. */
+function say(text) {
+  if (!("speechSynthesis" in window) || !text) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = S.speech; u.rate = .92;
+  const v = speechSynthesis.getVoices().find(v =>
+    v.lang && v.lang.toLowerCase().startsWith(S.speech.slice(0,2)));
+  if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+
+function view() { const v = $("view"); v.innerHTML = ""; return v; }
 
 function offline() {
-  ["s-lang", "s-docs", "s-q"].forEach(hide);
-  $("s-out").innerHTML = "";
-  $("err-title").textContent = t("ui.error_title") || "Cannot reach the app";
-  $("err-body").textContent = t("ui.error_offline") ||
-    'This page needs the app running. Open a terminal and run ' +
-    '"python3 -m patra.web.server", then open http://127.0.0.1:8765';
-  show("s-err");
+  const v = view();
+  const c = el("div","card");
+  c.appendChild(el("h2", null, t("ui.error_title") || "Cannot reach the app"));
+  c.appendChild(el("p","sub", t("ui.error_offline") ||
+    'Open a terminal, run "python3 -m patra.web.server", then open http://127.0.0.1:8765'));
+  v.appendChild(c);
 }
 
-// ---- voice ----------------------------------------------------------
-// Uses the browser's own synthesiser, so it works with no network and no
-// model. Where a voice for the language is missing the button simply does
-// nothing visible, which is why text is never replaced by audio.
+/* ---------- language ---------- */
 
-function speak(text) {
-  if (!("speechSynthesis" in window) || !text) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = state.speech;
-  u.rate = 0.9;
-  const voice = window.speechSynthesis.getVoices()
-    .find(v => v.lang && v.lang.toLowerCase().startsWith(state.speech.slice(0, 2)));
-  if (voice) u.voice = voice;
-  window.speechSynthesis.speak(u);
-}
-
-// ---- 1. language ----------------------------------------------------
-
-async function bootLanguages() {
-  let langs;
-  try { langs = await (await fetch("/api/languages")).json(); }
+async function boot() {
+  try { S.langs = await api("/api/languages"); }
   catch { return offline(); }
-
-  state.langs = langs;
-  const saved = recall();
-  const known = langs.find(l => l.code === saved);
-  if (known) { hide("s-lang"); return chooseLanguage(known, true); }
-  drawLanguageList();
+  let saved = null;
+  try { saved = localStorage.getItem(KEY); } catch {}
+  const found = S.langs.find(l => l.code === saved);
+  if (found) return pickLanguage(found);
+  languageScreen();
 }
 
-function drawLanguageList() {
-  const list = $("lang-list");
-  list.innerHTML = "";
-  state.langs.forEach(l => {
+function languageScreen() {
+  hide("tabs"); hide("fab");
+  const v = view();
+  const c = el("div","card");
+  c.appendChild(el("h2", null, "भाषा चुनें  ·  Choose your language"));
+  c.appendChild(el("p","sub","अपनी भाषा पर दबाएँ"));
+  const box = el("div","mt");
+  S.langs.forEach(l => {
     const b = el("button", null);
-    b.style.fontSize = "22px";
-    b.textContent = l.name + (l.complete ? "" : "  ·  not checked yet");
-    if (!l.complete) b.style.color = "var(--muted)";
-    b.onclick = () => { hide("s-lang"); chooseLanguage(l, true); };
-    list.appendChild(b);
+    b.style.fontSize = "21px";
+    b.textContent = l.name + (l.complete ? "" : "  ·  incomplete");
+    if (!l.complete) b.style.color = "var(--grey)";
+    b.onclick = () => pickLanguage(l);
+    box.appendChild(b);
   });
-  show("s-lang");
+  c.appendChild(box);
+  v.appendChild(c);
 }
 
-// The switcher stays reachable from the header. Somebody who taps the wrong
-// language first should not have to work out how to undo it.
-function switchLanguage() {
-  ["s-docs", "s-q", "s-err"].forEach(hide);
-  $("s-out").innerHTML = "";
-  drawLanguageList();
-  window.scrollTo(0, 0);
-}
-
-async function chooseLanguage(l, restart) {
-  state.lang = l.code;
-  remember(l.code);
-  state.speech = l.speech || l.code;
-  state.words = await (await fetch("/api/strings?lang=" + l.code)).json();
+async function pickLanguage(l) {
+  S.lang = l.code; S.speech = l.speech || l.code;
+  try { localStorage.setItem(KEY, l.code); } catch {}
+  S.words = await api("/api/strings?lang=" + l.code);
   document.documentElement.lang = l.code;
 
-  $("brand").textContent = t("ui.title") || "PATRA";
-  $("tagline").textContent = t("ui.tagline");
-  $("lang-switch").textContent = "🌐 " + l.name;
-  $("lang-switch").classList.remove("hide");
-  $("lang-switch").onclick = switchLanguage;
+  $("brand").textContent      = t("ui.title") || "PATRA";
+  $("tagline").textContent    = t("ui.tagline");
+  $("tab-home").textContent   = t("ui.tab_home")   || "Claims";
+  $("tab-papers").textContent = t("ui.tab_papers") || "Papers";
+  $("tab-help").textContent   = t("ui.tab_help")   || "Help";
+  $("chat-title").textContent = t("ui.chat_title") || "Ask a question";
+  $("chat-sub").textContent   = t("ui.chat_sub")   || "";
+  $("chat-in").placeholder    = t("ui.chat_hint")  || "Type your question";
 
-  hide("s-lang");
-  if (restart) {
-    state.facts = {}; state.order = []; state.held = new Set(); state.asked = 0;
-  }
-  await showDocuments();
+  const b = $("lang-btn");
+  b.textContent = "🌐 " + l.name;
+  b.classList.remove("hide");
+  b.onclick = languageScreen;
+
+  show("tabs"); show("fab");
+  S.facts = {}; S.order = []; S.held = new Set(); S.asked = 0; S.result = null;
+  go("home");
 }
 
-// ---- 2. papers already held -----------------------------------------
+/* ---------- tabs ---------- */
 
-async function showDocuments() {
-  $("docs-title").textContent = t("ui.docs_title");
-  $("docs-help").textContent = t("ui.docs_help");
-  $("docs-go").textContent = t("ui.start");
-  $("docs-go").onclick = () => { hide("s-docs"); askNext(); };
+document.querySelectorAll(".tabs button").forEach(b =>
+  b.onclick = () => go(b.dataset.tab));
 
-  const docs = await (await fetch("/api/documents?lang=" + state.lang)).json();
-  const list = $("doc-list");
-  list.innerHTML = "";
-  docs.forEach(d => {
-    const b = el("button", "pick");
-    b.appendChild(el("span", "pic", PIC[d.id] || "📄"));
-    b.appendChild(el("span", null, d.name));
-    b.onclick = () => {
-      if (state.held.has(d.id)) { state.held.delete(d.id); b.classList.remove("on"); }
-      else { state.held.add(d.id); b.classList.add("on"); speak(d.name); }
-    };
-    list.appendChild(b);
-  });
-  show("s-docs");
+function go(tab) {
+  S.tab = tab;
+  document.querySelectorAll(".tabs button").forEach(b =>
+    b.classList.toggle("on", b.dataset.tab === tab));
+  window.scrollTo(0,0);
+  if (tab === "home")   return S.result ? renderResult() : startScreen();
+  if (tab === "papers") return papersTab();
+  if (tab === "help")   return helpTab();
 }
 
-// ---- 3. questions ---------------------------------------------------
+/* ---------- start ---------- */
 
-function drawDots() {
-  const dots = $("dots");
-  dots.innerHTML = "";
-  // Honest about not knowing the total: the interview length depends on the
-  // answers. Ten segments that fill up beat a percentage we would be making up.
+function startScreen() {
+  const v = view();
+  const c = el("div","card");
+  c.appendChild(el("h2", null, t("ui.docs_title")));
+  c.appendChild(el("p","sub", t("ui.docs_help")));
+  const box = el("div","mt");
+  c.appendChild(box);
+  const go_ = el("button","cta", t("ui.start"));
+  go_.onclick = ask;
+  c.appendChild(go_);
+  v.appendChild(c);
+
+  const priv = el("div","note ok");
+  priv.textContent = t("ui.privacy");
+  v.appendChild(priv);
+
+  api("/api/documents?lang=" + S.lang).then(docs => {
+    docs.forEach(d => {
+      const b = el("button","opt");
+      b.appendChild(el("span","pic", PIC[d.id] || "📄"));
+      b.appendChild(el("span", null, d.name));
+      if (S.held.has(d.id)) b.classList.add("on");
+      b.onclick = () => {
+        if (S.held.has(d.id)) { S.held.delete(d.id); b.classList.remove("on"); }
+        else { S.held.add(d.id); b.classList.add("on"); say(d.name); }
+      };
+      box.appendChild(b);
+    });
+  }).catch(offline);
+}
+
+/* ---------- questions ---------- */
+
+async function ask() {
+  let data;
+  try { data = await api("/api/question", {facts:S.facts}); }
+  catch { return offline(); }
+  const q = data.question;
+  if (!q) return finish();
+
+  const v = view();
+  const c = el("div","card");
+
+  const track = el("div","track");
   for (let i = 0; i < 10; i++) {
-    const d = el("i");
-    if (i < state.asked) d.className = "done";
-    dots.appendChild(d);
+    const seg = el("i"); if (i < S.asked) seg.className = "on"; track.appendChild(seg);
   }
-}
+  c.appendChild(track);
+  c.appendChild(el("p","qtext", q.text));
+  if (q.sensitive) c.appendChild(el("p","qwhy", t("ui.why_asking")));
 
-async function askNext() {
-  const {question} = await api("/api/question", {facts: state.facts});
-  if (!question) return finish();
+  const hear = el("button","hear","🔊  " + (t("ui.listen") || "Listen"));
+  hear.onclick = () => say(q.text);
+  c.appendChild(hear);
 
-  show("s-q");
-  drawDots();
-  $("q-text").textContent = question.text;
-  $("q-speak").textContent = "🔊  " + (t("ui.listen") || "Listen");
-  $("q-speak").onclick = () => speak(question.text);
+  const box = el("div");
+  c.appendChild(box);
 
-  const why = $("q-why");
-  if (question.sensitive) {
-    why.textContent = t("ui.why_asking");
-    why.classList.remove("hide");
-  } else why.classList.add("hide");
-
-  $("q-back").textContent = "← " + (t("ui.back") || "Back");
-  $("q-back").style.visibility = state.order.length ? "visible" : "hidden";
-  $("q-back").onclick = goBack;
-  $("q-skip").textContent = t("ui.dont_know") || "Not sure";
-  $("q-skip").onclick = () => finish();
-
-  const box = $("q-answers");
-  box.innerHTML = "";
-
-  if (question.kind === "bool") {
-    [[true, t("ui.yes") || "Yes", "✔️"], [false, t("ui.no") || "No", "✖️"]]
-      .forEach(([val, label, pic]) => {
-        const b = el("button", "pick");
-        b.appendChild(el("span", "pic", pic));
-        b.appendChild(el("span", null, label));
-        b.onclick = () => answer(question.attribute, val);
+  if (q.kind === "bool") {
+    [[true, t("ui.yes")||"Yes","✔️"], [false, t("ui.no")||"No","✖️"]]
+      .forEach(([val, lab, pic]) => {
+        const b = el("button","opt");
+        b.appendChild(el("span","pic", pic));
+        b.appendChild(el("span", null, lab));
+        b.onclick = () => answer(q.attribute, val);
         box.appendChild(b);
       });
-  } else if (question.kind === "enum") {
-    question.options.forEach(o => {
+  } else if (q.kind === "enum") {
+    q.options.forEach(o => {
       const b = el("button", null, o.label);
-      b.onclick = () => answer(question.attribute, o.value);
+      b.onclick = () => answer(q.attribute, o.value);
       box.appendChild(b);
     });
   } else {
-    const input = document.createElement("input");
-    input.type = "number";
-    input.inputMode = "numeric";
-    if (question.low != null) input.min = question.low;
-    if (question.high != null) input.max = question.high;
-    box.appendChild(input);
-
-    const go = el("button", "big", t("ui.next") || "Next");
-    const submit = () => {
-      const n = parseInt(input.value, 10);
-      if (Number.isNaN(n)) { input.focus(); return; }
-      if (question.low != null && n < question.low) { input.focus(); return; }
-      if (question.high != null && n > question.high) { input.focus(); return; }
-      answer(question.attribute, n);
+    const inp = document.createElement("input");
+    inp.type = "number"; inp.inputMode = "numeric";
+    if (q.low  != null) inp.min = q.low;
+    if (q.high != null) inp.max = q.high;
+    box.appendChild(inp);
+    const nxt = el("button","cta", t("ui.next") || "Next");
+    const send = () => {
+      const n = parseInt(inp.value, 10);
+      if (Number.isNaN(n)) return inp.focus();
+      if (q.low != null && n < q.low) return inp.focus();
+      if (q.high != null && n > q.high) return inp.focus();
+      answer(q.attribute, n);
     };
-    go.onclick = submit;
-    input.onkeydown = (e) => { if (e.key === "Enter") submit(); };
-    box.appendChild(go);
-    setTimeout(() => input.focus(), 50);
+    nxt.onclick = send;
+    inp.onkeydown = e => { if (e.key === "Enter") send(); };
+    box.appendChild(nxt);
+    setTimeout(() => inp.focus(), 40);
   }
+
+  const pair = el("div","pair mt");
+  if (S.order.length) {
+    const back = el("button","ghost","← " + (t("ui.back") || "Back"));
+    back.onclick = () => {
+      const last = S.order.pop();
+      if (last) delete S.facts[last];
+      S.asked = Math.max(0, S.asked - 1);
+      ask();
+    };
+    pair.appendChild(back);
+  }
+  const skip = el("button","ghost", t("ui.dont_know") || "Not sure");
+  skip.onclick = finish;
+  pair.appendChild(skip);
+  c.appendChild(pair);
+  v.appendChild(c);
 }
 
-function answer(name, value) {
-  state.facts[name] = value;
-  state.order.push(name);
-  state.asked = Math.min(10, state.asked + 1);
-  askNext();
+function answer(name, val) {
+  S.facts[name] = val;
+  S.order.push(name);
+  S.asked = Math.min(10, S.asked + 1);
+  ask();
 }
 
-function goBack() {
-  const last = state.order.pop();
-  if (last) delete state.facts[last];
-  state.asked = Math.max(0, state.asked - 1);
-  askNext();
-}
-
-// ---- 4. results -----------------------------------------------------
+/* ---------- results ---------- */
 
 async function finish() {
-  hide("s-q");
-  const out = $("s-out");
-  out.innerHTML = "";
-  out.appendChild(el("div", "spin", t("ui.checking") || "Checking"));
-
-  const data = await api("/api/result",
-    {facts: state.facts, documents: [...state.held]});
-  out.innerHTML = "";
-
-  if (data.clashes && data.clashes.length) return renderClash(out, data);
-
-  renderClaims(out, data);
-  if (data.paperwork && data.paperwork.steps.length) renderPapers(out, data.paperwork);
-  if (data.near && data.near.length) renderNear(out, data.near);
-
-  const sheet = el("button", null, "🖨️  " + (t("ui.print") || "Print this page"));
-  sheet.onclick = () => window.print();
-  out.appendChild(sheet);
-
-  const again = el("button", "quiet", t("ui.start_over") || "Start again");
-  again.onclick = restart;
-  out.appendChild(again);
-  window.scrollTo(0, 0);
+  const v = view();
+  v.appendChild(el("div","empty", t("ui.checking") || "Checking"));
+  try { S.result = await api("/api/result", {facts:S.facts, documents:[...S.held]}); }
+  catch { return offline(); }
+  renderResult();
 }
 
-function renderClash(out, data) {
-  const card = el("div", "card");
-  card.appendChild(el("h2", null, t("ui.mismatch_title")));
-  card.appendChild(el("p", "note", t("ui.mismatch_body")));
-  data.clashes.forEach(c => {
-    const box = el("div", "box bad");
-    c.rule.forEach(r => box.appendChild(el("div", null, r)));
-    c.answers.forEach(a => box.appendChild(
-      el("div", "meta", t("ui.mismatch_you_said") + ": " + a.label + " — " + a.value)));
-    card.appendChild(box);
-  });
-  const again = el("button", "big", t("ui.start_over"));
-  again.onclick = restart;
-  card.appendChild(again);
-  out.appendChild(card);
-}
+function renderResult() {
+  const d = S.result;
+  const v = view();
+  if (!d) return startScreen();
 
-function renderClaims(out, data) {
-  const card = el("div", "card");
-  if (!data.claims.length) {
-    card.appendChild(el("h2", null, t("ui.claims_none_title")));
-    card.appendChild(el("p", "note", t("ui.claims_none_body")));
-    out.appendChild(card);
-    return;
-  }
-  card.appendChild(el("h2", null, t("ui.claims_title", {n: data.claims.length})));
-  data.claims.forEach(c => {
-    const item = el("div", "item");
-    item.appendChild(el("h3", null, "✅  " + c.name));
-    item.appendChild(el("div", "body", c.benefit));
-    const where = el("p", "where");
-    where.appendChild(el("b", null, t("ui.apply_at") + ": "));
-    where.appendChild(document.createTextNode(c.apply_at));
-    item.appendChild(where);
-    if (c.check) {
-      item.appendChild(el("div", "box warn",
-        t("ui.please_check") + " — " +
-        t("ui.check_body", {label: c.check.label, now: c.check.now, flips: c.check.flips})));
-    }
-    const listen = el("button", "speak", "🔊 " + (t("ui.listen") || "Listen"));
-    listen.onclick = () => speak(c.name + ". " + c.benefit + ". " + t("ui.apply_at") + " " + c.apply_at);
-    item.appendChild(listen);
-    card.appendChild(item);
-  });
-  out.appendChild(card);
-}
-
-function renderPapers(out, paper) {
-  const card = el("div", "card");
-  card.appendChild(el("h2", null, t("ui.papers_title")));
-  card.appendChild(el("p", "note",
-    t("ui.papers_summary", {trips: paper.trips, fee: paper.fee, days: paper.days})));
-
-  if (paper.first && paper.first.name) {
-    const box = el("div", "box good");
-    box.appendChild(el("div", null, "⭐  " + t("ui.papers_first")));
-    const step = paper.first.step ? paper.first.step + ". " : "";
-    box.appendChild(el("div", null, step + paper.first.name));
-    if (paper.first.unlocks.length) {
-      box.appendChild(el("div", "meta",
-        t("ui.papers_unlocks") + ": " + paper.first.unlocks.join(", ")));
-    }
-    card.appendChild(box);
-  }
-
-  const list = el("ol", "steps");
-  paper.steps.forEach(s => {
-    const li = el("li");
-    li.appendChild(el("h3", null, s.name));
-    li.appendChild(el("div", "meta", t("ui.papers_where") + ": " + s.issuer));
-    const bits = [];
-    bits.push(s.fee ? t("ui.papers_cost") + " ₹" + s.fee : t("ui.papers_free"));
-    if (s.days) bits.push(t("ui.papers_time", {days: s.days}));
-    bits.push(s.trips > 1 ? t("ui.papers_trips", {n: s.trips}) : t("ui.papers_trip"));
-    li.appendChild(el("div", "meta", bits.join(" · ")));
-    if (s.unlocks.length) {
-      li.appendChild(el("div", "box good",
-        t("ui.papers_unlocks") + ": " + s.unlocks.join(", ")));
-    }
-    list.appendChild(li);
-  });
-  card.appendChild(list);
-  out.appendChild(card);
-}
-
-function renderNear(out, near) {
-  const card = el("div", "card");
-  card.appendChild(el("h2", null, t("ui.near_title")));
-  near.forEach(n => {
-    const item = el("div", "item wait");
-    item.appendChild(el("h3", null, n.name));
-    item.appendChild(el("div", "body", n.benefit));
-
-    if (n.needed) {
-      const box = el("div", "box");
-      box.style.background = "var(--tint)";
-      box.appendChild(el("div", null, t("ui.near_needed") + ": " + n.needed));
-      n.you_said.forEach(a => box.appendChild(
-        el("div", "meta", t("ui.near_you_said") + ": " + a.label + " — " + a.value)));
-      item.appendChild(box);
-    }
-
-    const fix = el("div", "box good");
-    fix.appendChild(el("div", null, "👉  " + t("ui.near_change")));
-    n.fix.forEach(f => {
-      fix.appendChild(el("div", null, f.label + ": " + f.now + " → " + f.needed));
-      fix.appendChild(el("div", "meta", f.easy ? t("ui.near_easy") : t("ui.near_hard")));
+  if (d.clashes && d.clashes.length) {
+    const c = el("div","card");
+    c.appendChild(el("h2", null, t("ui.mismatch_title")));
+    c.appendChild(el("p","sub", t("ui.mismatch_body")));
+    d.clashes.forEach(x => {
+      const n = el("div","note stop");
+      x.rule.forEach(r => n.appendChild(el("div", null, r)));
+      x.answers.forEach(a => n.appendChild(el("div","sub",
+        t("ui.mismatch_you_said") + ": " + a.label + " " + a.value)));
+      c.appendChild(n);
     });
-    item.appendChild(fix);
-    card.appendChild(item);
-  });
-  out.appendChild(card);
+    const again = el("button","cta mt", t("ui.start_over"));
+    again.onclick = restart;
+    c.appendChild(again);
+    return v.appendChild(c);
+  }
+
+  const c = el("div","card");
+  if (d.claims.length) {
+    c.appendChild(el("h2", null, t("ui.claims_title", {n:d.claims.length})));
+    d.claims.forEach(x => c.appendChild(claimRow(x)));
+  } else {
+    c.appendChild(el("h2", null, t("ui.claims_none_title")));
+    c.appendChild(el("p","sub", t("ui.claims_none_body")));
+  }
+  v.appendChild(c);
+
+  if (d.near && d.near.length) {
+    const n = el("div","card");
+    n.appendChild(el("h2", null, t("ui.near_title")));
+    d.near.forEach(x => n.appendChild(nearRow(x)));
+    v.appendChild(n);
+  }
+
+  if (d.paperwork && d.paperwork.steps.length) {
+    const p = el("div","card");
+    p.appendChild(el("h2", null, t("ui.papers_title")));
+    p.appendChild(el("p","sub", t("ui.papers_summary",
+      {trips:d.paperwork.trips, fee:d.paperwork.fee, days:d.paperwork.days})));
+    const jump = el("button","cta mt", t("ui.papers_open") || "Open the list");
+    jump.onclick = () => go("papers");
+    p.appendChild(jump);
+    v.appendChild(p);
+  }
+
+  const acts = el("div","card");
+  const pr = el("button", null, "🖨️  " + (t("ui.print") || "Print"));
+  pr.onclick = () => window.print();
+  acts.appendChild(pr);
+  const ag = el("button","ghost", t("ui.start_over") || "Start again");
+  ag.onclick = restart;
+  acts.appendChild(ag);
+  v.appendChild(acts);
 }
+
+function claimRow(x) {
+  const row = el("div","row");
+  row.appendChild(el("div","tag ok","✓"));
+  const txt = el("div","txt");
+  txt.appendChild(el("b", null, x.name));
+  txt.appendChild(el("div","sub", x.benefit));
+  txt.appendChild(el("div", null, (t("ui.apply_at")||"Go to") + ": " + x.apply_at));
+  if (x.check) {
+    txt.appendChild(el("div","note warn",
+      t("ui.please_check") + ". " + t("ui.check_body",
+        {label:x.check.label, now:x.check.now, flips:x.check.flips})));
+  }
+  const hear = el("button","hear","🔊 " + (t("ui.listen") || "Listen"));
+  hear.onclick = () => say(x.name + ". " + x.benefit);
+  txt.appendChild(hear);
+  txt.appendChild(working(x.id));
+  row.appendChild(txt);
+  return row;
+}
+
+function nearRow(x) {
+  const row = el("div","row");
+  row.appendChild(el("div","tag near","!"));
+  const txt = el("div","txt");
+  txt.appendChild(el("b", null, x.name));
+  txt.appendChild(el("div","sub", x.benefit));
+  if (x.needed) {
+    const n = el("div","note");
+    n.style.background = "var(--bg)";
+    n.appendChild(el("div", null, (t("ui.near_needed")||"You need") + ": " + x.needed));
+    x.you_said.forEach(a => n.appendChild(el("div","sub",
+      (t("ui.near_you_said")||"You told us") + ": " + a.label + " " + a.value)));
+    txt.appendChild(n);
+  }
+  const fix = el("div","note ok");
+  fix.appendChild(el("div", null, "👉  " + (t("ui.near_change") || "What would change it")));
+  x.fix.forEach(f => {
+    fix.appendChild(el("div", null, f.label + ": " + f.now + " → " + f.needed));
+    fix.appendChild(el("div","sub", f.easy ? t("ui.near_easy") : t("ui.near_hard")));
+  });
+  txt.appendChild(fix);
+  txt.appendChild(working(x.id));
+  row.appendChild(txt);
+  return row;
+}
+
+/* The derivation, on demand. Without this the app shows only its conclusion
+   and reads as a lookup table, which was exactly the complaint. */
+function working(schemeId) {
+  const box = el("details","work");
+  box.appendChild(el("summary", null, t("ui.working") || "How we worked this out"));
+  let loaded = false;
+  box.ontoggle = async () => {
+    if (!box.open || loaded) return;
+    loaded = true;
+    const hold = el("div","sub", t("ui.checking") || "Checking");
+    box.appendChild(hold);
+    let tr;
+    try { tr = await api("/api/trace", {facts:S.facts, scheme:schemeId}); }
+    catch { hold.textContent = t("ui.error_body") || "Could not load"; return; }
+    hold.remove();
+    (tr.steps || []).forEach(s => box.appendChild(stepBlock(s)));
+  };
+  return box;
+}
+
+function stepBlock(s) {
+  const st = el("div","step");
+  st.appendChild(el("div","how", s.method));
+  st.appendChild(el("div","what", s.headline));
+  const bits = el("div","bits");
+  (s.detail || []).forEach(x => bits.appendChild(el("div", null, x)));
+  st.appendChild(bits);
+  if (s.queries) {
+    let line = (t("ui.queries") || "solver queries") + ": " + s.queries;
+    if (s.compare) line += "  ·  " + s.compare.label + " " + s.compare.queries;
+    st.appendChild(el("div","qc", line));
+  }
+  return st;
+}
+
+/* ---------- papers ---------- */
+
+function papersTab() {
+  const v = view();
+  const p = S.result && S.result.paperwork;
+  if (!p || !p.steps.length) {
+    return v.appendChild(el("div","empty", t("ui.papers_empty") ||
+      "Finish the questions and your paper list appears here."));
+  }
+
+  const head = el("div","card");
+  head.appendChild(el("h2", null, t("ui.papers_title")));
+  head.appendChild(el("p","sub", t("ui.papers_summary",
+    {trips:p.trips, fee:p.fee, days:p.days})));
+  if (p.first) {
+    const n = el("div","note ok");
+    n.appendChild(el("div", null, "⭐  " + t("ui.papers_first")));
+    n.appendChild(el("b", null, (p.first.step ? p.first.step + ". " : "") + p.first.name));
+    if (p.first.unlocks.length)
+      n.appendChild(el("div","sub", t("ui.papers_unlocks") + ": " + p.first.unlocks.join(", ")));
+    head.appendChild(n);
+  }
+  v.appendChild(head);
+
+  const list = el("div","card");
+  const ol = el("ol","route");
+  p.steps.forEach(s => {
+    const li = el("li");
+    li.appendChild(el("b", null, s.name));
+    li.appendChild(el("div","sub", (t("ui.papers_where")||"Go to") + ": " + s.issuer));
+    const bits = [];
+    bits.push(s.fee ? (t("ui.papers_cost")||"Cost") + " ₹" + s.fee
+                    : (t("ui.papers_free")||"Free"));
+    if (s.days) bits.push(t("ui.papers_time", {days:s.days}));
+    bits.push(s.trips > 1 ? t("ui.papers_trips", {n:s.trips}) : t("ui.papers_trip"));
+    li.appendChild(el("div","sub", bits.join("  ·  ")));
+    if (s.unlocks.length)
+      li.appendChild(el("div","note ok", t("ui.papers_unlocks") + ": " + s.unlocks.join(", ")));
+    ol.appendChild(li);
+  });
+  list.appendChild(ol);
+  list.appendChild(paperWorking());
+  v.appendChild(list);
+
+  const pr = el("div","card");
+  const b = el("button", null, "🖨️  " + (t("ui.print") || "Print"));
+  b.onclick = () => window.print();
+  pr.appendChild(b);
+  v.appendChild(pr);
+}
+
+function paperWorking() {
+  const box = el("details","work");
+  box.appendChild(el("summary", null,
+    t("ui.working_papers") || "How this order was worked out"));
+  let loaded = false;
+  box.ontoggle = async () => {
+    if (!box.open || loaded) return;
+    loaded = true;
+    let tr;
+    try {
+      tr = await api("/api/paper-trace",
+        {targets:S.result.targets || [], documents:[...S.held], facts:{}});
+    } catch { return; }
+    (tr.steps || []).forEach(s => box.appendChild(stepBlock(s)));
+  };
+  return box;
+}
+
+/* ---------- help ---------- */
+
+function helpTab() {
+  const v = view();
+  const c = el("div","card");
+  c.appendChild(el("h2", null, t("ui.help_title") || "Questions"));
+  c.appendChild(el("p","sub", t("ui.help_body") || ""));
+  const open = el("button","cta mt", "💬  " + (t("ui.chat_open") || "Ask a question"));
+  open.onclick = openChat;
+  c.appendChild(open);
+  v.appendChild(c);
+
+  const about = el("div","card");
+  about.appendChild(el("h3", null, t("ui.about_title") || "About this app"));
+  [t("ui.about_1"), t("ui.about_2"), t("ui.about_3")].filter(Boolean)
+    .forEach(x => about.appendChild(el("p","sub", x)));
+  v.appendChild(about);
+}
+
+/* ---------- chat ---------- */
+
+function openChat() {
+  show("chat");
+  if (!$("chat-log").childElementCount) {
+    bubble("it", t("ui.chat_greet") || "Ask me about a scheme or a paper.", [],
+      [t("ui.chat_eg1"), t("ui.chat_eg2"), t("ui.chat_eg3")].filter(Boolean));
+  }
+  setTimeout(() => $("chat-in").focus(), 60);
+}
+$("fab").onclick = openChat;
+$("chat-close").onclick = () => hide("chat");
+
+function bubble(who, text, bullets, chips, steps) {
+  const log = $("chat-log");
+  const b = el("div","bubble " + who);
+  if (who === "it") b.appendChild(el("b", null, text));
+  else b.textContent = text;
+  (bullets || []).forEach(x => b.appendChild(el("div","li", x)));
+  (steps || []).forEach((s, i) => b.appendChild(
+    el("div","li", (i+1) + ". " + s.name + ", " + s.issuer)));
+  log.appendChild(b);
+  if (chips && chips.length) {
+    const row = el("div");
+    chips.forEach(c => {
+      const ch = el("button","chip", c);
+      ch.onclick = () => sendChat(c);
+      row.appendChild(ch);
+    });
+    log.appendChild(row);
+  }
+  log.scrollTop = log.scrollHeight;
+}
+
+async function sendChat(text) {
+  const q = (text != null ? text : $("chat-in").value).trim();
+  if (!q) return;
+  $("chat-in").value = "";
+  bubble("me", q);
+  let a;
+  try { a = await api("/api/ask", {question:q, facts:{}}); }
+  catch { return bubble("it", t("ui.error_body") || "Could not answer"); }
+  bubble("it", a.text, a.bullets, a.suggestions, a.steps);
+  say(a.text);
+}
+$("chat-send").onclick = () => sendChat();
+$("chat-in").addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
+
+/* ---------- misc ---------- */
 
 function restart() {
-  state.facts = {}; state.order = []; state.held = new Set(); state.asked = 0;
-  $("s-out").innerHTML = "";
-  hide("s-q");
-  showDocuments();
-  window.scrollTo(0, 0);
+  S.facts = {}; S.order = []; S.held = new Set(); S.asked = 0; S.result = null;
+  go("home");
 }
 
-// Voices load asynchronously in some browsers; touching the list early makes
-// them available by the time anybody presses the button.
-if ("speechSynthesis" in window) window.speechSynthesis.getVoices();
-bootLanguages();
+if ("speechSynthesis" in window) speechSynthesis.getVoices();
+boot();
 </script>
 </body>
 </html>

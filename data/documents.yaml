@@ -188,7 +188,7 @@ documents:
         any: [passport_photo]
 
   death_certificate:
-    name: Death certificate
+    name: Death certificate of the person who died
     issuer: Gram panchayat or municipal office
     fee: 20
     days: 21

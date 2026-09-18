@@ -37,13 +37,13 @@ Restart the server and it appears in the picker.
 
 ## What each section is for
 
-- `ui` — the interface chrome: buttons, headings, warnings
-- `attr` — one entry per fact, with `label`, `question`, `unit`, and `options`
+- `ui`, the interface chrome: buttons, headings, warnings
+- `attr`, one entry per fact, with `label`, `question`, `unit`, and `options`
   for the multiple-choice ones. The `question` is read aloud, so write it the
   way somebody would actually say it on a doorstep
-- `doc` — document names and which office issues them
-- `scheme` — scheme names, what the benefit is, and where to apply
-- `criterion` — the clause that blocked somebody, keyed by scheme and criterion
+- `doc`, document names and which office issues them
+- `scheme`, scheme names, what the benefit is, and where to apply
+- `criterion`, the clause that blocked somebody, keyed by scheme and criterion
   id. **This is the explanation itself.** Leaving it untranslated undoes the
   point of translating anything else
 

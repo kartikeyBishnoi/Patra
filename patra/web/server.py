@@ -24,12 +24,14 @@ from ..encode.loader import (
     load_schema,
     load_schemes,
 )
+from ..assist import Assistant
 from ..engine import Engine, Trust
 from ..i18n import Translations
 from ..model.attributes import Kind
 from ..model.household import Profile
 from ..model.scheme import say
 from ..reason.questions import Status, next_question, status
+from ..explain.trace import decision_trace, paperwork_trace
 from ..reason.unlock import ladder
 
 HERE = Path(__file__).resolve().parent
@@ -189,7 +191,34 @@ class Brain:
             paper = self._paper(ladder(self.documents, winners, set(documents)), words)
 
         near.sort(key=lambda n: n["effort"])
-        return {"clashes": [], "claims": claims, "near": near, "paperwork": paper}
+        return {
+            "clashes": [], "claims": claims, "near": near, "paperwork": paper,
+            "targets": sorted({d for s in winners for d in s.documents}),
+        }
+
+    def answer(self, question: str, words) -> dict:
+        assistant = Assistant(self.schemes, self.documents, words)
+        with self._lock:
+            a = assistant.ask(question)
+        return {
+            "intent": a.intent.value,
+            "text": a.text,
+            "bullets": a.bullets,
+            "steps": a.steps,
+            "suggestions": a.suggestions,
+        }
+
+    def trace(self, facts: dict, scheme_id: str, words) -> dict:
+        scheme = next((s for s in self.schemes if s.id == scheme_id), None)
+        if scheme is None:
+            return {"error": "unknown scheme"}
+        with self._lock:
+            return decision_trace(self.engine, scheme,
+                                  Profile(id="web", facts=facts), words)
+
+    def paper_trace(self, targets, held, words) -> dict:
+        with self._lock:
+            return paperwork_trace(self.documents, targets, set(held), words)
 
     def _claim(self, scheme, verdict, words):
         out = {
@@ -342,6 +371,27 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(400, {"error": str(exc)})
 
         words = self.brain.translations.bundle(payload.get("lang", "en"))
+
+        if route == "/api/ask":
+            question = payload.get("question", "")
+            if not isinstance(question, str) or len(question) > 400:
+                return self._json(400, {"error": "bad question"})
+            return self._json(200, self.brain.answer(question, words))
+
+        if route == "/api/trace":
+            scheme_id = payload.get("scheme", "")
+            if not isinstance(scheme_id, str):
+                return self._json(400, {"error": "bad scheme"})
+            return self._json(200, self.brain.trace(facts, scheme_id, words))
+
+        if route == "/api/paper-trace":
+            targets = payload.get("targets", [])
+            held = payload.get("documents", [])
+            if not isinstance(targets, list) or not isinstance(held, list):
+                return self._json(400, {"error": "bad lists"})
+            return self._json(200, self.brain.paper_trace(
+                [t for t in targets if t in self.brain.documents],
+                [h for h in held if h in self.brain.documents], words))
 
         if route == "/api/question":
             return self._json(200, {"question": self.brain.question_for(facts, words)})

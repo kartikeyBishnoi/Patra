@@ -72,6 +72,69 @@ strings:
       "python3 -m patra.web.server", then open http://127.0.0.1:8765
 
   # How each fact is asked. Written to be read aloud.
+    tab_home: My claims
+    tab_papers: Papers
+    tab_help: Help
+    papers_open: Open the paper list
+    papers_empty: Answer the questions and your paper list appears here.
+    working: How we worked this out
+    working_papers: How this order was worked out
+    queries: solver questions
+    help_title: Questions about anything here
+    help_body: Ask about any scheme or any paper. Answers come from the rules in this app, so it will say when it does not know.
+    chat_open: Ask a question
+    chat_title: Ask a question
+    chat_sub: Answered from the rules, not guessed
+    chat_hint: Type your question
+    chat_greet: Ask me about a scheme or a paper.
+    chat_eg1: How do I get a ration card?
+    chat_eg2: What is an income certificate?
+    chat_eg3: Where do I apply for the old age pension?
+    about_title: About this app
+    about_1: Every answer is worked out from the published rules of each scheme. Tap "How we worked this out" under any result to see the steps.
+    about_2: Nothing is sent over the internet and nothing is saved. Close the page and it is gone.
+    about_3: The scheme rules here are simplified and vary by state. Please confirm at your gram panchayat before relying on them.
+    assist_privacy_1: Nothing is sent over the internet.
+    assist_privacy_2: Nothing is saved after you close the page.
+    assist_privacy_3: We never ask for your Aadhaar number, only whether your account is linked.
+    assist_used_by: Needed for
+    assist_papers: Papers
+    assist_none: No scheme in our list needs this.
+    assist_no_route: We could not work out a route to this one.
+    assist_unknown: I do not know that one. I can only answer about the schemes and papers in this app.
+    assist_eg_how: How do I get
+    assist_eg_what: What is
+    assist_eg_needs: What do I need for
+
+  trace:
+    to: to
+    encode: constraint encoding
+    encode_head: "{rules} rules and your {facts} answers turned into constraints"
+    solve: satisfiability
+    solve_yes: All of it together holds
+    solve_no: All of it together cannot hold
+    solve_yes_d: You qualify.
+    solve_no_d: Something the rules demand and something you told us cannot both be true.
+    shrink: QuickXPlain (Junker 2004)
+    shrink_head: "Narrowed to {n} that already clash"
+    compare: one at a time would have taken
+    enumerate: MARCO lattice traversal
+    enumerate_head: "{r} separate reasons, {c} ways to repair"
+    enumerate_d: Every repair has to break every reason, and breaking each one is enough. That is why one search answers both questions.
+    repair: correction sets over changeable facts
+    repair_none: Nothing could be changed to fix this
+    repair_none_d: This rests on facts that cannot change.
+    repair_redundant: Every repair meant giving something up
+    repair_redundant_d: This scheme is for people who lack something you already have, so it was set aside rather than refused.
+    repair_best: cheapest correction set
+    repair_best_head: "{n} possible repairs, cheapest shown"
+    goal: AND-OR graph
+    goal_head: "{want} papers wanted, {have} already held"
+    search: minimum-cost AND-OR search
+    search_head: "{n} papers to collect"
+    order: topological ordering
+    order_head: Ordered so nothing is attempted before its inputs exist
+
   attr:
     age:
       label: Age
@@ -232,6 +295,6 @@ strings:
     bank_account: {name: Bank account, issuer: Any bank or village bank agent}
     bank_aadhaar_seeding: {name: Aadhaar linked to your bank account, issuer: Your own bank branch}
     disability_certificate: {name: Disability certificate, issuer: District hospital}
-    death_certificate: {name: Death certificate, issuer: Gram panchayat office}
+    death_certificate: {name: "Death certificate of your husband, wife or the family earner", issuer: Gram panchayat office}
     land_records: {name: Land record, issuer: Patwari or tehsil office}
     job_card: {name: MGNREGA job card, issuer: Gram panchayat}
