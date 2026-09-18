@@ -1,0 +1,120 @@
+code: bn
+name: বাংলা
+speech: bn-IN
+complete: false
+
+# NOT YET CHECKED BY A NATIVE SPEAKER. See docs/LANGUAGES.md.
+# Anything missing here falls back to English per key rather than showing a
+# blank, and the picker marks this language so nobody mistakes it for reviewed.
+
+strings:
+  ui:
+    title: পাত্র
+    tagline: আপনার পরিবার কী পেতে পারে
+    privacy: আপনার উত্তর এই ফোনেই থাকে। কোথাও পাঠানো হয় না।
+    choose_language: আপনার ভাষা বেছে নিন
+    docs_title: এর মধ্যে কোন কাগজগুলি আপনার কাছে আছে?
+    docs_help: যেগুলি আপনার কাছে আছে সেগুলিতে চাপ দিন। বাকিগুলি ছেড়ে দিন।
+    start: শুরু করুন
+    listen: শুনুন
+    back: পিছনে
+    next: পরবর্তী
+    "yes": হ্যাঁ
+    "no": না
+    dont_know: আমি ঠিক জানি না
+    print: এই পাতা ছাপুন
+    start_over: আবার শুরু করুন
+    why_asking: একটি প্রকল্পে এটি দরকার বলেই জিজ্ঞাসা করছি।
+    checking: নিয়ম দেখা হচ্ছে
+    claims_title: "আপনি {n}টি পেতে পারেন"
+    claims_none_title: এই উত্তরগুলি থেকে কিছু পাওয়া গেল না
+    claims_none_body: >
+      এর মানে এই নয় যে আপনার জন্য কিছু নেই। আপনার গ্রাম পঞ্চায়েতে জিজ্ঞাসা করুন,
+      সেখানে রাজ্যের প্রকল্পের খবর থাকবে।
+    apply_at: "কোথায় যাবেন"
+    please_check: "আগে এটি দেখে নিন"
+    check_body: >
+      আপনি বলেছেন {label} হল {now}। উত্তর বদলে যায় {flips} এ। আসল সংখ্যা যদি
+      তার অন্য দিকে হয়, তবে এই ফল ভুল।
+    papers_title: কোন কাগজগুলি জোগাড় করতে হবে
+    papers_summary: "প্রায় {trips} বার যাওয়া, {fee} টাকা ফি, প্রায় {days} দিন"
+    papers_first: একটিই কাজ করতে পারলে আগে এটি করুন
+    papers_unlocks: "এর পরে আপনি এগুলির জন্য আবেদন করতে পারবেন"
+    papers_where: "কোথায় যাবেন"
+    papers_cost: "ফি"
+    papers_time: "প্রায় {days} দিন লাগে"
+    papers_trips: "{n} বার যাওয়া"
+    papers_trip: "1 বার যাওয়া"
+    papers_free: বিনামূল্যে
+    near_title: প্রায় হয়ে গেছে
+    near_needed: "এর জন্য দরকার"
+    near_you_said: "আপনি বলেছেন"
+    near_change: "কী করলে পাওয়া যাবে"
+    near_easy: এটি শুধু কাগজের কাজ
+    near_hard: এর জন্য সত্যিই কিছু বদলাতে হবে
+    mismatch_title: আমরা হয়তো কিছু ভুল বুঝেছি
+    mismatch_body: >
+      আপনার দুটি উত্তর একসঙ্গে মিলছে না। দয়া করে সেগুলি দেখে আবার শুরু করুন।
+      বাকি সব ঠিক ছিল।
+    mismatch_you_said: "আপনি বলেছেন"
+    error_title: কিছু একটা ভুল হয়েছে
+    error_body: দয়া করে আবার শুরু করুন।
+
+  attr:
+    age: {label: বয়স, unit: বছর, question: "আপনার বয়স কত?"}
+    gender:
+      label: পুরুষ না মহিলা
+      question: "আপনি কি পুরুষ না মহিলা?"
+      options: {male: পুরুষ, female: মহিলা, other: অন্য}
+    marital_status:
+      label: বৈবাহিক অবস্থা
+      question: "আপনি কি বিবাহিত, অবিবাহিত, না আপনার স্বামী বা স্ত্রী আর নেই?"
+      options: {unmarried: অবিবাহিত, married: বিবাহিত, widowed: স্বামী বা স্ত্রী মারা গেছেন, divorced: বিবাহবিচ্ছেদ হয়েছে, separated: আলাদা থাকি}
+    category:
+      label: জাতি শ্রেণি
+      question: "আপনি কোন জাতি শ্রেণিতে পড়েন?"
+      options: {general: সাধারণ, obc: অন্যান্য অনগ্রসর শ্রেণি, sc: তফসিলি জাতি, st: তফসিলি উপজাতি}
+    disability_percent:
+      label: প্রতিবন্ধকতা
+      unit: শতাংশ
+      question: "প্রতিবন্ধকতার শংসাপত্র থাকলে তাতে কত শতাংশ লেখা আছে?"
+    is_pregnant: {label: গর্ভবতী, question: "আপনি কি গর্ভবতী, বা সম্প্রতি সন্তান হয়েছে?"}
+    first_child: {label: প্রথম সন্তান, question: "এটি কি আপনার প্রথম সন্তান?"}
+    occupation:
+      label: কাজ
+      question: "আপনি কী কাজ করেন?"
+      options: {farmer: নিজের জমিতে চাষ, farm_labour: অন্যের খেতে মজুরি, daily_wage: দিনমজুরি, self_employed: নিজের ছোট ব্যবসা, salaried: পাকা চাকরি, unemployed: এখন কোনও কাজ নেই, student: পড়াশোনা, homemaker: ঘরের কাজ}
+    willing_unskilled_work: {label: মজুরির কাজে রাজি, question: "গ্রামে দিনমজুরির কাজ পেলে আপনি করবেন?"}
+    has_bank_account: {label: ব্যাঙ্ক অ্যাকাউন্ট, question: "আপনার নিজের নামে ব্যাঙ্ক অ্যাকাউন্ট আছে?"}
+    bank_aadhaar_linked: {label: অ্যাকাউন্ট আধারের সঙ্গে যুক্ত, question: "আপনার ব্যাঙ্ক অ্যাকাউন্ট কি আধারের সঙ্গে যুক্ত?"}
+    already_receiving_pension: {label: আগে থেকেই পেনশন, question: "আপনি কি আগে থেকেই কোনও সরকারি পেনশন পান?"}
+    state:
+      label: রাজ্য
+      question: "আপনি কোন রাজ্যে থাকেন?"
+      options: {haryana: হরিয়ানা, rajasthan: রাজস্থান, uttar_pradesh: উত্তরপ্রদেশ, madhya_pradesh: মধ্যপ্রদেশ, bihar: বিহার, other: অন্য রাজ্য}
+    area_type:
+      label: গ্রাম না শহর
+      question: "আপনি গ্রামে থাকেন না শহরে?"
+      options: {rural: গ্রাম, urban: শহর}
+    annual_income: {label: বছরের পারিবারিক আয়, unit: টাকা বছরে, question: "আপনার গোটা পরিবারের এক বছরের আয় আন্দাজ কত?"}
+    ration_card_type:
+      label: রেশন কার্ড
+      question: "আপনার পরিবারের কোন রেশন কার্ড আছে?"
+      options: {none: রেশন কার্ড নেই, apl: এ পি এল কার্ড, phh: অগ্রাধিকার কার্ড, aay: অন্ত্যোদয় কার্ড}
+    land_acres: {label: চাষের জমি, unit: একর, question: "আপনার পরিবারের কত একর চাষের জমি আছে?"}
+    cultivates_land: {label: নিজে চাষ করেন, question: "আপনার পরিবারের কেউ কি নিজে চাষ করেন?"}
+    owns_pucca_house: {label: পাকা বাড়ি, question: "আপনার বাড়ি কি ইট সিমেন্টের, পাকা ছাদ সহ?"}
+    owns_vehicle: {label: গাড়ি, question: "আপনার পরিবারের মোটরসাইকেল, গাড়ি বা ট্রাক্টর আছে?"}
+    income_tax_payer: {label: আয়কর দেন, question: "আপনার পরিবারের কেউ কি আয়কর দেন?"}
+    govt_employee_in_family: {label: পরিবারে সরকারি চাকরি, question: "আপনার পরিবারে কারও সরকারি চাকরি বা সরকারি পেনশন আছে?"}
+    lpg_connection: {label: গ্যাস সংযোগ, question: "আপনার বাড়িতে গ্যাসের সংযোগ আছে?"}
+    breadwinner_died_recently: {label: রোজগেরে ব্যক্তির মৃত্যু, question: "গত তিন বছরে আপনার পরিবারের প্রধান রোজগেরে ব্যক্তি মারা গেছেন?"}
+    household_size: {label: ঘরে লোক, question: "আপনার ঘরে কতজন থাকেন?"}
+    has_member_over_60: {label: ষাটের বেশি কেউ, question: "আপনার ঘরে ষাট বছরের বেশি কেউ আছেন?"}
+    has_girl_child: {label: আঠারোর কম মেয়ে, question: "আপনার ঘরে আঠারো বছরের কম বয়সি মেয়ে আছে?"}
+    has_disabled_member: {label: প্রতিবন্ধী সদস্য, question: "আপনার ঘরে কেউ প্রতিবন্ধী আছেন?"}
+    has_widowed_member: {label: ঘরে বিধবা, question: "আপনার ঘরে কোনও বিধবা আছেন?"}
+    adult_male_count: {label: কাজের বয়সি পুরুষ, question: "আপনার ঘরে আঠারো থেকে ষাট বছরের কতজন পুরুষ আছেন?"}
+    has_adult_woman: {label: প্রাপ্তবয়স্ক মহিলা, question: "আপনার ঘরে আঠারো বছরের বেশি কোনও মহিলা আছেন?"}
+    has_willing_worker: {label: মজুরির কাজে কেউ, question: "আপনার ঘরের কোনও প্রাপ্তবয়স্ক গ্রামে দিনমজুরির কাজ করবেন?"}
+    someone_has_bank_account: {label: কারও ব্যাঙ্ক অ্যাকাউন্ট, question: "আপনার ঘরে কারও ব্যাঙ্ক অ্যাকাউন্ট আছে?"}

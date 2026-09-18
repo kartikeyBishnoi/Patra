@@ -1,0 +1,237 @@
+code: en
+name: English
+speech: en-IN
+complete: true
+
+strings:
+
+  ui:
+    title: PATRA
+    tagline: What your family can claim
+    privacy: Your answers stay on this phone. Nothing is sent anywhere.
+    choose_language: Choose your language
+
+    docs_title: Which of these do you already have?
+    docs_help: Tap the ones you have at home. Leave the rest.
+    docs_none: I do not have any of these
+    start: Start
+
+    listen: Listen
+    back: Go back
+    skip: I would rather not say
+    next: Next
+    "yes": "Yes"
+    "no": "No"
+    dont_know: I am not sure
+    print: Print this page
+    start_over: Start again
+    question_of: "Question {n}"
+    why_asking: We ask this only because one of the schemes depends on it.
+
+    checking: Checking the rules
+
+    claims_title: "You can claim {n}"
+    claims_none_title: Nothing came out of these answers
+    claims_none_body: >
+      That does not mean there is nothing for you. Please ask at your gram
+      panchayat, they will know about state schemes we do not cover.
+    apply_at: "Go to"
+    please_check: "Please check this first"
+    check_body: >
+      You told us {label} is {now}. The answer changes at {flips}. If your real
+      figure is on the other side of that, this result is wrong.
+
+    papers_title: Papers you need to collect
+    papers_summary: "About {trips} trips, Rs {fee} in fees, around {days} days"
+    papers_first: If you can only do one thing, do this first
+    papers_unlocks: "After this you can apply for"
+    papers_where: "Go to"
+    papers_cost: "Cost"
+    papers_time: "Takes about {days} days"
+    papers_trips: "{n} trips"
+    papers_trip: "1 trip"
+    papers_free: Free
+
+    near_title: Close, but not yet
+    near_needed: "To get this you need"
+    near_you_said: "You told us"
+    near_change: "What would change it"
+    near_easy: This is only paperwork
+    near_hard: This needs a real change
+
+    mismatch_title: We may have misheard something
+    mismatch_body: >
+      Two of your answers do not fit together. Please check them and start
+      again. Everything else you told us was fine.
+    mismatch_you_said: "You told us"
+
+    error_title: Something went wrong
+    error_body: Please start again.
+    error_offline: >
+      This page cannot reach the app. Open a terminal and run
+      "python3 -m patra.web.server", then open http://127.0.0.1:8765
+
+  # How each fact is asked. Written to be read aloud.
+  attr:
+    age:
+      label: Age
+      unit: years
+      question: How old are you?
+    gender:
+      label: Gender
+      question: Are you a man or a woman?
+      options:
+        male: Man
+        female: Woman
+        other: Other
+    marital_status:
+      label: Marital status
+      question: Are you married, unmarried, or is your husband or wife no longer living?
+      options:
+        unmarried: Unmarried
+        married: Married
+        widowed: Husband or wife has died
+        divorced: Divorced
+        separated: Living separately
+    category:
+      label: Caste category
+      question: Which caste category are you in?
+      options:
+        general: General
+        obc: OBC
+        sc: Scheduled Caste
+        st: Scheduled Tribe
+    disability_percent:
+      label: Disability
+      unit: percent
+      question: If you have a disability certificate, what percentage does it show?
+    is_pregnant:
+      label: Pregnant
+      question: Are you expecting a child, or did you have a baby recently?
+    first_child:
+      label: First child
+      question: Is this your first child?
+    occupation:
+      label: Work
+      question: What work do you do?
+      options:
+        farmer: Farming my own land
+        farm_labour: Working on someone else's farm
+        daily_wage: Daily wage work
+        self_employed: My own small business
+        salaried: A regular job
+        unemployed: No work right now
+        student: Studying
+        homemaker: Looking after the house
+    willing_unskilled_work:
+      label: Willing to do manual work
+      question: Would you take daily wage work if it were available in the village?
+    has_bank_account:
+      label: Bank account
+      question: Do you have a bank account in your own name?
+    bank_aadhaar_linked:
+      label: Bank account linked to Aadhaar
+      question: Is your bank account linked to your Aadhaar?
+    already_receiving_pension:
+      label: Already gets a pension
+      question: Do you already receive any government pension?
+
+    state:
+      label: State
+      question: Which state do you live in?
+      options:
+        haryana: Haryana
+        rajasthan: Rajasthan
+        uttar_pradesh: Uttar Pradesh
+        madhya_pradesh: Madhya Pradesh
+        bihar: Bihar
+        other: Another state
+    area_type:
+      label: Village or town
+      question: Do you live in a village or in a town?
+      options:
+        rural: Village
+        urban: Town or city
+    annual_income:
+      label: Yearly family income
+      unit: rupees a year
+      question: Roughly how much does your whole family earn in one year?
+    ration_card_type:
+      label: Ration card
+      question: What kind of ration card does your family have?
+      options:
+        none: No ration card
+        apl: Above poverty line card
+        phh: Priority household card
+        aay: Antyodaya card
+    land_acres:
+      label: Farm land
+      unit: acres
+      question: How many acres of farm land does your family own?
+    cultivates_land:
+      label: Farms the land
+      question: Does anyone in your family farm land themselves?
+    owns_pucca_house:
+      label: Pucca house
+      question: Is your house made of brick and cement with a solid roof?
+    owns_vehicle:
+      label: Motor vehicle
+      question: Does your family own a motorcycle, car or tractor?
+    income_tax_payer:
+      label: Pays income tax
+      question: Does anyone in your family pay income tax?
+    govt_employee_in_family:
+      label: Government job in family
+      question: Does anyone in your family have a government job, or a government pension?
+    lpg_connection:
+      label: Gas connection
+      question: Do you have an LPG gas connection at home?
+    breadwinner_died_recently:
+      label: Main earner died recently
+      question: Has the main earner of your family passed away in the last three years?
+    household_size:
+      label: People in the house
+      question: How many people live in your house?
+    has_member_over_60:
+      label: Someone over sixty
+      question: Is anyone in your house over sixty years old?
+    has_girl_child:
+      label: Girl under eighteen
+      question: Is there a girl under eighteen in your house?
+    has_disabled_member:
+      label: Someone with a disability
+      question: Does anyone in your house have a disability?
+    has_widowed_member:
+      label: A widow in the house
+      question: Is there a widow in your house?
+    adult_male_count:
+      label: Working-age men
+      question: How many men between eighteen and sixty live in your house?
+    has_adult_woman:
+      label: An adult woman
+      question: Is there a woman over eighteen in your house?
+    has_willing_worker:
+      label: Someone for manual work
+      question: Would any adult in your house take daily wage work in the village?
+    someone_has_bank_account:
+      label: Someone has a bank account
+      question: Does anyone in your house have a bank account?
+
+  doc:
+    passport_photo: {name: Passport photos, issuer: Any photo shop in the market}
+    aadhaar: {name: Aadhaar card, issuer: Aadhaar centre}
+    birth_certificate: {name: Birth certificate, issuer: Gram panchayat office}
+    school_certificate: {name: School leaving certificate, issuer: The school you last attended}
+    electricity_bill: {name: Electricity bill, issuer: Electricity office}
+    voter_id: {name: Voter ID card, issuer: Booth officer or electoral office}
+    pan_card: {name: PAN card, issuer: PAN service centre}
+    ration_card: {name: Ration card, issuer: Block food and supplies office}
+    domicile_certificate: {name: Domicile certificate, issuer: Tehsil office}
+    income_certificate: {name: Income certificate, issuer: Tehsil office}
+    caste_certificate: {name: Caste certificate, issuer: Tehsil office}
+    bank_account: {name: Bank account, issuer: Any bank or village bank agent}
+    bank_aadhaar_seeding: {name: Aadhaar linked to your bank account, issuer: Your own bank branch}
+    disability_certificate: {name: Disability certificate, issuer: District hospital}
+    death_certificate: {name: Death certificate, issuer: Gram panchayat office}
+    land_records: {name: Land record, issuer: Patwari or tehsil office}
+    job_card: {name: MGNREGA job card, issuer: Gram panchayat}

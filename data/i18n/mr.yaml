@@ -1,0 +1,181 @@
+code: mr
+name: मराठी
+speech: mr-IN
+complete: false
+
+# NOT YET CHECKED BY A NATIVE SPEAKER.
+#
+# The picker marks this language accordingly, and any key left out falls back
+# to English rather than showing a blank. It is here to demonstrate that adding
+# a language is a data task and nothing more: translate this file, set
+# `complete: true`, and it appears.
+#
+# Do not put this in front of real applicants until somebody who speaks Marathi
+# has read every line. A wrong word in a question about caste or income sends
+# somebody to the wrong office.
+
+strings:
+
+  ui:
+    title: पात्र
+    tagline: तुमच्या कुटुंबाला काय मिळू शकते
+    privacy: तुमची उत्तरे याच फोनमध्ये राहतात. कुठेही पाठवली जात नाहीत.
+    choose_language: तुमची भाषा निवडा
+
+    docs_title: यापैकी कोणती कागदपत्रे तुमच्याकडे आहेत?
+    docs_help: जी तुमच्याकडे आहेत त्यावर दाबा. बाकीची सोडून द्या.
+    docs_none: यापैकी माझ्याकडे काहीही नाही
+    start: सुरू करा
+
+    listen: ऐका
+    back: मागे जा
+    skip: मला सांगायचे नाही
+    next: पुढे
+    "yes": होय
+    "no": नाही
+    dont_know: मला नक्की माहीत नाही
+    print: हे पान छापा
+    start_over: पुन्हा सुरू करा
+    question_of: "प्रश्न {n}"
+    why_asking: एका योजनेसाठी हे आवश्यक आहे म्हणून विचारत आहोत.
+
+    checking: नियम तपासत आहोत
+
+    claims_title: "तुम्हाला {n} गोष्टी मिळू शकतात"
+    claims_none_title: या उत्तरांमधून काही निघाले नाही
+    claims_none_body: >
+      याचा अर्थ तुमच्यासाठी काहीच नाही असा नाही. तुमच्या ग्रामपंचायतीत विचारा,
+      तिथे राज्याच्या योजनांची माहिती असेल.
+    apply_at: "कुठे जायचे"
+    please_check: "आधी हे तपासा"
+    check_body: >
+      तुम्ही सांगितले की {label} {now} आहे. उत्तर {flips} वर बदलते. खरा आकडा
+      त्याच्या दुसऱ्या बाजूला असेल तर हा निकाल चुकीचा आहे.
+
+    papers_title: कोणती कागदपत्रे काढायची
+    papers_summary: "अंदाजे {trips} फेऱ्या, {fee} रुपये फी, सुमारे {days} दिवस"
+    papers_first: फक्त एकच काम करता येत असेल तर आधी हे करा
+    papers_unlocks: "यानंतर तुम्ही यासाठी अर्ज करू शकता"
+    papers_where: "कुठे जायचे"
+    papers_cost: "फी"
+    papers_time: "सुमारे {days} दिवस लागतात"
+    papers_trips: "{n} फेऱ्या"
+    papers_trip: "1 फेरी"
+    papers_free: मोफत
+
+    near_title: थोडेच राहिले
+    near_needed: "यासाठी आवश्यक आहे"
+    near_you_said: "तुम्ही सांगितले"
+    near_change: "काय केल्याने मिळेल"
+    near_easy: हे फक्त कागदपत्रांचे काम आहे
+    near_hard: यासाठी प्रत्यक्षात काहीतरी बदलावे लागेल
+
+    mismatch_title: कदाचित आम्ही काहीतरी चुकीचे समजलो
+    mismatch_body: >
+      तुमची दोन उत्तरे एकमेकांशी जुळत नाहीत. कृपया ती तपासा आणि पुन्हा सुरू करा.
+      बाकी सर्व ठीक होते.
+    mismatch_you_said: "तुम्ही सांगितले"
+
+    error_title: काहीतरी चूक झाली
+    error_body: कृपया पुन्हा सुरू करा.
+
+  attr:
+    age:
+      label: वय
+      unit: वर्षे
+      question: तुमचे वय किती आहे?
+    gender:
+      label: पुरुष की स्त्री
+      question: तुम्ही पुरुष आहात की स्त्री?
+      options: {male: पुरुष, female: स्त्री, other: इतर}
+    marital_status:
+      label: वैवाहिक स्थिती
+      question: तुम्ही विवाहित आहात, अविवाहित आहात, की तुमचे पती किंवा पत्नी हयात नाहीत?
+      options:
+        unmarried: अविवाहित
+        married: विवाहित
+        widowed: पती किंवा पत्नीचे निधन झाले
+        divorced: घटस्फोट झाला
+        separated: वेगळे राहत आहोत
+    category:
+      label: जात प्रवर्ग
+      question: तुम्ही कोणत्या जात प्रवर्गात येता?
+      options: {general: खुला, obc: इतर मागासवर्ग, sc: अनुसूचित जाती, st: अनुसूचित जमाती}
+    disability_percent:
+      label: दिव्यांगत्व
+      unit: टक्के
+      question: दिव्यांगत्व प्रमाणपत्र असल्यास त्यावर किती टक्के लिहिले आहे?
+    is_pregnant:
+      label: गर्भवती
+      question: तुम्ही गर्भवती आहात, किंवा नुकतेच बाळ झाले आहे?
+    first_child:
+      label: पहिले मूल
+      question: हे तुमचे पहिले मूल आहे का?
+    has_bank_account:
+      label: बँक खाते
+      question: तुमच्या स्वतःच्या नावाने बँक खाते आहे का?
+    bank_aadhaar_linked:
+      label: खाते आधारशी जोडलेले
+      question: तुमचे बँक खाते आधारशी जोडलेले आहे का?
+    already_receiving_pension:
+      label: आधीच पेन्शन
+      question: तुम्हाला आधीपासून कोणती सरकारी पेन्शन मिळते का?
+    area_type:
+      label: गाव की शहर
+      question: तुम्ही गावात राहता की शहरात?
+      options: {rural: गाव, urban: शहर}
+    annual_income:
+      label: वार्षिक कौटुंबिक उत्पन्न
+      unit: रुपये वर्षाला
+      question: तुमच्या संपूर्ण कुटुंबाची वर्षभराची कमाई अंदाजे किती आहे?
+    ration_card_type:
+      label: रेशन कार्ड
+      question: तुमच्या कुटुंबाकडे कोणते रेशन कार्ड आहे?
+      options:
+        none: रेशन कार्ड नाही
+        apl: दारिद्र्यरेषेवरील कार्ड
+        phh: प्राधान्य कुटुंब कार्ड
+        aay: अंत्योदय कार्ड
+    land_acres:
+      label: शेतजमीन
+      unit: एकर
+      question: तुमच्या कुटुंबाकडे किती एकर शेतजमीन आहे?
+    cultivates_land:
+      label: स्वतः शेती करता
+      question: तुमच्या कुटुंबातील कोणी स्वतः शेती करते का?
+    owns_pucca_house:
+      label: पक्के घर
+      question: तुमचे घर विटा आणि सिमेंटचे आहे का, पक्क्या छतासह?
+    owns_vehicle:
+      label: वाहन
+      question: तुमच्या कुटुंबाकडे दुचाकी, कार किंवा ट्रॅक्टर आहे का?
+    income_tax_payer:
+      label: आयकर भरता
+      question: तुमच्या कुटुंबातील कोणी आयकर भरते का?
+    govt_employee_in_family:
+      label: कुटुंबात सरकारी नोकरी
+      question: तुमच्या कुटुंबात कोणाची सरकारी नोकरी आहे का, किंवा सरकारी पेन्शन येते का?
+    lpg_connection:
+      label: गॅस जोडणी
+      question: तुमच्या घरी गॅस जोडणी आहे का?
+    breadwinner_died_recently:
+      label: कमावत्या व्यक्तीचे निधन
+      question: गेल्या तीन वर्षांत तुमच्या कुटुंबातील मुख्य कमावत्या व्यक्तीचे निधन झाले का?
+    has_adult_woman:
+      label: प्रौढ स्त्री
+      question: तुमच्या घरात अठरा वर्षांवरील स्त्री आहे का?
+    has_willing_worker:
+      label: मजुरीसाठी कोणी
+      question: तुमच्या घरातील कोणी प्रौढ गावात रोजंदारीचे काम करेल का?
+    someone_has_bank_account:
+      label: कोणाचे बँक खाते
+      question: तुमच्या घरात कोणाचे बँक खाते आहे का?
+    has_widowed_member:
+      label: घरात विधवा
+      question: तुमच्या घरात कोणी विधवा आहेत का?
+    has_disabled_member:
+      label: दिव्यांग सदस्य
+      question: तुमच्या घरात कोणी दिव्यांग आहे का?
+    adult_male_count:
+      label: कामाच्या वयाचे पुरुष
+      question: तुमच्या घरात अठरा ते साठ वयोगटातील किती पुरुष आहेत?

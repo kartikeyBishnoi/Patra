@@ -14,6 +14,19 @@ Nothing here is trained. There are no weights, no dataset, no model.
 
 ---
 
+## Languages
+
+English, Hindi, Marathi, Bengali and Tamil. The language is chosen once on the
+first screen, with each name written in its own script, and remembered after
+that. It can be changed any time from the button in the header.
+
+Only English and Hindi have been checked properly. The rest are flagged in the
+picker and fall back to English key by key. Adding a language is a data task,
+no code: see [docs/LANGUAGES.md](docs/LANGUAGES.md).
+
+Every question and result can be read aloud by tapping the speaker, using the
+browser's own synthesiser so it works with no network.
+
 ## Running it
 
 ```bash
@@ -26,9 +39,14 @@ The app:
 python3 -m patra.web.server
 ```
 
-Then open `http://127.0.0.1:8765`. It asks a short series of questions, stops
-as soon as the answers are settled, and shows what the family can claim along
-with the paperwork route.
+Then open `http://127.0.0.1:8765`. Pick a language, tap the papers you already
+hold, and answer a short series of questions. It stops as soon as the answers
+are settled, then shows what the family can claim, what is one errand away, and
+the paperwork route in order. The result page prints, so it can be carried to
+the office or checked by a literate neighbour.
+
+Opening `index.html` straight off the disk will not work: the page needs the
+app running behind it. It says so rather than sitting blank.
 
 From the terminal:
 

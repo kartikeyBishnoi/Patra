@@ -5,241 +5,213 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PATRA</title>
 <style>
-  /* Sized for a cheap phone held at arm's length in daylight. Large text,
-     high contrast, generous tap targets, nothing that needs a steady hand. */
-  :root {
-    --ink: #17202a;
-    --muted: #5b6672;
-    --line: #dfe4ea;
-    --paper: #ffffff;
-    --tint: #f4f6f8;
-    --good: #1c6b47;
-    --good-tint: #e7f2ec;
-    --warn: #9a5b12;
-    --warn-tint: #fbf0e0;
-    --stop: #9c3025;
-    --accent: #1b4f72;
-  }
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0;
-    background: var(--tint); color: var(--ink);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    font-size: 18px; line-height: 1.55;
-  }
-  .wrap { max-width: 620px; margin: 0 auto; padding: 16px 16px 64px; }
+  /* Built for a cheap phone held in daylight by somebody who may not read
+     well. Large type, strong contrast, one thing on screen at a time, tap
+     targets you cannot miss.
 
-  header { padding: 22px 0 14px; }
-  header h1 { margin: 0; font-size: 30px; letter-spacing: 1px; }
-  header p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+     Research on low-literate users in India is consistent on three points:
+     they are numerate and comfortable with number keys; abstract icons are
+     semantically opaque to them while concrete pictures are not; and voice
+     plus local language matters more than any layout choice. The design
+     follows all three. */
+  :root {
+    --ink: #16202b;
+    --muted: #5d6874;
+    --line: #dde3e9;
+    --paper: #fff;
+    --tint: #f3f6f8;
+    --go: #17694a;
+    --go-tint: #e6f1eb;
+    --wait: #8f5310;
+    --wait-tint: #fbf1e2;
+    --stop: #93302a;
+    --stop-tint: #fbebe9;
+    --blue: #1a4f76;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; background: var(--tint); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+    font-size: 19px; line-height: 1.6;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 14px 14px 80px; }
+  .hide { display: none !important; }
+
+  header { display: flex; align-items: baseline; gap: 10px; padding: 16px 2px 12px; }
+  header h1 { margin: 0; font-size: 26px; letter-spacing: 1px; }
+  header span { color: var(--muted); font-size: 15px; }
+  #lang-switch {
+    margin-left: auto; font-size: 15px; padding: 8px 12px; width: auto;
+    border-radius: 999px; background: var(--paper);
+  }
 
   .card {
     background: var(--paper); border: 1px solid var(--line);
-    border-radius: 12px; padding: 20px; margin-bottom: 14px;
+    border-radius: 14px; padding: 20px; margin-bottom: 14px;
   }
-  .card h2 { margin: 0 0 10px; font-size: 20px; }
-  .card h3 { margin: 0 0 4px; font-size: 18px; }
-
+  .card h2 { margin: 0 0 6px; font-size: 21px; }
+  .note { color: var(--muted); font-size: 16px; margin: 0 0 16px; }
   .privacy {
-    background: var(--good-tint); border-color: #cfe3d8;
-    font-size: 15px; color: #21543c;
+    background: var(--go-tint); border-color: #cee2d7; color: #1c513a;
+    font-size: 16px; padding: 14px 18px;
   }
-
-  .q { font-size: 23px; line-height: 1.4; margin: 0 0 18px; }
-  .hint { color: var(--muted); font-size: 15px; margin: -10px 0 16px; }
 
   button {
-    font: inherit; cursor: pointer; border-radius: 10px;
-    border: 1px solid var(--line); background: var(--paper);
-    color: var(--ink); padding: 15px 16px; width: 100%;
-    text-align: left; margin-bottom: 10px;
+    font: inherit; cursor: pointer; display: block; width: 100%;
+    text-align: left; padding: 17px 18px; margin-bottom: 11px;
+    border: 2px solid var(--line); border-radius: 12px;
+    background: var(--paper); color: var(--ink);
   }
-  button:hover { border-color: var(--accent); }
-  button:active { transform: translateY(1px); }
-  .primary {
-    background: var(--accent); color: #fff; border-color: var(--accent);
-    text-align: center; font-weight: 600;
+  button:active { transform: scale(.99); }
+  .big { text-align: center; font-weight: 600; background: var(--blue); color: #fff; border-color: var(--blue); }
+  .quiet { text-align: center; color: var(--muted); border-style: dashed; }
+  .row { display: flex; gap: 10px; }
+  .row button { margin-bottom: 0; }
+
+  .pick { display: flex; align-items: center; gap: 14px; }
+  .pick .pic { font-size: 30px; line-height: 1; }
+  .pick.on { border-color: var(--go); background: var(--go-tint); }
+  .pick.on::after { content: "✓"; margin-left: auto; color: var(--go); font-weight: 700; font-size: 22px; }
+
+  .qtext { font-size: 25px; line-height: 1.4; margin: 6px 0 4px; font-weight: 600; }
+  .why { color: var(--wait); font-size: 15px; margin: 0 0 14px; }
+  .speak {
+    width: auto; padding: 10px 16px; margin: 0 0 18px;
+    border-radius: 999px; font-size: 16px; color: var(--blue);
+    border-color: #cfe0ee; background: #f2f8fc;
   }
-  .ghost { text-align: center; color: var(--muted); background: transparent; border: none; }
+  .dots { display: flex; gap: 5px; margin-bottom: 14px; }
+  .dots i { flex: 1; height: 5px; border-radius: 3px; background: var(--line); }
+  .dots i.done { background: var(--blue); }
 
   input[type=number] {
-    font: inherit; width: 100%; padding: 15px 14px;
-    border: 1px solid var(--line); border-radius: 10px; margin-bottom: 12px;
+    font: inherit; font-size: 24px; width: 100%; padding: 16px;
+    border: 2px solid var(--line); border-radius: 12px; margin-bottom: 12px;
+    text-align: center;
   }
 
-  .progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 18px; }
-  .progress > div { height: 100%; background: var(--accent); width: 0; transition: width .25s; }
+  .item { border-left: 6px solid var(--go); padding: 2px 0 2px 16px; margin-bottom: 22px; }
+  .item.wait { border-left-color: var(--wait); }
+  .item h3 { margin: 0 0 4px; font-size: 20px; }
+  .item .body { color: var(--muted); font-size: 16px; margin-bottom: 8px; }
+  .where { font-size: 17px; }
+  .where b { font-weight: 600; }
 
-  .claim { border-left: 5px solid var(--good); padding-left: 14px; margin-bottom: 20px; }
-  .claim .what { color: var(--muted); font-size: 16px; margin: 2px 0 6px; }
-  .claim .where { font-size: 16px; }
-
-  .near { border-left: 5px solid var(--warn); padding-left: 14px; margin-bottom: 20px; }
-  .reason { background: var(--tint); border-radius: 8px; padding: 10px 12px; margin: 8px 0; font-size: 16px; }
-  .reason b { font-weight: 600; }
-  .fix { background: var(--good-tint); border-radius: 8px; padding: 10px 12px; font-size: 16px; }
-
-  .check { background: var(--warn-tint); border-radius: 8px; padding: 10px 12px; font-size: 15px; margin-top: 6px; }
+  .box { border-radius: 10px; padding: 12px 14px; font-size: 16px; margin: 8px 0; }
+  .box.warn { background: var(--wait-tint); }
+  .box.good { background: var(--go-tint); }
+  .box.bad { background: var(--stop-tint); }
 
   ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0; }
-  ol.steps > li { counter-increment: s; position: relative; padding: 0 0 18px 44px; }
-  ol.steps > li::before {
-    content: counter(s); position: absolute; left: 0; top: 0;
-    width: 30px; height: 30px; border-radius: 50%;
-    background: var(--accent); color: #fff;
-    display: grid; place-items: center; font-size: 15px; font-weight: 600;
+  ol.steps li { counter-increment: s; position: relative; padding: 0 0 22px 48px; }
+  ol.steps li::before {
+    content: counter(s); position: absolute; left: 0; top: 2px;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--blue); color: #fff;
+    display: grid; place-items: center; font-weight: 700; font-size: 16px;
   }
-  .meta { color: var(--muted); font-size: 15px; }
-  .unlocks { background: var(--good-tint); border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: 15px; }
+  .meta { color: var(--muted); font-size: 16px; }
+  .spin { text-align: center; color: var(--muted); padding: 28px 0; }
 
-  .stop { border-left: 5px solid var(--stop); padding-left: 14px; }
-  .totals { font-size: 16px; color: var(--muted); margin-bottom: 14px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip {
-    border: 1px solid var(--line); background: var(--paper);
-    border-radius: 999px; padding: 9px 14px; font-size: 16px; width: auto;
-    margin: 0;
+  @media print {
+    body { background: #fff; font-size: 12pt; }
+    .wrap { max-width: none; padding: 0; }
+    button, .speak, #lang-switch, .dots { display: none !important; }
+    .card { border: none; padding: 0 0 12pt; page-break-inside: avoid; }
+    .item, ol.steps li { page-break-inside: avoid; }
+    .box { border: 1px solid #bbb; }
   }
-  .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .hidden { display: none; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <header>
-    <h1>PATRA</h1>
-    <p>What your family can claim, and what stands in the way</p>
+    <h1 id="brand">PATRA</h1>
+    <span id="tagline"></span>
+    <button id="lang-switch" class="hide"></button>
   </header>
 
-  <div class="card privacy">
-    Your answers stay on this device. Nothing is sent anywhere and nothing is saved.
+  <!-- 1. language -->
+  <div class="card" id="s-lang">
+    <h2>Choose your language / अपनी भाषा चुनें</h2>
+    <div id="lang-list" style="margin-top:14px"></div>
   </div>
 
-  <!-- step 1: which papers do you already have -->
-  <div class="card" id="docs-card">
-    <h2>First, which papers do you already have?</h2>
-    <p class="hint">Tap the ones you hold. Skip any you are unsure about.</p>
-    <div class="chips" id="doc-chips"></div>
-    <button class="primary" style="margin-top:18px" id="start">Start</button>
+  <!-- 2. papers already held -->
+  <div class="card hide" id="s-docs">
+    <h2 id="docs-title"></h2>
+    <p class="note" id="docs-help"></p>
+    <div id="doc-list"></div>
+    <button class="big" id="docs-go"></button>
   </div>
 
-  <!-- step 2: the questions -->
-  <div class="card hidden" id="q-card">
-    <div class="progress"><div id="bar"></div></div>
-    <p class="q" id="q-text"></p>
-    <p class="hint hidden" id="q-why"></p>
+  <!-- 3. questions -->
+  <div class="card hide" id="s-q">
+    <div class="dots" id="dots"></div>
+    <p class="qtext" id="q-text"></p>
+    <p class="why hide" id="q-why"></p>
+    <button class="speak" id="q-speak"></button>
     <div id="q-answers"></div>
-    <button class="ghost" id="skip">I would rather not say</button>
+    <div class="row">
+      <button class="quiet" id="q-back"></button>
+      <button class="quiet" id="q-skip"></button>
+    </div>
   </div>
 
-  <!-- step 3: results -->
-  <div id="results"></div>
+  <!-- 4. results -->
+  <div id="s-out"></div>
+
+  <div class="card hide" id="s-err">
+    <h2 id="err-title"></h2>
+    <p class="note" id="err-body"></p>
+  </div>
 
 </div>
 
 <script>
-const facts = {};
-const held = new Set();
-let asked = 0;
+"use strict";
+
+// Concrete pictures, not abstract glyphs. Research on low-literate users is
+// blunt about this: a stylised symbol means nothing, a recognisable object
+// does. These are objects people have handled.
+const PIC = {
+  aadhaar: "🪪", voter_id: "🗳️", pan_card: "💳", ration_card: "🍚",
+  birth_certificate: "👶", school_certificate: "🎓", electricity_bill: "💡",
+  domicile_certificate: "🏠", income_certificate: "💰", caste_certificate: "📜",
+  bank_account: "🏦", bank_aadhaar_seeding: "🔗", disability_certificate: "♿",
+  death_certificate: "🕯️", land_records: "🌾", job_card: "⛏️",
+  passport_photo: "📷"
+};
+
+const state = {
+  lang: "en", speech: "en-IN", words: {}, langs: [],
+  facts: {}, order: [], held: new Set(), asked: 0
+};
+
+const REMEMBERED = "patra.lang";
+
+function remember(code) {
+  try { localStorage.setItem(REMEMBERED, code); } catch { /* private mode */ }
+}
+function recall() {
+  try { return localStorage.getItem(REMEMBERED); } catch { return null; }
+}
 
 const $ = (id) => document.getElementById(id);
+const show = (id) => $(id).classList.remove("hide");
+const hide = (id) => $(id).classList.add("hide");
 
-async function post(path, body) {
-  const res = await fetch(path, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(body),
-  });
-  return res.json();
-}
-
-// ---- documents the family already holds -------------------------------
-
-async function loadDocs() {
-  const docs = await (await fetch("/api/documents")).json();
-  const box = $("doc-chips");
-  docs.forEach(d => {
-    const b = document.createElement("button");
-    b.className = "chip";
-    b.textContent = d.name;
-    b.onclick = () => {
-      if (held.has(d.id)) { held.delete(d.id); b.classList.remove("on"); }
-      else { held.add(d.id); b.classList.add("on"); }
-    };
-    box.appendChild(b);
-  });
-}
-
-// ---- the interview ----------------------------------------------------
-
-async function nextQuestion() {
-  const {question} = await post("/api/question", {facts});
-  if (!question) return finish();
-
-  $("q-card").classList.remove("hidden");
-  $("q-text").textContent = question.text;
-
-  // Expectation management rather than a fake percentage: we genuinely do
-  // not know how many are left until the answers come in.
-  $("bar").style.width = Math.min(90, asked * 14) + "%";
-
-  const why = $("q-why");
-  if (question.sensitive) {
-    why.textContent = "We ask this only because a scheme depends on it.";
-    why.classList.remove("hidden");
-  } else {
-    why.classList.add("hidden");
+function t(path, vars) {
+  let node = state.words;
+  for (const key of path.split(".")) {
+    if (!node || typeof node !== "object" || !(key in node)) return "";
+    node = node[key];
   }
-
-  const box = $("q-answers");
-  box.innerHTML = "";
-
-  if (question.kind === "bool") {
-    ["Yes", "No"].forEach((label, i) => {
-      const b = document.createElement("button");
-      b.textContent = label;
-      b.onclick = () => answer(question.attribute, i === 0);
-      box.appendChild(b);
-    });
-  } else if (question.kind === "enum") {
-    question.options.forEach(opt => {
-      const b = document.createElement("button");
-      b.textContent = opt.replace(/_/g, " ");
-      b.onclick = () => answer(question.attribute, opt);
-      box.appendChild(b);
-    });
-  } else {
-    const input = document.createElement("input");
-    input.type = "number";
-    input.inputMode = "numeric";
-    if (question.low != null) input.min = question.low;
-    if (question.high != null) input.max = question.high;
-    input.placeholder = question.unit || "";
-    box.appendChild(input);
-
-    const go = document.createElement("button");
-    go.className = "primary";
-    go.textContent = "Next";
-    go.onclick = () => {
-      const n = parseInt(input.value, 10);
-      if (Number.isNaN(n)) { input.focus(); return; }
-      answer(question.attribute, n);
-    };
-    box.appendChild(go);
-    input.focus();
-  }
+  let out = String(node ?? "");
+  if (vars) for (const [k, v] of Object.entries(vars)) out = out.split("{" + k + "}").join(v);
+  return out;
 }
-
-function answer(name, value) {
-  facts[name] = value;
-  asked += 1;
-  nextQuestion();
-}
-
-$("skip").onclick = () => finish();
-
-// ---- results ----------------------------------------------------------
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -248,119 +220,377 @@ function el(tag, cls, text) {
   return e;
 }
 
+// Every network call goes through here so a dead server produces a readable
+// instruction instead of a blank page. Opening the file directly from disk is
+// the common case: there is no app behind it, only HTML.
+async function api(path, body) {
+  try {
+    const opts = body
+      ? {method: "POST", headers: {"Content-Type": "application/json"},
+         body: JSON.stringify({...body, lang: state.lang})}
+      : {};
+    const res = await fetch(path, opts);
+    if (!res.ok) throw new Error("status " + res.status);
+    return await res.json();
+  } catch (err) {
+    offline();
+    throw err;
+  }
+}
+
+function offline() {
+  ["s-lang", "s-docs", "s-q"].forEach(hide);
+  $("s-out").innerHTML = "";
+  $("err-title").textContent = t("ui.error_title") || "Cannot reach the app";
+  $("err-body").textContent = t("ui.error_offline") ||
+    'This page needs the app running. Open a terminal and run ' +
+    '"python3 -m patra.web.server", then open http://127.0.0.1:8765';
+  show("s-err");
+}
+
+// ---- voice ----------------------------------------------------------
+// Uses the browser's own synthesiser, so it works with no network and no
+// model. Where a voice for the language is missing the button simply does
+// nothing visible, which is why text is never replaced by audio.
+
+function speak(text) {
+  if (!("speechSynthesis" in window) || !text) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = state.speech;
+  u.rate = 0.9;
+  const voice = window.speechSynthesis.getVoices()
+    .find(v => v.lang && v.lang.toLowerCase().startsWith(state.speech.slice(0, 2)));
+  if (voice) u.voice = voice;
+  window.speechSynthesis.speak(u);
+}
+
+// ---- 1. language ----------------------------------------------------
+
+async function bootLanguages() {
+  let langs;
+  try { langs = await (await fetch("/api/languages")).json(); }
+  catch { return offline(); }
+
+  state.langs = langs;
+  const saved = recall();
+  const known = langs.find(l => l.code === saved);
+  if (known) { hide("s-lang"); return chooseLanguage(known, true); }
+  drawLanguageList();
+}
+
+function drawLanguageList() {
+  const list = $("lang-list");
+  list.innerHTML = "";
+  state.langs.forEach(l => {
+    const b = el("button", null);
+    b.style.fontSize = "22px";
+    b.textContent = l.name + (l.complete ? "" : "  ·  not checked yet");
+    if (!l.complete) b.style.color = "var(--muted)";
+    b.onclick = () => { hide("s-lang"); chooseLanguage(l, true); };
+    list.appendChild(b);
+  });
+  show("s-lang");
+}
+
+// The switcher stays reachable from the header. Somebody who taps the wrong
+// language first should not have to work out how to undo it.
+function switchLanguage() {
+  ["s-docs", "s-q", "s-err"].forEach(hide);
+  $("s-out").innerHTML = "";
+  drawLanguageList();
+  window.scrollTo(0, 0);
+}
+
+async function chooseLanguage(l, restart) {
+  state.lang = l.code;
+  remember(l.code);
+  state.speech = l.speech || l.code;
+  state.words = await (await fetch("/api/strings?lang=" + l.code)).json();
+  document.documentElement.lang = l.code;
+
+  $("brand").textContent = t("ui.title") || "PATRA";
+  $("tagline").textContent = t("ui.tagline");
+  $("lang-switch").textContent = "🌐 " + l.name;
+  $("lang-switch").classList.remove("hide");
+  $("lang-switch").onclick = switchLanguage;
+
+  hide("s-lang");
+  if (restart) {
+    state.facts = {}; state.order = []; state.held = new Set(); state.asked = 0;
+  }
+  await showDocuments();
+}
+
+// ---- 2. papers already held -----------------------------------------
+
+async function showDocuments() {
+  $("docs-title").textContent = t("ui.docs_title");
+  $("docs-help").textContent = t("ui.docs_help");
+  $("docs-go").textContent = t("ui.start");
+  $("docs-go").onclick = () => { hide("s-docs"); askNext(); };
+
+  const docs = await (await fetch("/api/documents?lang=" + state.lang)).json();
+  const list = $("doc-list");
+  list.innerHTML = "";
+  docs.forEach(d => {
+    const b = el("button", "pick");
+    b.appendChild(el("span", "pic", PIC[d.id] || "📄"));
+    b.appendChild(el("span", null, d.name));
+    b.onclick = () => {
+      if (state.held.has(d.id)) { state.held.delete(d.id); b.classList.remove("on"); }
+      else { state.held.add(d.id); b.classList.add("on"); speak(d.name); }
+    };
+    list.appendChild(b);
+  });
+  show("s-docs");
+}
+
+// ---- 3. questions ---------------------------------------------------
+
+function drawDots() {
+  const dots = $("dots");
+  dots.innerHTML = "";
+  // Honest about not knowing the total: the interview length depends on the
+  // answers. Ten segments that fill up beat a percentage we would be making up.
+  for (let i = 0; i < 10; i++) {
+    const d = el("i");
+    if (i < state.asked) d.className = "done";
+    dots.appendChild(d);
+  }
+}
+
+async function askNext() {
+  const {question} = await api("/api/question", {facts: state.facts});
+  if (!question) return finish();
+
+  show("s-q");
+  drawDots();
+  $("q-text").textContent = question.text;
+  $("q-speak").textContent = "🔊  " + (t("ui.listen") || "Listen");
+  $("q-speak").onclick = () => speak(question.text);
+
+  const why = $("q-why");
+  if (question.sensitive) {
+    why.textContent = t("ui.why_asking");
+    why.classList.remove("hide");
+  } else why.classList.add("hide");
+
+  $("q-back").textContent = "← " + (t("ui.back") || "Back");
+  $("q-back").style.visibility = state.order.length ? "visible" : "hidden";
+  $("q-back").onclick = goBack;
+  $("q-skip").textContent = t("ui.dont_know") || "Not sure";
+  $("q-skip").onclick = () => finish();
+
+  const box = $("q-answers");
+  box.innerHTML = "";
+
+  if (question.kind === "bool") {
+    [[true, t("ui.yes") || "Yes", "✔️"], [false, t("ui.no") || "No", "✖️"]]
+      .forEach(([val, label, pic]) => {
+        const b = el("button", "pick");
+        b.appendChild(el("span", "pic", pic));
+        b.appendChild(el("span", null, label));
+        b.onclick = () => answer(question.attribute, val);
+        box.appendChild(b);
+      });
+  } else if (question.kind === "enum") {
+    question.options.forEach(o => {
+      const b = el("button", null, o.label);
+      b.onclick = () => answer(question.attribute, o.value);
+      box.appendChild(b);
+    });
+  } else {
+    const input = document.createElement("input");
+    input.type = "number";
+    input.inputMode = "numeric";
+    if (question.low != null) input.min = question.low;
+    if (question.high != null) input.max = question.high;
+    box.appendChild(input);
+
+    const go = el("button", "big", t("ui.next") || "Next");
+    const submit = () => {
+      const n = parseInt(input.value, 10);
+      if (Number.isNaN(n)) { input.focus(); return; }
+      if (question.low != null && n < question.low) { input.focus(); return; }
+      if (question.high != null && n > question.high) { input.focus(); return; }
+      answer(question.attribute, n);
+    };
+    go.onclick = submit;
+    input.onkeydown = (e) => { if (e.key === "Enter") submit(); };
+    box.appendChild(go);
+    setTimeout(() => input.focus(), 50);
+  }
+}
+
+function answer(name, value) {
+  state.facts[name] = value;
+  state.order.push(name);
+  state.asked = Math.min(10, state.asked + 1);
+  askNext();
+}
+
+function goBack() {
+  const last = state.order.pop();
+  if (last) delete state.facts[last];
+  state.asked = Math.max(0, state.asked - 1);
+  askNext();
+}
+
+// ---- 4. results -----------------------------------------------------
+
 async function finish() {
-  $("q-card").classList.add("hidden");
-  const out = $("results");
+  hide("s-q");
+  const out = $("s-out");
+  out.innerHTML = "";
+  out.appendChild(el("div", "spin", t("ui.checking") || "Checking"));
+
+  const data = await api("/api/result",
+    {facts: state.facts, documents: [...state.held]});
   out.innerHTML = "";
 
-  const data = await post("/api/result", {facts, documents: [...held]});
+  if (data.clashes && data.clashes.length) return renderClash(out, data);
 
-  if (data.clashes.length) {
-    const card = el("div", "card");
-    card.appendChild(el("h2", null, "Something does not add up"));
-    data.clashes.forEach(c => {
-      const box = el("div", "reason");
-      c.rule.forEach(r => box.appendChild(el("div", null, r)));
-      c.answers.forEach(a => box.appendChild(el("div", "meta", "you said: " + a)));
-      card.appendChild(box);
-    });
-    card.appendChild(el("p", "meta",
-      "Please check those answers and start again. Everything else was fine."));
-    const again = el("button", "primary", "Start again");
-    again.onclick = () => location.reload();
-    card.appendChild(again);
+  renderClaims(out, data);
+  if (data.paperwork && data.paperwork.steps.length) renderPapers(out, data.paperwork);
+  if (data.near && data.near.length) renderNear(out, data.near);
+
+  const sheet = el("button", null, "🖨️  " + (t("ui.print") || "Print this page"));
+  sheet.onclick = () => window.print();
+  out.appendChild(sheet);
+
+  const again = el("button", "quiet", t("ui.start_over") || "Start again");
+  again.onclick = restart;
+  out.appendChild(again);
+  window.scrollTo(0, 0);
+}
+
+function renderClash(out, data) {
+  const card = el("div", "card");
+  card.appendChild(el("h2", null, t("ui.mismatch_title")));
+  card.appendChild(el("p", "note", t("ui.mismatch_body")));
+  data.clashes.forEach(c => {
+    const box = el("div", "box bad");
+    c.rule.forEach(r => box.appendChild(el("div", null, r)));
+    c.answers.forEach(a => box.appendChild(
+      el("div", "meta", t("ui.mismatch_you_said") + ": " + a.label + " — " + a.value)));
+    card.appendChild(box);
+  });
+  const again = el("button", "big", t("ui.start_over"));
+  again.onclick = restart;
+  card.appendChild(again);
+  out.appendChild(card);
+}
+
+function renderClaims(out, data) {
+  const card = el("div", "card");
+  if (!data.claims.length) {
+    card.appendChild(el("h2", null, t("ui.claims_none_title")));
+    card.appendChild(el("p", "note", t("ui.claims_none_body")));
     out.appendChild(card);
     return;
   }
-
-  // what you can claim
-  const good = el("div", "card");
-  if (data.claims.length) {
-    good.appendChild(el("h2", null, `You can claim ${data.claims.length}`));
-    data.claims.forEach(c => {
-      const box = el("div", "claim");
-      box.appendChild(el("h3", null, c.name));
-      box.appendChild(el("p", "what", c.benefit));
-      box.appendChild(el("p", "where", "Go to: " + c.apply_at));
-      if (c.check) {
-        box.appendChild(el("div", "check",
-          `Please check: ${c.check.label} is ${c.check.now}. ` +
-          `The answer changes at ${c.check.flips_at}. If your real figure is ` +
-          `on the other side of that, this is wrong.`));
-      }
-      good.appendChild(box);
-    });
-  } else {
-    good.appendChild(el("h2", null, "Nothing came through on these answers"));
-    good.appendChild(el("p", "meta",
-      "That does not mean nothing is available. Ask at your gram panchayat."));
-  }
-  out.appendChild(good);
-
-  // paperwork
-  if (data.paperwork && data.paperwork.steps.length) {
-    const card = el("div", "card");
-    card.appendChild(el("h2", null, "Papers to collect"));
-    card.appendChild(el("p", "totals",
-      `About ${data.paperwork.trips} trips, Rs ${data.paperwork.fee} in fees, ` +
-      `roughly ${data.paperwork.days} days.`));
-
-    const list = el("ol", "steps");
-    data.paperwork.steps.forEach(s => {
-      const li = el("li");
-      li.appendChild(el("h3", null, s.name));
-      li.appendChild(el("div", "meta", "Go to: " + s.issuer));
-      const bits = [];
-      if (s.fee) bits.push("Rs " + s.fee);
-      if (s.days) bits.push("about " + s.days + " days");
-      bits.push(s.trips + (s.trips > 1 ? " trips" : " trip"));
-      li.appendChild(el("div", "meta", bits.join(", ")));
-      if (s.note) li.appendChild(el("div", "meta", s.note));
-      if (s.unlocks.length) {
-        li.appendChild(el("div", "unlocks",
-          "After this you can apply for: " + s.unlocks.join(", ")));
-      }
-      list.appendChild(li);
-    });
-    card.appendChild(list);
-    out.appendChild(card);
-  }
-
-  // close but not yet
-  if (data.near.length) {
-    const card = el("div", "card");
-    card.appendChild(el("h2", null, "Close, but not yet"));
-    data.near.forEach(n => {
-      const box = el("div", "near");
-      box.appendChild(el("h3", null, n.name));
-      n.why.slice(0, 1).forEach(w => {
-        const r = el("div", "reason");
-        r.appendChild(el("div", null, "The rule says: " + w.rule));
-        r.appendChild(el("div", "meta", "Your answer: " + w.answer));
-        box.appendChild(r);
-      });
-      const fix = el("div", "fix");
-      fix.appendChild(el("div", null, "What would change it:"));
-      n.fix.forEach(f => {
-        fix.appendChild(el("div", null, `${f.label}: ${f.now} to ${f.needed}`));
-      });
-      box.appendChild(fix);
-      card.appendChild(box);
-    });
-    out.appendChild(card);
-  }
-
-  const again = el("button", "ghost", "Start again");
-  again.onclick = () => location.reload();
-  out.appendChild(again);
+  card.appendChild(el("h2", null, t("ui.claims_title", {n: data.claims.length})));
+  data.claims.forEach(c => {
+    const item = el("div", "item");
+    item.appendChild(el("h3", null, "✅  " + c.name));
+    item.appendChild(el("div", "body", c.benefit));
+    const where = el("p", "where");
+    where.appendChild(el("b", null, t("ui.apply_at") + ": "));
+    where.appendChild(document.createTextNode(c.apply_at));
+    item.appendChild(where);
+    if (c.check) {
+      item.appendChild(el("div", "box warn",
+        t("ui.please_check") + " — " +
+        t("ui.check_body", {label: c.check.label, now: c.check.now, flips: c.check.flips})));
+    }
+    const listen = el("button", "speak", "🔊 " + (t("ui.listen") || "Listen"));
+    listen.onclick = () => speak(c.name + ". " + c.benefit + ". " + t("ui.apply_at") + " " + c.apply_at);
+    item.appendChild(listen);
+    card.appendChild(item);
+  });
+  out.appendChild(card);
 }
 
-$("start").onclick = () => {
-  $("docs-card").classList.add("hidden");
-  nextQuestion();
-};
+function renderPapers(out, paper) {
+  const card = el("div", "card");
+  card.appendChild(el("h2", null, t("ui.papers_title")));
+  card.appendChild(el("p", "note",
+    t("ui.papers_summary", {trips: paper.trips, fee: paper.fee, days: paper.days})));
 
-loadDocs();
+  if (paper.first && paper.first.name) {
+    const box = el("div", "box good");
+    box.appendChild(el("div", null, "⭐  " + t("ui.papers_first")));
+    const step = paper.first.step ? paper.first.step + ". " : "";
+    box.appendChild(el("div", null, step + paper.first.name));
+    if (paper.first.unlocks.length) {
+      box.appendChild(el("div", "meta",
+        t("ui.papers_unlocks") + ": " + paper.first.unlocks.join(", ")));
+    }
+    card.appendChild(box);
+  }
+
+  const list = el("ol", "steps");
+  paper.steps.forEach(s => {
+    const li = el("li");
+    li.appendChild(el("h3", null, s.name));
+    li.appendChild(el("div", "meta", t("ui.papers_where") + ": " + s.issuer));
+    const bits = [];
+    bits.push(s.fee ? t("ui.papers_cost") + " ₹" + s.fee : t("ui.papers_free"));
+    if (s.days) bits.push(t("ui.papers_time", {days: s.days}));
+    bits.push(s.trips > 1 ? t("ui.papers_trips", {n: s.trips}) : t("ui.papers_trip"));
+    li.appendChild(el("div", "meta", bits.join(" · ")));
+    if (s.unlocks.length) {
+      li.appendChild(el("div", "box good",
+        t("ui.papers_unlocks") + ": " + s.unlocks.join(", ")));
+    }
+    list.appendChild(li);
+  });
+  card.appendChild(list);
+  out.appendChild(card);
+}
+
+function renderNear(out, near) {
+  const card = el("div", "card");
+  card.appendChild(el("h2", null, t("ui.near_title")));
+  near.forEach(n => {
+    const item = el("div", "item wait");
+    item.appendChild(el("h3", null, n.name));
+    item.appendChild(el("div", "body", n.benefit));
+
+    if (n.needed) {
+      const box = el("div", "box");
+      box.style.background = "var(--tint)";
+      box.appendChild(el("div", null, t("ui.near_needed") + ": " + n.needed));
+      n.you_said.forEach(a => box.appendChild(
+        el("div", "meta", t("ui.near_you_said") + ": " + a.label + " — " + a.value)));
+      item.appendChild(box);
+    }
+
+    const fix = el("div", "box good");
+    fix.appendChild(el("div", null, "👉  " + t("ui.near_change")));
+    n.fix.forEach(f => {
+      fix.appendChild(el("div", null, f.label + ": " + f.now + " → " + f.needed));
+      fix.appendChild(el("div", "meta", f.easy ? t("ui.near_easy") : t("ui.near_hard")));
+    });
+    item.appendChild(fix);
+    card.appendChild(item);
+  });
+  out.appendChild(card);
+}
+
+function restart() {
+  state.facts = {}; state.order = []; state.held = new Set(); state.asked = 0;
+  $("s-out").innerHTML = "";
+  hide("s-q");
+  showDocuments();
+  window.scrollTo(0, 0);
+}
+
+// Voices load asynchronously in some browsers; touching the list early makes
+// them available by the time anybody presses the button.
+if ("speechSynthesis" in window) window.speechSynthesis.getVoices();
+bootLanguages();
 </script>
 </body>
 </html>
