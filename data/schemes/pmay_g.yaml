@@ -1,0 +1,45 @@
+id: pmay_g
+name: Pradhan Mantri Awas Yojana (Gramin)
+authority: Ministry of Rural Development
+scope: household
+benefit: >
+  Assistance towards building a pucca house, paid in instalments as the work
+  progresses, along with support for a toilet and a job card for the labour.
+apply_at: Gram panchayat
+source_url: https://pmayg.nic.in/
+note: >
+  Simplified encoding. Selection runs off the SECC deprivation list and a
+  permanent waiting list, so meeting the conditions here means a household
+  should be on that list, not that a house follows immediately.
+
+documents:
+  - aadhaar
+  - bank_account
+  - bank_aadhaar_seeding
+  - job_card
+  - ration_card
+
+criteria:
+  - id: C1
+    text: "The household must live in a rural area"
+    rule: {eq: [area_type, rural]}
+
+  - id: C2
+    text: "The household must not already own a pucca house"
+    rule: {is_false: owns_pucca_house}
+
+  - id: C3
+    text: "Nobody in the family may hold a government post"
+    rule: {is_false: govt_employee_in_family}
+
+  - id: C4
+    text: "Nobody in the family may be an income tax payer"
+    rule: {is_false: income_tax_payer}
+
+  - id: C5
+    text: "The household must not own a motor vehicle"
+    rule: {is_false: owns_vehicle}
+
+  - id: C6
+    text: "The family must not own more than five acres of irrigated land"
+    rule: {le: [land_acres, 5]}

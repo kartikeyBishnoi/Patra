@@ -1,0 +1,31 @@
+id: pmjay
+name: Ayushman Bharat PM Jan Arogya Yojana
+authority: National Health Authority
+scope: household
+benefit: >
+  Cashless hospital treatment up to five lakh rupees a year for the whole
+  family, at any empanelled public or private hospital.
+apply_at: Common Service Centre, or any empanelled hospital's help desk
+source_url: https://pmjay.gov.in/
+note: >
+  Simplified encoding. Entitlement is decided by the SECC deprivation list
+  rather than by an income test, and many states have widened it since. We
+  approximate the list with the ration card type, which is the closest thing a
+  household can actually tell us on their doorstep.
+
+documents:
+  - aadhaar
+  - ration_card
+
+criteria:
+  - id: C1
+    text: "The household must be on the below-poverty-line list"
+    rule: {in: [ration_card_type, [phh, aay]]}
+
+  - id: C2
+    text: "Nobody in the family may be an income tax payer"
+    rule: {is_false: income_tax_payer}
+
+  - id: C3
+    text: "Nobody in the family may hold a government post"
+    rule: {is_false: govt_employee_in_family}

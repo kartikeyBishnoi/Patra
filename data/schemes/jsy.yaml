@@ -1,0 +1,37 @@
+id: jsy
+name: Janani Suraksha Yojana
+authority: Ministry of Health and Family Welfare
+scope: member
+benefit: >
+  A cash payment for delivering in a government or accredited hospital, higher
+  in rural areas, along with transport assistance.
+apply_at: The ASHA worker, or the nearest health centre
+source_url: https://nhm.gov.in/
+note: >
+  Simplified encoding. In the low-performing states the payment is available
+  to any pregnant woman regardless of age, number of children, or poverty
+  status. We model the general rule, so a refusal here is worth checking
+  against the state's own list.
+
+documents:
+  - aadhaar
+  - bank_account
+  - bank_aadhaar_seeding
+  - ration_card
+
+criteria:
+  - id: C1
+    text: "Must be pregnant, or have delivered recently"
+    rule: {is_true: is_pregnant}
+
+  - id: C2
+    text: "Must be at least nineteen years old"
+    rule: {ge: [age, 19]}
+
+  - id: C3
+    text: "Household must be on the below-poverty-line list"
+    rule: {in: [ration_card_type, [phh, aay]]}
+
+  - id: C4
+    text: "Payment needs a bank account linked to Aadhaar"
+    rule: {is_true: bank_aadhaar_linked}

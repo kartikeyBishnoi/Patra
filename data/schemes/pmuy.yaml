@@ -1,0 +1,31 @@
+id: pmuy
+name: Pradhan Mantri Ujjwala Yojana
+authority: Ministry of Petroleum and Natural Gas
+scope: household
+benefit: >
+  A free LPG connection in the name of an adult woman of the household, with
+  the deposit and the first filling covered.
+apply_at: Any LPG distributor, or a Common Service Centre
+source_url: https://www.pmuy.gov.in/
+note: >
+  Simplified encoding. The connection is issued in a woman's name, so a
+  household with no adult woman cannot apply even when everything else fits.
+
+documents:
+  - aadhaar
+  - bank_account
+  - ration_card
+  - passport_photo
+
+criteria:
+  - id: C1
+    text: "The household must not already have a gas connection"
+    rule: {is_false: lpg_connection}
+
+  - id: C2
+    text: "The household must be on the below-poverty-line list"
+    rule: {in: [ration_card_type, [phh, aay]]}
+
+  - id: C3
+    text: "The connection must go to an adult woman of the household"
+    rule: {is_true: has_adult_woman}

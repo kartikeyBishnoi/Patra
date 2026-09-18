@@ -1,0 +1,34 @@
+id: apy
+name: Atal Pension Yojana
+authority: Pension Fund Regulatory and Development Authority
+scope: member
+benefit: >
+  A guaranteed monthly pension from the age of sixty, between one and five
+  thousand rupees depending on what is paid in. The spouse continues to draw
+  it afterwards.
+apply_at: The bank where you hold your account
+source_url: https://npscra.nsdl.co.in/
+note: >
+  Simplified encoding. Contributions are deducted from the bank account every
+  month until sixty, so this suits someone with a steady if small income.
+
+documents:
+  - aadhaar
+  - bank_account
+  - bank_aadhaar_seeding
+
+criteria:
+  - id: C1
+    text: "Must be between eighteen and forty years of age"
+    rule:
+      all:
+        - {ge: [age, 18]}
+        - {le: [age, 40]}
+
+  - id: C2
+    text: "Must have a bank account"
+    rule: {is_true: has_bank_account}
+
+  - id: C3
+    text: "Not available to income tax payers"
+    rule: {is_false: income_tax_payer}

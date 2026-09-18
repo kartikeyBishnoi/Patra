@@ -1,0 +1,63 @@
+# Things that cannot be true of anybody.
+#
+# These exist to catch a misheard question, not to decide eligibility. Nobody
+# is standing beside the household to notice when an answer comes out wrong,
+# and a wrong answer produces a verdict that looks perfectly traceable and is
+# nonsense.
+#
+# Every axiom here has to be conservative. One that is merely usually true will
+# turn away honest families, which is a worse failure than the one it prevents.
+# When in doubt we leave it out.
+
+axioms:
+
+  - id: A1
+    text: "Only a woman can be pregnant"
+    rule:
+      implies:
+        - {is_true: is_pregnant}
+        - {eq: [gender, female]}
+
+  - id: A2
+    text: "Pregnancy falls within childbearing years"
+    rule:
+      implies:
+        - {is_true: is_pregnant}
+        - all:
+            - {ge: [age, 12]}
+            - {le: [age, 55]}
+
+  - id: A3
+    text: "Nobody is married, widowed or divorced before eighteen"
+    rule:
+      implies:
+        - {not_in: [marital_status, [unmarried]]}
+        - {ge: [age, 18]}
+
+  - id: A4
+    text: "A child under ten does not hold a bank account in their own name"
+    rule:
+      implies:
+        - {lt: [age, 10]}
+        - {is_false: has_bank_account}
+
+  - id: A5
+    text: "Government pensions do not begin before eighteen"
+    rule:
+      implies:
+        - {is_true: already_receiving_pension}
+        - {ge: [age, 18]}
+
+  - id: A6
+    text: "Paid work does not start before fourteen"
+    rule:
+      implies:
+        - {in: [occupation, [salaried, farmer, farm_labour, daily_wage, self_employed]]}
+        - {ge: [age, 14]}
+
+  - id: A7
+    text: "An account cannot be linked to Aadhaar if there is no account"
+    rule:
+      implies:
+        - {is_true: bank_aadhaar_linked}
+        - {is_true: has_bank_account}

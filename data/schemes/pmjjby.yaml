@@ -1,0 +1,32 @@
+id: pmjjby
+name: Pradhan Mantri Jeevan Jyoti Bima Yojana
+authority: Department of Financial Services
+scope: member
+benefit: >
+  Life cover of two lakh rupees for a premium of a few hundred rupees a year,
+  deducted automatically from the bank account.
+apply_at: The bank where you hold your account
+source_url: https://jansuraksha.gov.in/
+note: >
+  Simplified encoding. Cover runs to the age of fifty five once taken, but it
+  cannot be started after fifty.
+
+documents:
+  - aadhaar
+  - bank_account
+
+criteria:
+  - id: C1
+    text: "Must be between eighteen and fifty years of age to join"
+    rule:
+      all:
+        - {ge: [age, 18]}
+        - {le: [age, 50]}
+
+  - id: C2
+    text: "Must have a bank account"
+    rule: {is_true: has_bank_account}
+
+  - id: C3
+    text: "The account must be linked to Aadhaar"
+    rule: {is_true: bank_aadhaar_linked}

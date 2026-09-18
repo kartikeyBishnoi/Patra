@@ -1,0 +1,27 @@
+id: jan_dhan
+name: Pradhan Mantri Jan Dhan Yojana account
+authority: Department of Financial Services
+scope: member
+benefit: >
+  A bank account with no minimum balance, a free debit card, accident cover,
+  and an overdraft facility after six months of steady use. Most scheme
+  payments need an account of some kind, so this is often the first step.
+apply_at: Any bank branch, or a business correspondent in the village
+source_url: https://pmjdy.gov.in/
+note: >
+  Simplified encoding. An account can be opened with Aadhaar alone, which is
+  what makes it the usual way out of the paperwork trap for somebody holding
+  almost nothing.
+
+documents:
+  - aadhaar
+  - passport_photo
+
+criteria:
+  - id: C1
+    text: "Must be ten years of age or older"
+    rule: {ge: [age, 10]}
+
+  - id: C2
+    text: "Intended for people who do not already have a bank account"
+    rule: {is_false: has_bank_account}

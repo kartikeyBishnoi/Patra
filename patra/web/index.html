@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PATRA</title>
+<style>
+  /* Sized for a cheap phone held at arm's length in daylight. Large text,
+     high contrast, generous tap targets, nothing that needs a steady hand. */
+  :root {
+    --ink: #17202a;
+    --muted: #5b6672;
+    --line: #dfe4ea;
+    --paper: #ffffff;
+    --tint: #f4f6f8;
+    --good: #1c6b47;
+    --good-tint: #e7f2ec;
+    --warn: #9a5b12;
+    --warn-tint: #fbf0e0;
+    --stop: #9c3025;
+    --accent: #1b4f72;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--tint); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 18px; line-height: 1.55;
+  }
+  .wrap { max-width: 620px; margin: 0 auto; padding: 16px 16px 64px; }
+
+  header { padding: 22px 0 14px; }
+  header h1 { margin: 0; font-size: 30px; letter-spacing: 1px; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+
+  .card {
+    background: var(--paper); border: 1px solid var(--line);
+    border-radius: 12px; padding: 20px; margin-bottom: 14px;
+  }
+  .card h2 { margin: 0 0 10px; font-size: 20px; }
+  .card h3 { margin: 0 0 4px; font-size: 18px; }
+
+  .privacy {
+    background: var(--good-tint); border-color: #cfe3d8;
+    font-size: 15px; color: #21543c;
+  }
+
+  .q { font-size: 23px; line-height: 1.4; margin: 0 0 18px; }
+  .hint { color: var(--muted); font-size: 15px; margin: -10px 0 16px; }
+
+  button {
+    font: inherit; cursor: pointer; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--paper);
+    color: var(--ink); padding: 15px 16px; width: 100%;
+    text-align: left; margin-bottom: 10px;
+  }
+  button:hover { border-color: var(--accent); }
+  button:active { transform: translateY(1px); }
+  .primary {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+    text-align: center; font-weight: 600;
+  }
+  .ghost { text-align: center; color: var(--muted); background: transparent; border: none; }
+
+  input[type=number] {
+    font: inherit; width: 100%; padding: 15px 14px;
+    border: 1px solid var(--line); border-radius: 10px; margin-bottom: 12px;
+  }
+
+  .progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 18px; }
+  .progress > div { height: 100%; background: var(--accent); width: 0; transition: width .25s; }
+
+  .claim { border-left: 5px solid var(--good); padding-left: 14px; margin-bottom: 20px; }
+  .claim .what { color: var(--muted); font-size: 16px; margin: 2px 0 6px; }
+  .claim .where { font-size: 16px; }
+
+  .near { border-left: 5px solid var(--warn); padding-left: 14px; margin-bottom: 20px; }
+  .reason { background: var(--tint); border-radius: 8px; padding: 10px 12px; margin: 8px 0; font-size: 16px; }
+  .reason b { font-weight: 600; }
+  .fix { background: var(--good-tint); border-radius: 8px; padding: 10px 12px; font-size: 16px; }
+
+  .check { background: var(--warn-tint); border-radius: 8px; padding: 10px 12px; font-size: 15px; margin-top: 6px; }
+
+  ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0; }
+  ol.steps > li { counter-increment: s; position: relative; padding: 0 0 18px 44px; }
+  ol.steps > li::before {
+    content: counter(s); position: absolute; left: 0; top: 0;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    display: grid; place-items: center; font-size: 15px; font-weight: 600;
+  }
+  .meta { color: var(--muted); font-size: 15px; }
+  .unlocks { background: var(--good-tint); border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: 15px; }
+
+  .stop { border-left: 5px solid var(--stop); padding-left: 14px; }
+  .totals { font-size: 16px; color: var(--muted); margin-bottom: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--paper);
+    border-radius: 999px; padding: 9px 14px; font-size: 16px; width: auto;
+    margin: 0;
+  }
+  .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>PATRA</h1>
+    <p>What your family can claim, and what stands in the way</p>
+  </header>
+
+  <div class="card privacy">
+    Your answers stay on this device. Nothing is sent anywhere and nothing is saved.
+  </div>
+
+  <!-- step 1: which papers do you already have -->
+  <div class="card" id="docs-card">
+    <h2>First, which papers do you already have?</h2>
+    <p class="hint">Tap the ones you hold. Skip any you are unsure about.</p>
+    <div class="chips" id="doc-chips"></div>
+    <button class="primary" style="margin-top:18px" id="start">Start</button>
+  </div>
+
+  <!-- step 2: the questions -->
+  <div class="card hidden" id="q-card">
+    <div class="progress"><div id="bar"></div></div>
+    <p class="q" id="q-text"></p>
+    <p class="hint hidden" id="q-why"></p>
+    <div id="q-answers"></div>
+    <button class="ghost" id="skip">I would rather not say</button>
+  </div>
+
+  <!-- step 3: results -->
+  <div id="results"></div>
+
+</div>
+
+<script>
+const facts = {};
+const held = new Set();
+let asked = 0;
+
+const $ = (id) => document.getElementById(id);
+
+async function post(path, body) {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+// ---- documents the family already holds -------------------------------
+
+async function loadDocs() {
+  const docs = await (await fetch("/api/documents")).json();
+  const box = $("doc-chips");
+  docs.forEach(d => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = d.name;
+    b.onclick = () => {
+      if (held.has(d.id)) { held.delete(d.id); b.classList.remove("on"); }
+      else { held.add(d.id); b.classList.add("on"); }
+    };
+    box.appendChild(b);
+  });
+}
+
+// ---- the interview ----------------------------------------------------
+
+async function nextQuestion() {
+  const {question} = await post("/api/question", {facts});
+  if (!question) return finish();
+
+  $("q-card").classList.remove("hidden");
+  $("q-text").textContent = question.text;
+
+  // Expectation management rather than a fake percentage: we genuinely do
+  // not know how many are left until the answers come in.
+  $("bar").style.width = Math.min(90, asked * 14) + "%";
+
+  const why = $("q-why");
+  if (question.sensitive) {
+    why.textContent = "We ask this only because a scheme depends on it.";
+    why.classList.remove("hidden");
+  } else {
+    why.classList.add("hidden");
+  }
+
+  const box = $("q-answers");
+  box.innerHTML = "";
+
+  if (question.kind === "bool") {
+    ["Yes", "No"].forEach((label, i) => {
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.onclick = () => answer(question.attribute, i === 0);
+      box.appendChild(b);
+    });
+  } else if (question.kind === "enum") {
+    question.options.forEach(opt => {
+      const b = document.createElement("button");
+      b.textContent = opt.replace(/_/g, " ");
+      b.onclick = () => answer(question.attribute, opt);
+      box.appendChild(b);
+    });
+  } else {
+    const input = document.createElement("input");
+    input.type = "number";
+    input.inputMode = "numeric";
+    if (question.low != null) input.min = question.low;
+    if (question.high != null) input.max = question.high;
+    input.placeholder = question.unit || "";
+    box.appendChild(input);
+
+    const go = document.createElement("button");
+    go.className = "primary";
+    go.textContent = "Next";
+    go.onclick = () => {
+      const n = parseInt(input.value, 10);
+      if (Number.isNaN(n)) { input.focus(); return; }
+      answer(question.attribute, n);
+    };
+    box.appendChild(go);
+    input.focus();
+  }
+}
+
+function answer(name, value) {
+  facts[name] = value;
+  asked += 1;
+  nextQuestion();
+}
+
+$("skip").onclick = () => finish();
+
+// ---- results ----------------------------------------------------------
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+async function finish() {
+  $("q-card").classList.add("hidden");
+  const out = $("results");
+  out.innerHTML = "";
+
+  const data = await post("/api/result", {facts, documents: [...held]});
+
+  if (data.clashes.length) {
+    const card = el("div", "card");
+    card.appendChild(el("h2", null, "Something does not add up"));
+    data.clashes.forEach(c => {
+      const box = el("div", "reason");
+      c.rule.forEach(r => box.appendChild(el("div", null, r)));
+      c.answers.forEach(a => box.appendChild(el("div", "meta", "you said: " + a)));
+      card.appendChild(box);
+    });
+    card.appendChild(el("p", "meta",
+      "Please check those answers and start again. Everything else was fine."));
+    const again = el("button", "primary", "Start again");
+    again.onclick = () => location.reload();
+    card.appendChild(again);
+    out.appendChild(card);
+    return;
+  }
+
+  // what you can claim
+  const good = el("div", "card");
+  if (data.claims.length) {
+    good.appendChild(el("h2", null, `You can claim ${data.claims.length}`));
+    data.claims.forEach(c => {
+      const box = el("div", "claim");
+      box.appendChild(el("h3", null, c.name));
+      box.appendChild(el("p", "what", c.benefit));
+      box.appendChild(el("p", "where", "Go to: " + c.apply_at));
+      if (c.check) {
+        box.appendChild(el("div", "check",
+          `Please check: ${c.check.label} is ${c.check.now}. ` +
+          `The answer changes at ${c.check.flips_at}. If your real figure is ` +
+          `on the other side of that, this is wrong.`));
+      }
+      good.appendChild(box);
+    });
+  } else {
+    good.appendChild(el("h2", null, "Nothing came through on these answers"));
+    good.appendChild(el("p", "meta",
+      "That does not mean nothing is available. Ask at your gram panchayat."));
+  }
+  out.appendChild(good);
+
+  // paperwork
+  if (data.paperwork && data.paperwork.steps.length) {
+    const card = el("div", "card");
+    card.appendChild(el("h2", null, "Papers to collect"));
+    card.appendChild(el("p", "totals",
+      `About ${data.paperwork.trips} trips, Rs ${data.paperwork.fee} in fees, ` +
+      `roughly ${data.paperwork.days} days.`));
+
+    const list = el("ol", "steps");
+    data.paperwork.steps.forEach(s => {
+      const li = el("li");
+      li.appendChild(el("h3", null, s.name));
+      li.appendChild(el("div", "meta", "Go to: " + s.issuer));
+      const bits = [];
+      if (s.fee) bits.push("Rs " + s.fee);
+      if (s.days) bits.push("about " + s.days + " days");
+      bits.push(s.trips + (s.trips > 1 ? " trips" : " trip"));
+      li.appendChild(el("div", "meta", bits.join(", ")));
+      if (s.note) li.appendChild(el("div", "meta", s.note));
+      if (s.unlocks.length) {
+        li.appendChild(el("div", "unlocks",
+          "After this you can apply for: " + s.unlocks.join(", ")));
+      }
+      list.appendChild(li);
+    });
+    card.appendChild(list);
+    out.appendChild(card);
+  }
+
+  // close but not yet
+  if (data.near.length) {
+    const card = el("div", "card");
+    card.appendChild(el("h2", null, "Close, but not yet"));
+    data.near.forEach(n => {
+      const box = el("div", "near");
+      box.appendChild(el("h3", null, n.name));
+      n.why.slice(0, 1).forEach(w => {
+        const r = el("div", "reason");
+        r.appendChild(el("div", null, "The rule says: " + w.rule));
+        r.appendChild(el("div", "meta", "Your answer: " + w.answer));
+        box.appendChild(r);
+      });
+      const fix = el("div", "fix");
+      fix.appendChild(el("div", null, "What would change it:"));
+      n.fix.forEach(f => {
+        fix.appendChild(el("div", null, `${f.label}: ${f.now} to ${f.needed}`));
+      });
+      box.appendChild(fix);
+      card.appendChild(box);
+    });
+    out.appendChild(card);
+  }
+
+  const again = el("button", "ghost", "Start again");
+  again.onclick = () => location.reload();
+  out.appendChild(again);
+}
+
+$("start").onclick = () => {
+  $("docs-card").classList.add("hidden");
+  nextQuestion();
+};
+
+loadDocs();
+</script>
+</body>
+</html>

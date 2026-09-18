@@ -1,0 +1,48 @@
+id: ration_aay
+name: Antyodaya Anna Yojana ration card
+authority: Department of Food and Public Distribution
+scope: household
+benefit: >
+  Thirty five kilograms of grain a month for the whole household at two or
+  three rupees a kilo, whatever the family's size.
+apply_at: Block food and supplies office
+source_url: https://dfpd.gov.in/
+note: >
+  Simplified encoding, and this is the one that varies most by state. Antyodaya
+  is meant for the poorest households and states apply their own tests, usually
+  around landlessness, no assured income, and households headed by a widow or a
+  person with disability. Treat the income figure as indicative only.
+
+documents:
+  - aadhaar
+  - passport_photo
+  - electricity_bill
+
+criteria:
+  - id: C1
+    text: "The household must live in a rural area"
+    rule: {eq: [area_type, rural]}
+
+  - id: C2
+    text: "The household must not already hold an Antyodaya card"
+    rule: {not_in: [ration_card_type, [aay]]}
+
+  - id: C3
+    text: "Yearly household income must be very low"
+    rule: {le: [annual_income, 46080]}
+
+  - id: C4
+    text: >
+      The household must show a mark of severe hardship: no pucca house, or
+      headed by a widow, or including a person with disability, or with no
+      working-age man in the family
+    rule:
+      any:
+        - {is_false: owns_pucca_house}
+        - {is_true: has_widowed_member}
+        - {is_true: has_disabled_member}
+        - {eq: [adult_male_count, 0]}
+
+  - id: C5
+    text: "The household must not own a motor vehicle"
+    rule: {is_false: owns_vehicle}

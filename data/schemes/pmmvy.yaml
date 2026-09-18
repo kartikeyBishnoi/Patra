@@ -1,0 +1,39 @@
+id: pmmvy
+name: Pradhan Mantri Matru Vandana Yojana
+authority: Ministry of Women and Child Development
+scope: member
+benefit: >
+  Five thousand rupees paid in instalments during a first pregnancy, to make
+  up for the wages lost around the birth.
+apply_at: Anganwadi centre, or the nearest health facility
+source_url: https://wcd.nic.in/
+note: >
+  Simplified encoding. The scheme was later extended to a second child if that
+  child is a girl, which we do not model. A woman refused here on the
+  first-child test may still qualify under that extension.
+
+documents:
+  - aadhaar
+  - bank_account
+  - bank_aadhaar_seeding
+
+criteria:
+  - id: C1
+    text: "Must be pregnant, or have delivered recently"
+    rule: {is_true: is_pregnant}
+
+  - id: C2
+    text: "Must be at least nineteen years old"
+    rule: {ge: [age, 19]}
+
+  - id: C3
+    text: "Must be the first living child"
+    rule: {is_true: first_child}
+
+  - id: C4
+    text: "Payment needs a bank account linked to Aadhaar"
+    rule: {is_true: bank_aadhaar_linked}
+
+  - id: C5
+    text: "Not available to women in regular government employment, who get paid maternity leave"
+    rule: {is_false: govt_employee_in_family}

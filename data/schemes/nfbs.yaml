@@ -1,0 +1,29 @@
+id: nfbs
+name: National Family Benefit Scheme
+authority: Ministry of Rural Development
+scope: household
+benefit: >
+  A one time payment of twenty thousand rupees to a poor household that has
+  lost its main earner.
+apply_at: Gram panchayat, or the block development office
+source_url: https://nsap.nic.in/
+note: >
+  Simplified encoding. The claim must normally be made within a few years of
+  the death, and the person who died must have been of working age. Families
+  often miss this one entirely because nobody tells them it exists.
+
+documents:
+  - aadhaar
+  - bank_account
+  - bank_aadhaar_seeding
+  - ration_card
+  - death_certificate
+
+criteria:
+  - id: C1
+    text: "The household's main earner must have died in the last three years"
+    rule: {is_true: breadwinner_died_recently}
+
+  - id: C2
+    text: "Household must be on the below-poverty-line list"
+    rule: {in: [ration_card_type, [phh, aay]]}

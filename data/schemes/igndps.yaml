@@ -1,0 +1,46 @@
+id: igndps
+name: Indira Gandhi National Disability Pension
+authority: Ministry of Rural Development
+scope: member
+benefit: >
+  A monthly pension for people with severe disability from poor households.
+  Most states add their own amount on top.
+apply_at: Gram panchayat, or the block development office
+source_url: https://nsap.nic.in/
+note: >
+  Simplified encoding. The central scheme sets the bar at severe or multiple
+  disability, which is assessed at eighty percent. Several states pay at a
+  lower threshold from their own funds, so somebody refused here may still
+  qualify under a state scheme.
+
+documents:
+  - aadhaar
+  - bank_account
+  - bank_aadhaar_seeding
+  - ration_card
+  - disability_certificate
+
+criteria:
+  - id: C1
+    text: "Certified disability must be eighty percent or more"
+    rule: {ge: [disability_percent, 80]}
+
+  - id: C2
+    text: "Must be at least eighteen years old"
+    rule: {ge: [age, 18]}
+
+  - id: C3
+    text: "Must be under eighty years of age"
+    rule: {le: [age, 79]}
+
+  - id: C4
+    text: "Household must be on the below-poverty-line list"
+    rule: {in: [ration_card_type, [phh, aay]]}
+
+  - id: C5
+    text: "Must not already be drawing another government pension"
+    rule: {is_false: already_receiving_pension}
+
+  - id: C6
+    text: "Payment needs a bank account linked to Aadhaar"
+    rule: {is_true: bank_aadhaar_linked}

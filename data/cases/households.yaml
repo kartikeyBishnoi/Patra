@@ -1,0 +1,262 @@
+# Households used for testing and for the walkthrough.
+#
+# Written to cover the cases that actually matter: a family blocked by one
+# cheap piece of paper, a family blocked by something nothing can change, a
+# family holding nothing at all, and a family that is simply not poor enough.
+
+households:
+
+  - id: sunita
+    note: >
+      A widow with a bank account that was never linked to Aadhaar. Everything
+      else about her claim is in order. This is the commonest shape of refusal
+      we found: one free errand standing between a family and a monthly
+      payment.
+    facts:
+      state: haryana
+      area_type: rural
+      annual_income: 42000
+      ration_card_type: phh
+      land_acres: 0
+      cultivates_land: false
+      owns_pucca_house: false
+      owns_vehicle: false
+      income_tax_payer: false
+      govt_employee_in_family: false
+      lpg_connection: false
+      breadwinner_died_recently: true
+    documents: [aadhaar, ration_card, electricity_bill]
+    members:
+      - id: sunita
+        name: Sunita Devi
+        facts:
+          age: 46
+          gender: female
+          marital_status: widowed
+          category: obc
+          disability_percent: 0
+          is_pregnant: false
+          first_child: false
+          occupation: farm_labour
+          willing_unskilled_work: true
+          has_bank_account: true
+          bank_aadhaar_linked: false
+          already_receiving_pension: false
+      - id: raju
+        name: Raju
+        facts:
+          age: 14
+          gender: male
+          marital_status: unmarried
+          category: obc
+          disability_percent: 0
+          is_pregnant: false
+          first_child: false
+          occupation: student
+          willing_unskilled_work: false
+          has_bank_account: false
+          bank_aadhaar_linked: false
+          already_receiving_pension: false
+
+  - id: ramlal
+    note: >
+      An elderly small farmer whose papers are all in order. Used to check we
+      do not manufacture problems for a family that has none.
+    facts:
+      state: rajasthan
+      area_type: rural
+      annual_income: 58000
+      ration_card_type: phh
+      land_acres: 2
+      cultivates_land: true
+      owns_pucca_house: false
+      owns_vehicle: false
+      income_tax_payer: false
+      govt_employee_in_family: false
+      lpg_connection: true
+      breadwinner_died_recently: false
+    documents:
+      - aadhaar
+      - ration_card
+      - electricity_bill
+      - bank_account
+      - bank_aadhaar_seeding
+      - land_records
+      - passport_photo
+    members:
+      - id: ramlal
+        name: Ram Lal
+        facts:
+          age: 68
+          gender: male
+          marital_status: married
+          category: sc
+          disability_percent: 0
+          is_pregnant: false
+          first_child: false
+          occupation: farmer
+          willing_unskilled_work: true
+          has_bank_account: true
+          bank_aadhaar_linked: true
+          already_receiving_pension: false
+      - id: kamla
+        name: Kamla Devi
+        facts:
+          age: 63
+          gender: female
+          marital_status: married
+          category: sc
+          disability_percent: 0
+          is_pregnant: false
+          first_child: false
+          occupation: homemaker
+          willing_unskilled_work: false
+          has_bank_account: true
+          bank_aadhaar_linked: true
+          already_receiving_pension: false
+
+  - id: munni
+    note: >
+      A landless family holding nothing but an Aadhaar card. Their problem is
+      not eligibility, it is paperwork, which is what the acquisition planner
+      is for. Includes a young girl and a pregnant daughter-in-law.
+    facts:
+      state: bihar
+      area_type: rural
+      annual_income: 31000
+      ration_card_type: none
+      land_acres: 0
+      cultivates_land: false
+      owns_pucca_house: false
+      owns_vehicle: false
+      income_tax_payer: false
+      govt_employee_in_family: false
+      lpg_connection: false
+      breadwinner_died_recently: false
+    documents: [aadhaar]
+    members:
+      - id: munni
+        name: Munni Devi
+        facts:
+          age: 34
+          gender: female
+          marital_status: married
+          category: st
+          disability_percent: 0
+          is_pregnant: true
+          first_child: false
+          occupation: farm_labour
+          willing_unskilled_work: true
+          has_bank_account: false
+          bank_aadhaar_linked: false
+          already_receiving_pension: false
+      - id: guddi
+        name: Guddi
+        facts:
+          age: 7
+          gender: female
+          marital_status: unmarried
+          category: st
+          disability_percent: 0
+          is_pregnant: false
+          first_child: false
+          occupation: student
+          willing_unskilled_work: false
+          has_bank_account: false
+          bank_aadhaar_linked: false
+          already_receiving_pension: false
+
+  - id: kishore
+    note: >
+      A comfortable farming family with a government salary in it. Refused
+      almost everywhere, and refused on grounds nothing can change, which is
+      the case where the honest answer is to say so and stop.
+    facts:
+      state: haryana
+      area_type: rural
+      annual_income: 940000
+      ration_card_type: apl
+      land_acres: 18
+      cultivates_land: true
+      owns_pucca_house: true
+      owns_vehicle: true
+      income_tax_payer: true
+      govt_employee_in_family: true
+      lpg_connection: true
+      breadwinner_died_recently: false
+    documents:
+      - aadhaar
+      - ration_card
+      - electricity_bill
+      - bank_account
+      - bank_aadhaar_seeding
+      - land_records
+      - pan_card
+      - passport_photo
+    members:
+      - id: kishore
+        name: Kishore Singh
+        facts:
+          age: 44
+          gender: male
+          marital_status: married
+          category: general
+          disability_percent: 0
+          is_pregnant: false
+          first_child: false
+          occupation: salaried
+          willing_unskilled_work: false
+          has_bank_account: true
+          bank_aadhaar_linked: true
+          already_receiving_pension: false
+
+  - id: bhola
+    note: >
+      A household with a severely disabled adult and an income that sits a
+      whisker under the Antyodaya line. Used to check the boundary warning
+      fires on a number the family can only have estimated.
+    facts:
+      state: uttar_pradesh
+      area_type: rural
+      annual_income: 45000
+      ration_card_type: phh
+      land_acres: 0
+      cultivates_land: false
+      owns_pucca_house: false
+      owns_vehicle: false
+      income_tax_payer: false
+      govt_employee_in_family: false
+      lpg_connection: false
+      breadwinner_died_recently: false
+    documents: [aadhaar, ration_card, passport_photo]
+    members:
+      - id: bhola
+        name: Bhola Prasad
+        facts:
+          age: 37
+          gender: male
+          marital_status: married
+          category: sc
+          disability_percent: 85
+          is_pregnant: false
+          first_child: false
+          occupation: unemployed
+          willing_unskilled_work: false
+          has_bank_account: false
+          bank_aadhaar_linked: false
+          already_receiving_pension: false
+      - id: shanti
+        name: Shanti Devi
+        facts:
+          age: 33
+          gender: female
+          marital_status: married
+          category: sc
+          disability_percent: 0
+          is_pregnant: false
+          first_child: false
+          occupation: daily_wage
+          willing_unskilled_work: true
+          has_bank_account: true
+          bank_aadhaar_linked: false
+          already_receiving_pension: false

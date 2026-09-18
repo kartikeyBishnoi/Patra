@@ -1,0 +1,26 @@
+id: pmfby
+name: Pradhan Mantri Fasal Bima Yojana
+authority: Ministry of Agriculture and Farmers Welfare
+scope: household
+benefit: >
+  Crop insurance against a failed harvest, with the farmer paying only a small
+  share of the premium and the governments covering the rest.
+apply_at: Any bank branch, Common Service Centre, or the insurance agent
+source_url: https://pmfby.gov.in/
+note: >
+  Simplified encoding. Enrolment closes on a cut-off date each season, which
+  is the most common reason a farmer who qualifies still misses out.
+
+documents:
+  - aadhaar
+  - bank_account
+  - land_records
+
+criteria:
+  - id: C1
+    text: "The family must cultivate land"
+    rule: {is_true: cultivates_land}
+
+  - id: C2
+    text: "The family must own or lease land to sow"
+    rule: {gt: [land_acres, 0]}

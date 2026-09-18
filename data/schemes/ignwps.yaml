@@ -1,0 +1,46 @@
+id: ignwps
+name: Indira Gandhi National Widow Pension
+authority: Ministry of Rural Development
+scope: member
+benefit: >
+  A monthly pension for widows from poor households, paid directly into the
+  widow's own account. Several states raise the amount and widen the age band.
+apply_at: Gram panchayat, or the block development office
+source_url: https://nsap.nic.in/
+note: >
+  Simplified encoding. The upper age limit exists because a widow turning
+  eighty moves to the old age pension instead, so the two do not overlap.
+
+documents:
+  - aadhaar
+  - bank_account
+  - bank_aadhaar_seeding
+  - ration_card
+  - death_certificate
+
+criteria:
+  - id: C1
+    text: "Must be a widow"
+    rule:
+      all:
+        - {eq: [gender, female]}
+        - {eq: [marital_status, widowed]}
+
+  - id: C2
+    text: "Must be between forty and seventy-nine years of age"
+    rule:
+      all:
+        - {ge: [age, 40]}
+        - {le: [age, 79]}
+
+  - id: C3
+    text: "Household must be on the below-poverty-line list"
+    rule: {in: [ration_card_type, [phh, aay]]}
+
+  - id: C4
+    text: "Must not already be drawing another government pension"
+    rule: {is_false: already_receiving_pension}
+
+  - id: C5
+    text: "Payment needs a bank account linked to Aadhaar"
+    rule: {is_true: bank_aadhaar_linked}

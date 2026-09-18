@@ -1,0 +1,36 @@
+id: ignoaps
+name: Indira Gandhi National Old Age Pension
+authority: Ministry of Rural Development
+scope: member
+benefit: >
+  A monthly pension paid into the beneficiary's own bank account. Most states
+  add a top-up on the central amount, so the figure varies.
+apply_at: Gram panchayat, or the block development office
+source_url: https://nsap.nic.in/
+note: >
+  Simplified encoding. The poverty test is done through the state BPL list,
+  which we approximate with the ration card type. Verify against your own
+  state's notification before relying on this.
+
+documents:
+  - aadhaar
+  - bank_account
+  - bank_aadhaar_seeding
+  - ration_card
+
+criteria:
+  - id: C1
+    text: "Must be sixty years of age or older"
+    rule: {ge: [age, 60]}
+
+  - id: C2
+    text: "Household must be on the below-poverty-line list"
+    rule: {in: [ration_card_type, [phh, aay]]}
+
+  - id: C3
+    text: "Must not already be drawing another government pension"
+    rule: {is_false: already_receiving_pension}
+
+  - id: C4
+    text: "Payment needs a bank account linked to Aadhaar"
+    rule: {is_true: bank_aadhaar_linked}

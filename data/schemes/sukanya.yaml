@@ -1,0 +1,26 @@
+id: sukanya
+name: Sukanya Samriddhi Yojana
+authority: Department of Posts, Ministry of Finance
+scope: member
+benefit: >
+  A savings account for a girl child at a high fixed rate of interest, with
+  the deposits exempt from tax. It can be opened with as little as two hundred
+  and fifty rupees.
+apply_at: Any post office, or most bank branches
+source_url: https://www.indiapost.gov.in/
+note: >
+  Simplified encoding. A family may open at most two such accounts, with an
+  exception for twins, which we do not model.
+
+documents:
+  - aadhaar
+  - birth_certificate
+
+criteria:
+  - id: C1
+    text: "The account must be for a girl"
+    rule: {eq: [gender, female]}
+
+  - id: C2
+    text: "The girl must be under ten years of age"
+    rule: {lt: [age, 10]}

@@ -1,0 +1,307 @@
+# What we can know about a household and the people in it.
+#
+# scope       household or member. Household rules read household facts only;
+#             member rules read both, because a person is judged in the
+#             context of the family they belong to.
+#
+# mutability  fixed       nothing changes it (age, caste, a spouse's death)
+#             paperwork   already true, just not on record. A certificate, a
+#                         bank account, an Aadhaar seeding. These block an
+#                         enormous number of claims and cost almost nothing
+#                         to fix, which is why they are worth surfacing first.
+#             circumstance genuinely changeable, at real cost
+#
+# sensitive   caste, religion, disability, income. Asked last, and skipped
+#             entirely once the answer no longer depends on them.
+#
+# question    written to be read aloud. Somebody is going to have to say this
+#             to a stranger on their doorstep.
+
+attributes:
+
+  # ---------------- household ----------------
+
+  state:
+    kind: enum
+    options: [haryana, rajasthan, uttar_pradesh, madhya_pradesh, bihar, other]
+    label: State
+    scope: household
+    mutability: circumstance
+    effort: 9
+    question: "Which state do you live in?"
+
+  area_type:
+    kind: enum
+    options: [rural, urban]
+    label: Area
+    scope: household
+    mutability: circumstance
+    effort: 9
+    question: "Is your home in a village or in a town?"
+
+  annual_income:
+    kind: int
+    low: 0
+    high: 5000000
+    unit: rupees a year
+    label: Yearly household income
+    scope: household
+    mutability: paperwork
+    effort: 3
+    sensitive: true
+    question: "Roughly how much does your whole family earn in a year?"
+
+  ration_card_type:
+    kind: enum
+    options: [none, apl, phh, aay]
+    label: Ration card
+    scope: household
+    mutability: paperwork
+    effort: 3
+    asset: true
+    question: "What kind of ration card does the family have, if any?"
+
+  land_acres:
+    kind: int
+    low: 0
+    high: 500
+    unit: acres
+    label: Farm land owned
+    scope: household
+    mutability: circumstance
+    effort: 9
+    question: "How much farm land does the family own, in acres?"
+
+  cultivates_land:
+    kind: bool
+    label: Farms the land
+    scope: household
+    mutability: circumstance
+    effort: 6
+    question: "Does anyone in the family farm the land themselves?"
+
+  owns_pucca_house:
+    kind: bool
+    label: Lives in a pucca house
+    scope: household
+    mutability: circumstance
+    effort: 9
+    question: "Is your house built of brick and concrete, with a solid roof?"
+
+  owns_vehicle:
+    kind: bool
+    label: Owns a motor vehicle
+    scope: household
+    mutability: circumstance
+    effort: 7
+    question: "Does the family own a motorcycle, car or tractor?"
+
+  income_tax_payer:
+    kind: bool
+    label: Pays income tax
+    scope: household
+    mutability: circumstance
+    effort: 8
+    question: "Does anyone in the family file income tax?"
+
+  govt_employee_in_family:
+    kind: bool
+    label: Government employee in family
+    scope: household
+    mutability: circumstance
+    effort: 9
+    question: "Does anyone in the family hold a government job, now or retired on pension?"
+
+  lpg_connection:
+    kind: bool
+    label: Has a gas connection
+    scope: household
+    mutability: circumstance
+    effort: 4
+    asset: true
+    question: "Does the house have an LPG gas connection?"
+
+  breadwinner_died_recently:
+    kind: bool
+    label: Main earner died in the last three years
+    scope: household
+    mutability: fixed
+    question: "Has the family's main earner passed away in the last three years?"
+
+  # ---- derived from the members; never asked directly ----
+
+  household_size:
+    kind: int
+    low: 1
+    high: 30
+    label: People in the household
+    scope: household
+    mutability: fixed
+    question: "How many people live in the house?"
+
+  has_member_over_60:
+    kind: bool
+    label: Someone over sixty in the house
+    scope: household
+    mutability: fixed
+    question: "Is anyone in the house over sixty years old?"
+
+  has_girl_child:
+    kind: bool
+    label: Girl under eighteen in the house
+    scope: household
+    mutability: fixed
+    question: "Is there a girl under eighteen in the house?"
+
+  has_disabled_member:
+    kind: bool
+    label: Someone with a disability in the house
+    scope: household
+    mutability: fixed
+    sensitive: true
+    question: "Does anyone in the house have a disability?"
+
+  has_widowed_member:
+    kind: bool
+    label: A widow in the house
+    scope: household
+    mutability: fixed
+    question: "Is there a widow in the house?"
+
+  adult_male_count:
+    kind: int
+    low: 0
+    high: 20
+    label: Working-age men in the house
+    scope: household
+    mutability: fixed
+    question: "How many men between eighteen and sixty live in the house?"
+
+  has_adult_woman:
+    kind: bool
+    label: An adult woman in the house
+    scope: household
+    mutability: fixed
+    question: "Is there a woman over eighteen in the house?"
+
+  has_willing_worker:
+    kind: bool
+    label: Someone willing to do manual work
+    scope: household
+    mutability: circumstance
+    effort: 3
+    question: "Would any adult in the house take up daily manual work nearby?"
+
+  someone_has_bank_account:
+    kind: bool
+    label: Someone in the house has a bank account
+    scope: household
+    mutability: paperwork
+    effort: 2
+    asset: true
+    question: "Does anyone in the house have a bank account?"
+
+  # ---------------- member ----------------
+
+  age:
+    kind: int
+    low: 0
+    high: 120
+    unit: years
+    label: Age
+    scope: member
+    mutability: fixed
+    question: "How old are you?"
+
+  gender:
+    kind: enum
+    options: [male, female, other]
+    label: Gender
+    scope: member
+    mutability: fixed
+    question: "Are you male or female?"
+
+  marital_status:
+    kind: enum
+    options: [unmarried, married, widowed, divorced, separated]
+    label: Marital status
+    scope: member
+    mutability: fixed
+    question: "Are you married, unmarried, or widowed?"
+
+  category:
+    kind: enum
+    options: [general, obc, sc, st]
+    label: Caste category
+    scope: member
+    mutability: fixed
+    sensitive: true
+    question: "Which caste category do you come under?"
+
+  disability_percent:
+    kind: int
+    low: 0
+    high: 100
+    unit: percent
+    label: Certified disability
+    scope: member
+    mutability: fixed
+    sensitive: true
+    question: "Do you have a disability certificate, and what percentage does it show?"
+
+  is_pregnant:
+    kind: bool
+    label: Pregnant or recently delivered
+    scope: member
+    mutability: fixed
+    sensitive: true
+    question: "Are you expecting a child, or have you delivered in the last few months?"
+
+  first_child:
+    kind: bool
+    label: This is the first child
+    scope: member
+    mutability: fixed
+    question: "Is this your first child?"
+
+  occupation:
+    kind: enum
+    options: [farmer, farm_labour, daily_wage, self_employed, salaried, unemployed, student, homemaker]
+    label: Work
+    scope: member
+    mutability: circumstance
+    effort: 7
+    question: "What work do you do?"
+
+  willing_unskilled_work:
+    kind: bool
+    label: Willing to do manual work
+    scope: member
+    mutability: circumstance
+    effort: 3
+    question: "Would you take up daily manual work if it were offered nearby?"
+
+  has_bank_account:
+    kind: bool
+    label: Has a bank account
+    scope: member
+    mutability: paperwork
+    effort: 2
+    asset: true
+    question: "Do you have a bank account in your own name?"
+
+  bank_aadhaar_linked:
+    kind: bool
+    label: Bank account linked to Aadhaar
+    scope: member
+    mutability: paperwork
+    effort: 1
+    question: "Is that bank account linked to your Aadhaar?"
+
+  already_receiving_pension:
+    kind: bool
+    label: Already draws a pension
+    scope: member
+    mutability: circumstance
+    effort: 5
+    question: "Do you already receive any government pension?"

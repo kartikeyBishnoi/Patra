@@ -1,0 +1,29 @@
+id: kcc
+name: Kisan Credit Card
+authority: Reserve Bank of India, through any scheduled bank
+scope: household
+benefit: >
+  Short term credit for seed, fertiliser and other crop costs at a subsidised
+  rate, repayable after harvest. It also covers allied activities like dairy
+  and fisheries.
+apply_at: Any bank branch, or a Common Service Centre
+source_url: https://www.nabard.org/
+note: >
+  Simplified encoding. Tenant farmers and sharecroppers are eligible in
+  principle but usually cannot produce land records, which is the practical
+  barrier rather than the written rule.
+
+documents:
+  - aadhaar
+  - bank_account
+  - land_records
+  - passport_photo
+
+criteria:
+  - id: C1
+    text: "The family must cultivate land, whether owned or leased"
+    rule: {is_true: cultivates_land}
+
+  - id: C2
+    text: "Someone in the family must hold a bank account"
+    rule: {is_true: someone_has_bank_account}

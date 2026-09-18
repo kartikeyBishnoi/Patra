@@ -1,0 +1,9 @@
+# Needed to run the system
+z3-solver>=4.12    # the satisfiability oracle; handles the integer thresholds
+                   # in income and land rules without bit-blasting
+PyYAML>=6.0        # the knowledge base is YAML
+
+# Needed only for the tests and the evaluation harness
+pytest>=7.0
+
+# The web app uses the standard library only.

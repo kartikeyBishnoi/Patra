@@ -1,0 +1,222 @@
+# What you need before you can get the thing you need.
+#
+# Requirements are not a chain. An income certificate wants proof of identity,
+# proof of address and proof of age, and each of those accepts several
+# alternatives. So every document lists a set of `needs`, all of which must be
+# met, and each need lists the documents that would satisfy it, any one of
+# which will do. That makes this an AND-OR graph.
+#
+# Aadhaar is deliberately a root with no requirements. In practice enrolment
+# accepts an introducer or the head of the family vouching for someone who
+# holds nothing at all, so treating it as obtainable from a standing start is
+# both accurate and what keeps the graph well founded. Without that, identity
+# and address proof would require each other forever.
+#
+# fee is in rupees, days is the usual wait, trips is how many times somebody
+# has to physically go somewhere. Trips are what actually cost a household,
+# because each one is a lost day of wages.
+#
+# These are simplified and vary by state. Verify against your own district
+# before relying on any of it. See docs/LIMITATIONS.md.
+
+documents:
+
+  passport_photo:
+    name: Passport photographs
+    issuer: Any photo studio in the market
+    fee: 60
+    days: 0
+    trips: 1
+
+  aadhaar:
+    name: Aadhaar card
+    issuer: Aadhaar enrolment centre
+    fee: 0
+    days: 30
+    trips: 2
+    note: >
+      If you hold no papers at all, an approved introducer or the head of your
+      family can vouch for you at the enrolment centre. You do not need to
+      bring anything else first.
+
+  birth_certificate:
+    name: Birth certificate
+    issuer: Gram panchayat or municipal office
+    fee: 20
+    days: 15
+    trips: 2
+
+  school_certificate:
+    name: School leaving certificate
+    issuer: The school last attended
+    fee: 0
+    days: 7
+    trips: 1
+
+  electricity_bill:
+    name: Electricity bill in the family name
+    issuer: Electricity board office
+    fee: 0
+    days: 0
+    trips: 1
+    note: A recent bill usually works as address proof on its own.
+
+  voter_id:
+    name: Voter ID card
+    issuer: Booth level officer or the electoral office
+    fee: 0
+    days: 30
+    trips: 2
+    needs:
+      - purpose: proof of age
+        any: [aadhaar, birth_certificate, school_certificate]
+      - purpose: proof of address
+        any: [aadhaar, ration_card, electricity_bill]
+
+  pan_card:
+    name: PAN card
+    issuer: PAN service centre
+    fee: 110
+    days: 15
+    trips: 1
+    needs:
+      - purpose: proof of identity
+        any: [aadhaar, voter_id]
+      - purpose: photographs
+        any: [passport_photo]
+
+  ration_card:
+    name: Ration card
+    issuer: Block food and supplies office
+    fee: 25
+    days: 30
+    trips: 2
+    needs:
+      - purpose: proof of identity
+        any: [aadhaar, voter_id]
+      - purpose: proof of address
+        any: [aadhaar, electricity_bill]
+      - purpose: photographs
+        any: [passport_photo]
+
+  domicile_certificate:
+    name: Domicile certificate
+    issuer: Tehsil office
+    fee: 30
+    days: 21
+    trips: 2
+    needs:
+      - purpose: proof of identity
+        any: [aadhaar, voter_id]
+      - purpose: proof of address
+        any: [ration_card, electricity_bill]
+
+  income_certificate:
+    name: Income certificate
+    issuer: Tehsildar or SDM office
+    fee: 30
+    days: 21
+    trips: 2
+    source_url: https://serviceonline.gov.in/
+    needs:
+      - purpose: proof of identity
+        any: [aadhaar, voter_id, pan_card]
+      - purpose: proof of address
+        any: [ration_card, electricity_bill]
+      - purpose: proof of age
+        any: [aadhaar, birth_certificate, school_certificate]
+      - purpose: photographs
+        any: [passport_photo]
+
+  caste_certificate:
+    name: Caste certificate
+    issuer: Tehsil office
+    fee: 30
+    days: 30
+    trips: 3
+    note: >
+      Usually needs a parent's caste certificate or an old school record
+      showing the family's category. That part varies a lot by district.
+    needs:
+      - purpose: proof of identity
+        any: [aadhaar, voter_id]
+      - purpose: proof of address
+        any: [ration_card, electricity_bill, domicile_certificate]
+      - purpose: photographs
+        any: [passport_photo]
+
+  bank_account:
+    name: Bank account in your own name
+    issuer: Any bank branch or business correspondent
+    fee: 0
+    days: 7
+    trips: 1
+    note: >
+      A Jan Dhan account can be opened with Aadhaar alone and needs no minimum
+      balance, which is usually the quickest route.
+    needs:
+      - purpose: proof of identity
+        any: [aadhaar, voter_id, pan_card]
+      - purpose: photographs
+        any: [passport_photo]
+
+  bank_aadhaar_seeding:
+    name: Aadhaar linked to the bank account
+    issuer: Your own bank branch
+    fee: 0
+    days: 3
+    trips: 1
+    note: >
+      Money from most schemes will not reach an unlinked account. This is the
+      single cheapest thing that blocks the most payments.
+    needs:
+      - purpose: the account itself
+        any: [bank_account]
+      - purpose: proof of identity
+        any: [aadhaar]
+
+  disability_certificate:
+    name: Disability certificate
+    issuer: District hospital medical board
+    fee: 0
+    days: 45
+    trips: 3
+    needs:
+      - purpose: proof of identity
+        any: [aadhaar, voter_id]
+      - purpose: photographs
+        any: [passport_photo]
+
+  death_certificate:
+    name: Death certificate
+    issuer: Gram panchayat or municipal office
+    fee: 20
+    days: 21
+    trips: 2
+    needs:
+      - purpose: proof of identity of the person who died
+        any: [aadhaar, voter_id, ration_card]
+
+  land_records:
+    name: Land record (khatauni or record of rights)
+    issuer: Patwari or tehsil office
+    fee: 20
+    days: 15
+    trips: 2
+    needs:
+      - purpose: proof of identity
+        any: [aadhaar, voter_id]
+
+  job_card:
+    name: MGNREGA job card
+    issuer: Gram panchayat
+    fee: 0
+    days: 15
+    trips: 2
+    needs:
+      - purpose: proof of identity
+        any: [aadhaar, voter_id]
+      - purpose: proof of address
+        any: [ration_card, electricity_bill]
+      - purpose: photographs
+        any: [passport_photo]

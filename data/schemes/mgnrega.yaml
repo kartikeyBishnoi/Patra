@@ -1,0 +1,27 @@
+id: mgnrega
+name: MGNREGA job card
+authority: Ministry of Rural Development
+scope: household
+benefit: >
+  A guarantee of a hundred days of paid unskilled work in a year for the
+  household, at the notified wage, within five kilometres of the village.
+apply_at: Gram panchayat
+source_url: https://nrega.nic.in/
+note: >
+  Simplified encoding. The right is unconditional for any rural household
+  whose adult members volunteer for manual work, so the criteria here are
+  deliberately short. There is no income test.
+
+documents:
+  - aadhaar
+  - passport_photo
+  - electricity_bill
+
+criteria:
+  - id: C1
+    text: "The household must live in a rural area"
+    rule: {eq: [area_type, rural]}
+
+  - id: C2
+    text: "At least one adult in the household must be willing to do unskilled manual work"
+    rule: {is_true: has_willing_worker}

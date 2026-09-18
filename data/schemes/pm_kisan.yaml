@@ -1,0 +1,36 @@
+id: pm_kisan
+name: PM Kisan Samman Nidhi
+authority: Ministry of Agriculture and Farmers Welfare
+scope: household
+benefit: >
+  Six thousand rupees a year, paid in three instalments of two thousand
+  straight into the bank account.
+apply_at: Common Service Centre, or the village revenue officer
+source_url: https://pmkisan.gov.in/
+note: >
+  Simplified encoding. The scheme excludes a longer list of professionals and
+  higher-income pensioners than we model here; we cover the exclusions a rural
+  household is actually likely to trip.
+
+documents:
+  - aadhaar
+  - bank_account
+  - bank_aadhaar_seeding
+  - land_records
+
+criteria:
+  - id: C1
+    text: "The family must own cultivable land"
+    rule: {gt: [land_acres, 0]}
+
+  - id: C2
+    text: "Nobody in the family may be an income tax payer"
+    rule: {is_false: income_tax_payer}
+
+  - id: C3
+    text: "Nobody in the family may hold or have retired from a government post"
+    rule: {is_false: govt_employee_in_family}
+
+  - id: C4
+    text: "The family must actually farm that land"
+    rule: {is_true: cultivates_land}
