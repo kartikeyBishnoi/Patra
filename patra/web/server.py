@@ -369,7 +369,9 @@ class Handler(BaseHTTPRequestHandler):
             if not text or lang not in self.brain.translations.languages:
                 return self._json(404, {"error": "no audio"})
             name = hashlib.sha1(text.strip().encode("utf-8")).hexdigest()[:16]
-            clip = AUDIO / lang / f"{name}.mp3"
+            folder = AUDIO / lang
+            clip = next((folder / f"{name}{ext}" for ext in (".wav", ".mp3")
+                         if (folder / f"{name}{ext}").is_file()), folder / f"{name}.wav")
             # Resolve before comparing, so a crafted lang or text cannot walk
             # out of the audio directory.
             try:
@@ -379,7 +381,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(404, {"error": "no audio"})
             if not clip.is_file():
                 return self._json(404, {"error": "no audio"})
-            return self._send(200, clip.read_bytes(), "audio/mpeg")
+            kind = "audio/wav" if clip.suffix == ".wav" else "audio/mpeg"
+            return self._send(200, clip.read_bytes(), kind)
 
         if route == "/api/documents":
             words = self.brain.translations.bundle(self._lang())

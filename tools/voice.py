@@ -100,6 +100,76 @@ def speakable(strings: dict) -> list[str]:
     return unique
 
 
+class Piper:
+    """Neural voices that run on this machine, with no key and no account.
+
+    Piper is a small open-source TTS from the Rhasspy project. The voice is a
+    60MB ONNX file downloaded once from HuggingFace; after that nothing leaves
+    the machine even at generation time, which makes it the better default for
+    a tool whose whole argument is that data stays put.
+
+    It covers Hindi, Marathi, Bengali and English. It has no Tamil voice, so
+    Tamil falls to Bhashini, which does.
+    """
+
+    CATALOGUE = "https://huggingface.co/rhasspy/piper-voices/raw/main/voices.json"
+    FILES = "https://huggingface.co/rhasspy/piper-voices/resolve/main"
+    PREFER = {
+        "hi": "hi_IN-pratham-medium",
+        "mr": "mr_IN-google-medium",
+        "bn": "bn_BD-google-medium",
+        "en": "en_GB-alan-medium",
+    }
+
+    def __init__(self, *_):
+        self.loaded = {}
+        self._catalogue = None
+
+    def _catalogue_once(self):
+        if self._catalogue is None:
+            with urllib.request.urlopen(self.CATALOGUE, timeout=60) as r:
+                self._catalogue = json.loads(r.read())
+        return self._catalogue
+
+    def _model(self, lang: str) -> Path:
+        name = self.PREFER.get(lang)
+        catalogue = self._catalogue_once()
+        if name not in catalogue:
+            name = next((k for k, v in catalogue.items()
+                         if v.get("language", {}).get("code", "").startswith(lang + "_")),
+                        None)
+        if name is None:
+            raise ValueError(f"Piper has no voice for {lang!r}; use --provider bhashini")
+
+        voices = ROOT / "data" / "voices"
+        voices.mkdir(parents=True, exist_ok=True)
+        onnx = voices / f"{name}.onnx"
+        if not onnx.exists():
+            entry = catalogue[name]
+            # The catalogue keys its files by full repo path, which saves
+            # guessing the folder layout.
+            for path in entry["files"]:
+                if path.endswith(".onnx") or path.endswith(".onnx.json"):
+                    target = voices / Path(path).name
+                    if target.exists():
+                        continue
+                    print(f"  downloading {target.name} ...")
+                    urllib.request.urlretrieve(f"{self.FILES}/{path}", target)
+        return onnx
+
+    def speak(self, text: str, lang: str) -> bytes:
+        import io
+        import wave
+        from piper import PiperVoice
+
+        if lang not in self.loaded:
+            self.loaded[lang] = PiperVoice.load(str(self._model(lang)))
+        buffer = io.BytesIO()
+        with wave.open(buffer, "wb") as handle:
+            self.loaded[lang].synthesize_wav(text, handle)
+        return buffer.getvalue()
+
+
 class Bhashini:
     """Government of India's language platform. Free for low volume.
 
@@ -159,10 +229,14 @@ class Bhashini:
         return base64.b64decode(data["pipelineResponse"][0]["audio"][0]["audioContent"])
 
 
-PROVIDERS = {"bhashini": Bhashini}
+PROVIDERS = {"piper": Piper, "bhashini": Bhashini}
+EXTENSION = {"piper": ".wav", "bhashini": ".mp3"}
 
 
 def build(lang: str, provider_name: str, limit: int | None, pause: float) -> int:
+    # Piper runs locally, so there is no rate limit to respect.
+    if provider_name == "piper":
+        pause = 0.0
     path = I18N / f"{lang}.yaml"
     if not path.exists():
         print(f"no language file for {lang!r}", file=sys.stderr)
@@ -178,22 +252,27 @@ def build(lang: str, provider_name: str, limit: int | None, pause: float) -> int
     index_path = out_dir / "index.json"
     index = json.loads(index_path.read_text()) if index_path.exists() else {}
 
-    key = os.environ.get("BHASHINI_KEY")
-    user = os.environ.get("BHASHINI_ID")
-    if not key or not user:
-        print("BHASHINI_KEY and BHASHINI_ID are not set.\n"
-              "Register free at https://bhashini.gov.in and export both.\n"
-              f"{len(lines)} sentences would be generated for {lang!r}.",
-              file=sys.stderr)
-        return 2
+    if provider_name == "bhashini":
+        key = os.environ.get("BHASHINI_KEY")
+        user = os.environ.get("BHASHINI_ID")
+        if not key or not user:
+            print("BHASHINI_KEY and BHASHINI_ID are not set.\n"
+                  "Register free at https://bhashini.gov.in, or use the default\n"
+                  "--provider piper, which needs no key at all.\n"
+                  f"{len(lines)} sentences would be generated for {lang!r}.",
+                  file=sys.stderr)
+            return 2
+        provider = Bhashini(key, user)
+    else:
+        provider = Piper()
 
-    provider = PROVIDERS[provider_name](key, user)
-    source_lang = BHASHINI_LANG.get(lang, lang)
+    source_lang = BHASHINI_LANG.get(lang, lang) if provider_name == "bhashini" else lang
+    suffix = EXTENSION[provider_name]
 
     made = skipped = failed = 0
     for i, line in enumerate(lines, 1):
         name = key_for(line)
-        target = out_dir / f"{name}.mp3"
+        target = out_dir / f"{name}{suffix}"
         if target.exists():
             index[name] = line
             skipped += 1
@@ -203,7 +282,7 @@ def build(lang: str, provider_name: str, limit: int | None, pause: float) -> int
             index[name] = line
             made += 1
             print(f"  [{i}/{len(lines)}] {line[:58]}")
-        except (urllib.error.URLError, KeyError, ValueError) as exc:
+        except (urllib.error.URLError, KeyError, ValueError, OSError) as exc:
             failed += 1
             print(f"  [{i}/{len(lines)}] failed: {exc}", file=sys.stderr)
         # The free tier is rate limited, and hammering it gets the key blocked.
@@ -222,7 +301,8 @@ def main() -> int:
                     "needs no network.")
     parser.add_argument("--lang", required=True,
                         help="language code, or 'all'")
-    parser.add_argument("--provider", default="bhashini", choices=list(PROVIDERS))
+    parser.add_argument("--provider", default="piper", choices=list(PROVIDERS),
+                        help="piper runs locally and needs no key; bhashini covers Tamil")
     parser.add_argument("--limit", type=int, default=None,
                         help="stop after this many sentences, for a trial run")
     parser.add_argument("--pause", type=float, default=0.4,

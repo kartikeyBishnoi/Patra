@@ -190,6 +190,16 @@
   .empty { text-align:center; color:var(--grey); padding:34px 18px; }
   .hide { display:none !important; }
 
+  @media (min-width: 760px) {
+    .bar { justify-content:center; }
+    .bar > div:first-child, .bar .lang { position:relative; }
+    .bar { padding-left:max(16px, calc(50vw - 330px)); }
+    .tabs { max-width:660px; margin:0 auto; border-left:1px solid var(--line);
+            border-right:1px solid var(--line); }
+    .fab { right:max(16px, calc(50vw - 314px)); }
+    .sheet .log, .sheet .compose { max-width:660px; margin:0 auto; width:100%; }
+  }
+
   @media print {
     body { padding:0; }
     .bar,.tabs,.fab,button,details.work { display:none !important; }
@@ -301,11 +311,20 @@ function say(text) {
   if (playing) { playing.pause(); playing = null; }
   if ("speechSynthesis" in window) speechSynthesis.cancel();
 
+  let handed = false;
+  const fallback = () => {
+    if (handed) return;
+    handed = true;
+    playing = null;
+    robot(text);
+  };
+
   const clip = new Audio("/api/voice?lang=" + encodeURIComponent(S.lang) +
                          "&text=" + encodeURIComponent(String(text).trim()));
-  clip.onerror = () => { playing = null; robot(text); };
+  clip.onerror = fallback;
+  clip.onplaying = () => { handed = true; };
   playing = clip;
-  clip.play().catch(() => { playing = null; robot(text); });
+  clip.play().catch(fallback);
 }
 
 function robot(text) {
@@ -407,6 +426,7 @@ async function pickLanguage(l) {
   b.onclick = languageScreen;
 
   show("tabs"); show("fab");
+  $("chat-log").innerHTML = "";
   S.facts = {}; S.order = []; S.held = new Set(); S.asked = 0; S.result = null;
   go("home");
 }

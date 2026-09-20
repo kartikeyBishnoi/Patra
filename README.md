@@ -119,26 +119,35 @@ languages. Real neural voices exist, but calling one at runtime would send what
 the household is being asked and told to somebody else's server, and the
 privacy property this app rests on would be gone.
 
-So the network call happens once, before anybody uses the app. The set of
+So the synthesis happens once, before anybody uses the app. The set of
 sentences is finite, which is only true because nothing here generates prose,
-so `tools/voice.py` walks every string in `data/i18n/`, asks a text-to-speech
-service for each, and writes the audio into `data/audio/<lang>/`. At runtime
-the app plays a local file and makes no network call at all, falling back to
-the browser voice wherever a clip is missing.
+so `tools/voice.py` walks every string in `data/i18n/`, synthesises each one,
+and writes the audio into `data/audio/<lang>/`. At runtime the app plays a
+local file and makes no network call at all, falling back to the browser voice
+wherever a clip is missing.
 
-The default provider is [Bhashini](https://bhashini.gov.in), the Government of
-India's own language platform. It is free at low volume and its Indic models
-come from IITM, IITB, IIITH and CDAC, which is the right provenance for a
-welfare tool. Register there, then:
+```bash
+pip3 install piper-tts
+python3 tools/voice.py --lang all
+```
+
+The default is [Piper](https://github.com/rhasspy/piper), a small open-source
+neural TTS. The voice is a 60MB ONNX model fetched once; after that nothing
+leaves the machine even during generation, and no key or account is involved.
+It covers Hindi, Marathi, Bengali and English.
+
+Piper has no Tamil voice. For Tamil, [Bhashini](https://bhashini.gov.in), the
+Government of India's own language platform, is free at low volume and its
+Indic models come from IITM, IITB, IIITH and CDAC:
 
 ```bash
 export BHASHINI_KEY=your_key
 export BHASHINI_ID=your_user_id
-python3 tools/voice.py --lang all
+python3 tools/voice.py --lang ta --provider bhashini
 ```
 
-Roughly 300 clips per language. Run with `--limit 20` first to check the voice
-before spending the quota.
+Around 200 to 300 clips per language, a couple of minutes each. The audio and
+the voice models are build artefacts and are not in the repository.
 
 ## How it works
 
