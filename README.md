@@ -112,6 +112,34 @@ picker as awaiting a native speaker's review.
 
 See [docs/LANGUAGES.md](docs/LANGUAGES.md).
 
+## Voice
+
+Browser speech synthesis is robotic and missing outright for several Indian
+languages. Real neural voices exist, but calling one at runtime would send what
+the household is being asked and told to somebody else's server, and the
+privacy property this app rests on would be gone.
+
+So the network call happens once, before anybody uses the app. The set of
+sentences is finite, which is only true because nothing here generates prose,
+so `tools/voice.py` walks every string in `data/i18n/`, asks a text-to-speech
+service for each, and writes the audio into `data/audio/<lang>/`. At runtime
+the app plays a local file and makes no network call at all, falling back to
+the browser voice wherever a clip is missing.
+
+The default provider is [Bhashini](https://bhashini.gov.in), the Government of
+India's own language platform. It is free at low volume and its Indic models
+come from IITM, IITB, IIITH and CDAC, which is the right provenance for a
+welfare tool. Register there, then:
+
+```bash
+export BHASHINI_KEY=your_key
+export BHASHINI_ID=your_user_id
+python3 tools/voice.py --lang all
+```
+
+Roughly 300 clips per language. Run with `--limit 20` first to check the voice
+before spending the quota.
+
 ## How it works
 
 ```

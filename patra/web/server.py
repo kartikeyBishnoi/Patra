@@ -11,6 +11,7 @@ Standard library only, so it starts anywhere Python does.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import threading
 import traceback
@@ -37,6 +38,7 @@ from ..reason.unlock import ladder
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE.parent.parent / "data"
+AUDIO = DATA / "audio"
 
 
 def dig(tree, *path, default=None):
@@ -356,6 +358,28 @@ class Handler(BaseHTTPRequestHandler):
 
         if route == "/api/strings":
             return self._json(200, self.brain.translations.bundle(self._lang()))
+
+        if route == "/api/voice":
+            # Pre-recorded by tools/voice.py. Nothing is fetched here; if the
+            # file was never generated we say so and the page falls back to the
+            # browser voice, so no request ever leaves this machine.
+            query = parse_qs(urlparse(self.path).query)
+            lang = query.get("lang", ["en"])[0]
+            text = query.get("text", [""])[0]
+            if not text or lang not in self.brain.translations.languages:
+                return self._json(404, {"error": "no audio"})
+            name = hashlib.sha1(text.strip().encode("utf-8")).hexdigest()[:16]
+            clip = AUDIO / lang / f"{name}.mp3"
+            # Resolve before comparing, so a crafted lang or text cannot walk
+            # out of the audio directory.
+            try:
+                clip = clip.resolve()
+                clip.relative_to(AUDIO.resolve())
+            except (ValueError, OSError):
+                return self._json(404, {"error": "no audio"})
+            if not clip.is_file():
+                return self._json(404, {"error": "no audio"})
+            return self._send(200, clip.read_bytes(), "audio/mpeg")
 
         if route == "/api/documents":
             words = self.brain.translations.bundle(self._lang())

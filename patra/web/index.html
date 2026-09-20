@@ -6,161 +6,195 @@
 <meta name="theme-color" content="#0a6e4e">
 <title>PATRA</title>
 <style>
-  /* Laid out like the apps this audience already uses: a fixed top bar, a
-     scrolling body of cards, a bottom tab bar, one floating action button.
-     DigiLocker and UMANG both settled on that shape, and both get criticised
-     for cramming every screen, so the rule here is one job per screen.
+  /* Built after usa.gov rather than after a phone app. That site is the
+     clearest government service index anyone has shipped, and its structure is
+     deliberate: serif headings with a heavy rule under them, a tinted band
+     behind every card grid, square white cards with a thin border, a centred
+     line mark separated from the text by a dotted rule, and a great deal of
+     air. It reads as an official document you can trust rather than a product
+     trying to be friendly.
 
-     Colour is saturated rather than pastel because these phones get used
-     outdoors. Green for what you can claim, amber for what is one errand
-     away, red only for a real stop. */
+     Square corners and serif headings are the two choices doing most of the
+     work. Rounded cards and a sans-serif stack are what make an interface look
+     generic. */
   :root {
-    --green:#0a6e4e; --green-soft:#e7f3ed;
-    --amber:#b1600b; --amber-soft:#fdf3e3;
-    --red-soft:#fbeceb;
-    --ink:#1a1d21; --grey:#5a6570; --line:#e2e6ea;
-    --bg:#f5f6f8; --card:#fff; --bar-h:62px;
+    --green:#12633f; --green-dark:#0c4a2f; --green-soft:#e8f2ec;
+    --band:#dceaf2;
+    --amber:#8a4d06; --amber-soft:#fbf1e0;
+    --red:#8c2b22; --red-soft:#fbeae8;
+    --ink:#1b1b1b; --grey:#565c65; --line:#c9ced4; --hair:#dfe3e7;
+    --bg:#ffffff; --card:#ffffff; --bar-h:60px;
+    --serif: Georgia, "Times New Roman", "Noto Serif Devanagari", serif;
   }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body {
     margin:0; background:var(--bg); color:var(--ink);
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;
-    font-size:17px; line-height:1.55;
+    font-family:"Source Sans Pro", system-ui, -apple-system, "Segoe UI", Roboto,
+                "Noto Sans", sans-serif;
+    font-size:17px; line-height:1.6;
   }
   body { padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom)); }
 
   .bar {
-    position:sticky; top:0; z-index:20; background:var(--green); color:#fff;
+    position:sticky; top:0; z-index:20; background:var(--green-dark); color:#fff;
     display:flex; align-items:center; gap:10px;
-    padding:14px 16px; padding-top:calc(14px + env(safe-area-inset-top));
+    padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top));
+    border-bottom:4px solid var(--green);
   }
-  .bar h1 { margin:0; font-size:20px; font-weight:700; letter-spacing:.5px; }
-  .bar .sub { font-size:13px; opacity:.85; color:#fff; }
+  .bar h1 { margin:0; font-family:var(--serif); font-size:21px; font-weight:700; }
+  .bar .sub { font-size:13px; opacity:.88; color:#fff; }
   .bar .lang {
-    margin-left:auto; background:rgba(255,255,255,.16); color:#fff; border:0;
-    border-radius:999px; padding:8px 14px; font:inherit; font-size:14px;
-    width:auto; cursor:pointer; margin-bottom:0;
+    margin-left:auto; background:rgba(255,255,255,.14); color:#fff;
+    border:1px solid rgba(255,255,255,.35); border-radius:2px;
+    padding:7px 12px; font:inherit; font-size:14px; width:auto;
+    cursor:pointer; margin-bottom:0;
   }
 
-  .body { max-width:620px; margin:0 auto; padding:14px 14px 24px; }
-  .card { background:var(--card); border-radius:16px; padding:18px;
-          margin-bottom:12px; box-shadow:0 1px 2px rgba(20,30,40,.06); }
-  .card h2 { margin:0 0 4px; font-size:19px; }
-  .card h3 { margin:0 0 3px; font-size:17px; }
-  .sub { color:var(--grey); font-size:15px; }
-  .mt { margin-top:12px; }
+  .body { max-width:660px; margin:0 auto; padding:0 0 28px; }
+
+  /* A page heading with the heavy rule under it, straight off usa.gov. */
+  .head { padding:22px 16px 0; }
+  .head h2 {
+    font-family:var(--serif); font-size:27px; line-height:1.25;
+    margin:0 0 12px; color:var(--green-dark); font-weight:700;
+  }
+  .head .rule { height:5px; background:var(--green); margin-bottom:16px; }
+  .head p { margin:0 0 16px; color:var(--grey); font-size:16px; }
+
+  .band { background:var(--band); padding:18px 16px 4px; }
+  .plain { padding:0 16px; }
+
+  .card {
+    background:var(--card); border:1px solid var(--line); border-radius:2px;
+    padding:18px; margin-bottom:16px;
+  }
+  .card h3 {
+    margin:0 0 6px; font-size:18px; font-weight:700; color:var(--ink);
+  }
+  .card .mark {
+    text-align:center; font-size:26px; line-height:1;
+    padding-bottom:12px; margin-bottom:14px;
+    border-bottom:1px dotted var(--line);
+  }
+  .sub { color:var(--grey); font-size:15.5px; }
+  .mt { margin-top:14px; }
 
   button {
     font:inherit; cursor:pointer; display:block; width:100%; text-align:left;
-    padding:15px 16px; margin-bottom:10px; border:1.5px solid var(--line);
-    border-radius:13px; background:var(--card); color:var(--ink);
+    padding:14px 15px; margin-bottom:9px; border:1px solid var(--line);
+    border-radius:2px; background:#fff; color:var(--ink);
   }
-  button:active { transform:scale(.985); }
+  button:hover { border-color:var(--green); }
   .cta { background:var(--green); color:#fff; border-color:var(--green);
-         text-align:center; font-weight:700; font-size:18px; padding:17px; }
-  .ghost { text-align:center; color:var(--grey); background:transparent;
-           border-style:dashed; }
+         text-align:center; font-weight:700; font-size:17px; padding:15px; }
+  .ghost { text-align:center; color:var(--green); background:transparent;
+           border-color:var(--green); font-weight:600; }
   .pair { display:flex; gap:10px; }
   .pair button { margin-bottom:0; }
 
-  .opt { display:flex; align-items:center; gap:13px; }
-  .opt .pic { font-size:27px; line-height:1; width:34px; text-align:center; }
-  .opt.on { border-color:var(--green); background:var(--green-soft); }
-  .opt.on::after { content:"✓"; margin-left:auto; color:var(--green);
-                   font-weight:800; font-size:20px; }
+  .opt { display:flex; align-items:center; gap:12px; }
+  .opt.on { border-color:var(--green); border-width:2px; background:var(--green-soft); }
+  .opt.on::after { content:"\2713"; margin-left:auto; color:var(--green);
+                   font-weight:800; font-size:19px; }
 
-  .track { display:flex; gap:4px; margin-bottom:16px; }
-  .track i { flex:1; height:4px; border-radius:2px; background:var(--line); }
+  .track { display:flex; gap:3px; margin-bottom:16px; }
+  .track i { flex:1; height:4px; background:var(--hair); }
   .track i.on { background:var(--green); }
-  .qtext { font-size:23px; font-weight:700; line-height:1.35; margin:0 0 6px; }
+  .qtext { font-family:var(--serif); font-size:24px; font-weight:700;
+           line-height:1.35; margin:0 0 6px; }
   .qwhy { color:var(--amber); font-size:14px; margin:0 0 12px; }
-  .hear { width:auto; padding:9px 15px; margin:0 0 16px; font-size:15px;
-          border-radius:999px; color:var(--green); border-color:#bfded0;
-          background:var(--green-soft); }
+  .hear { width:auto; padding:8px 14px; margin:0 0 16px; font-size:15px;
+          color:var(--green); border-color:var(--green); background:#fff;
+          font-weight:600; }
   input[type=number], input[type=text] {
-    font:inherit; font-size:22px; width:100%; padding:15px;
-    border:1.5px solid var(--line); border-radius:13px; margin-bottom:10px;
+    font:inherit; font-size:21px; width:100%; padding:14px;
+    border:1px solid var(--line); border-radius:2px; margin-bottom:10px;
   }
   input[type=number] { text-align:center; }
 
-  .row { display:flex; gap:12px; padding:13px 0; border-top:1px solid var(--line); }
-  .row:first-of-type { border-top:0; }
-  .row .tag { flex:none; width:34px; height:34px; border-radius:10px;
-              display:grid; place-items:center; font-size:17px; }
-  .tag.ok { background:var(--green-soft); }
-  .tag.near { background:var(--amber-soft); }
-  .row .txt { min-width:0; }
-  .row .txt b { display:block; font-size:17px; }
+  /* One claim, one card, like a topic tile. */
+  .item { background:#fff; border:1px solid var(--line); border-radius:2px;
+          padding:16px; margin-bottom:14px; }
+  .item.near { border-left:5px solid var(--amber); }
+  .item.ok { border-left:5px solid var(--green); }
+  .item h3 { font-family:var(--serif); font-size:19px; margin:0 0 6px;
+             color:var(--green-dark); }
+  .item.near h3 { color:var(--amber); }
+  .item .what { color:var(--grey); font-size:15.5px; margin-bottom:10px; }
+  .item .where { font-size:16px; }
 
-  .note { border-radius:11px; padding:11px 13px; font-size:15px; margin-top:9px; }
-  .note.ok { background:var(--green-soft); }
-  .note.warn { background:var(--amber-soft); }
-  .note.stop { background:var(--red-soft); }
+  .note { border-radius:2px; padding:11px 13px; font-size:15px; margin-top:10px;
+          border-left:4px solid var(--line); }
+  .note.ok { background:var(--green-soft); border-left-color:var(--green); }
+  .note.warn { background:var(--amber-soft); border-left-color:var(--amber); }
+  .note.stop { background:var(--red-soft); border-left-color:var(--red); }
 
-  ol.route { list-style:none; counter-reset:r; padding:0; margin:6px 0 0; }
-  ol.route li { counter-increment:r; position:relative; padding:0 0 18px 44px; }
+  ol.route { list-style:none; counter-reset:r; padding:0; margin:4px 0 0; }
+  ol.route li { counter-increment:r; position:relative; padding:0 0 20px 46px; }
   ol.route li::before {
     content:counter(r); position:absolute; left:0; top:0; width:30px; height:30px;
-    border-radius:50%; background:var(--green); color:#fff;
+    background:var(--green); color:#fff; border-radius:2px;
     display:grid; place-items:center; font-weight:700; font-size:15px;
   }
   ol.route li::after { content:""; position:absolute; left:14.5px; top:32px;
-                       bottom:6px; width:1.5px; background:var(--line); }
+                       bottom:8px; width:1px; background:var(--line); }
   ol.route li:last-child::after { display:none; }
+  ol.route li b { font-size:16.5px; }
 
-  details.work { border-top:1px solid var(--line); margin-top:12px; padding-top:10px; }
-  details.work summary { cursor:pointer; color:var(--green); font-weight:600;
-                         font-size:15px; list-style:none; }
+  details.work { border-top:1px dotted var(--line); margin-top:14px; padding-top:11px; }
+  details.work summary { cursor:pointer; color:var(--green); font-weight:700;
+                         font-size:15px; list-style:none; text-decoration:underline; }
   details.work summary::-webkit-details-marker { display:none; }
-  details.work summary::before { content:"🔍 "; }
-  .step { border-left:2px solid var(--line); margin:10px 0 0 6px; padding:0 0 2px 14px; }
-  .step .how { font-size:13px; color:var(--green); font-weight:700;
-               text-transform:uppercase; letter-spacing:.4px; }
-  .step .what { font-size:15px; }
+  .step { border-left:2px solid var(--hair); margin:10px 0 0 4px; padding:0 0 4px 14px; }
+  .step .how { font-size:12.5px; color:var(--green); font-weight:700;
+               text-transform:uppercase; letter-spacing:.5px; }
+  .step .what2 { font-size:15px; }
   .step .bits { font-size:14px; color:var(--grey); }
   .step .bits div { padding:1px 0; }
   .qc { font-size:13px; color:var(--grey); font-style:italic; }
 
   .tabs { position:fixed; left:0; right:0; bottom:0; z-index:20; display:flex;
-          background:var(--card); border-top:1px solid var(--line);
+          background:#fff; border-top:2px solid var(--green);
           padding-bottom:env(safe-area-inset-bottom); }
   .tabs button { flex:1; margin:0; border:0; border-radius:0; background:none;
-                 text-align:center; padding:8px 4px; color:var(--grey);
-                 font-size:12px; line-height:1.25; }
-  .tabs button .ic { display:block; font-size:21px; margin-bottom:1px; }
-  .tabs button.on { color:var(--green); font-weight:700; }
+                 text-align:center; padding:9px 4px; color:var(--grey);
+                 font-size:12.5px; line-height:1.25; }
+  .tabs button .ic { display:block; font-size:19px; margin-bottom:2px; }
+  .tabs button.on { color:var(--green-dark); font-weight:700;
+                    box-shadow:inset 0 3px 0 var(--green); }
 
-  .fab { position:fixed; right:16px; z-index:25; width:58px; height:58px;
+  .fab { position:fixed; right:16px; z-index:25; width:56px; height:56px;
          bottom:calc(var(--bar-h) + 16px + env(safe-area-inset-bottom));
          border-radius:50%; border:0; padding:0; margin:0; background:var(--green);
-         color:#fff; font-size:25px; box-shadow:0 4px 14px rgba(10,110,78,.4);
+         color:#fff; font-size:23px; box-shadow:0 3px 10px rgba(0,0,0,.3);
          display:grid; place-items:center; }
-  .sheet { position:fixed; inset:0; z-index:40; background:var(--bg);
+  .sheet { position:fixed; inset:0; z-index:40; background:#fff;
            display:flex; flex-direction:column; }
   .sheet .bar { position:static; }
-  .sheet .log { flex:1; overflow-y:auto; padding:14px; }
+  .sheet .log { flex:1; overflow-y:auto; padding:14px 16px; background:var(--band); }
   .sheet .compose { display:flex; gap:8px; padding:10px 12px;
                     padding-bottom:calc(10px + env(safe-area-inset-bottom));
-                    background:var(--card); border-top:1px solid var(--line); }
+                    background:#fff; border-top:1px solid var(--line); }
   .sheet .compose input { margin:0; font-size:17px; }
-  .sheet .compose button { width:auto; margin:0; padding:0 20px; }
-  .bubble { max-width:86%; padding:11px 14px; border-radius:15px;
-            margin-bottom:10px; font-size:16px; }
+  .sheet .compose button { width:auto; margin:0; padding:0 18px; }
+  .bubble { max-width:88%; padding:11px 14px; border-radius:2px;
+            margin-bottom:10px; font-size:16px; border:1px solid var(--line); }
   .bubble.me { margin-left:auto; background:var(--green); color:#fff;
-               border-bottom-right-radius:4px; }
-  .bubble.it { background:var(--card); border:1px solid var(--line);
-               border-bottom-left-radius:4px; }
-  .bubble.it b { display:block; margin-bottom:3px; }
+               border-color:var(--green); }
+  .bubble.it { background:#fff; }
+  .bubble.it b { display:block; margin-bottom:4px; font-family:var(--serif);
+                 font-size:17px; }
   .bubble.it .li { font-size:15px; color:var(--grey); padding:2px 0; }
-  .chip { display:inline-block; width:auto; margin:4px 6px 0 0; padding:8px 13px;
-          font-size:14px; border-radius:999px; background:var(--card); }
-  .empty { text-align:center; color:var(--grey); padding:34px 16px; }
+  .chip { display:inline-block; width:auto; margin:5px 6px 0 0; padding:8px 12px;
+          font-size:14px; border-radius:2px; background:#fff; }
+  .empty { text-align:center; color:var(--grey); padding:34px 18px; }
   .hide { display:none !important; }
 
   @media print {
-    body { background:#fff; padding:0; }
+    body { padding:0; }
     .bar,.tabs,.fab,button,details.work { display:none !important; }
-    .card { box-shadow:none; border:1px solid #ccc; page-break-inside:avoid; }
+    .band { background:#fff; }
+    .card,.item { border:1px solid #999; page-break-inside:avoid; }
   }
 </style>
 </head>
@@ -257,7 +291,24 @@ function bestVoice() {
       || null;
 }
 
+let playing = null;
+
+/* A real recorded voice when one exists, the browser's otherwise.
+   tools/voice.py generates the clips ahead of time, so this reads a local
+   file and never calls out. */
 function say(text) {
+  if (!text) return;
+  if (playing) { playing.pause(); playing = null; }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+
+  const clip = new Audio("/api/voice?lang=" + encodeURIComponent(S.lang) +
+                         "&text=" + encodeURIComponent(String(text).trim()));
+  clip.onerror = () => { playing = null; robot(text); };
+  playing = clip;
+  clip.play().catch(() => { playing = null; robot(text); });
+}
+
+function robot(text) {
   if (!("speechSynthesis" in window) || !text) return;
   speechSynthesis.cancel();
   const voice = bestVoice();
@@ -273,6 +324,27 @@ function say(text) {
 }
 
 function view() { const v = $("view"); v.innerHTML = ""; return v; }
+
+function heading(parent, title, blurb) {
+  const h = el("div","head");
+  h.appendChild(el("h2", null, title));
+  h.appendChild(el("div","rule"));
+  if (blurb) h.appendChild(el("p", null, blurb));
+  parent.appendChild(h);
+  return h;
+}
+
+function band(parent) {
+  const b = el("div","band");
+  parent.appendChild(b);
+  return b;
+}
+
+function plain(parent) {
+  const b = el("div","plain");
+  parent.appendChild(b);
+  return b;
+}
 
 function offline() {
   const v = view();
@@ -358,30 +430,31 @@ function go(tab) {
 
 function startScreen() {
   const v = view();
-  const c = el("div","card");
-  c.appendChild(el("h2", null, t("ui.docs_title")));
-  c.appendChild(el("p","sub", t("ui.docs_help")));
-  const box = el("div","mt");
-  c.appendChild(box);
-  const go_ = el("button","cta", t("ui.start"));
-  go_.onclick = ask;
-  c.appendChild(go_);
-  v.appendChild(c);
-
+  heading(v, t("ui.docs_title"), t("ui.docs_help"));
+  const wrap = plain(v);
   const priv = el("div","note ok");
   priv.textContent = t("ui.privacy");
-  v.appendChild(priv);
+  wrap.appendChild(priv);
+
+  const b = band(v);
+  const box = el("div");
+  b.appendChild(box);
+
+  const foot = plain(v);
+  const go_ = el("button","cta mt", t("ui.start"));
+  go_.onclick = ask;
+  foot.appendChild(go_);
 
   api("/api/documents?lang=" + S.lang).then(docs => {
     docs.forEach(d => {
-      const b = el("button","opt");
-      b.appendChild(el("span", null, d.name));
-      if (S.held.has(d.id)) b.classList.add("on");
-      b.onclick = () => {
-        if (S.held.has(d.id)) { S.held.delete(d.id); b.classList.remove("on"); }
-        else { S.held.add(d.id); b.classList.add("on"); say(d.name); }
+      const bt = el("button","opt");
+      bt.appendChild(el("span", null, d.name));
+      if (S.held.has(d.id)) bt.classList.add("on");
+      bt.onclick = () => {
+        if (S.held.has(d.id)) { S.held.delete(d.id); bt.classList.remove("on"); }
+        else { S.held.add(d.id); bt.classList.add("on"); say(d.name); }
       };
-      box.appendChild(b);
+      box.appendChild(bt);
     });
   }).catch(offline);
 }
@@ -396,7 +469,7 @@ async function ask() {
   if (!q) return finish();
 
   const v = view();
-  const c = el("div","card");
+  const c = el("div","head");
 
   const track = el("div","track");
   for (let i = 0; i < 10; i++) {
@@ -507,71 +580,59 @@ function renderResult() {
     return v.appendChild(c);
   }
 
-  const c = el("div","card");
   if (d.claims.length) {
-    c.appendChild(el("h2", null, t("ui.claims_title", {n:d.claims.length})));
-    d.claims.forEach(x => c.appendChild(claimRow(x)));
+    heading(v, t("ui.claims_title", {n:d.claims.length}));
+    const b = band(v);
+    d.claims.forEach(x => b.appendChild(claimRow(x)));
   } else {
-    c.appendChild(el("h2", null, t("ui.claims_none_title")));
-    c.appendChild(el("p","sub", t("ui.claims_none_body")));
+    heading(v, t("ui.claims_none_title"), t("ui.claims_none_body"));
   }
-  v.appendChild(c);
 
   if (d.near && d.near.length) {
-    const n = el("div","card");
-    n.appendChild(el("h2", null, t("ui.near_title")));
-    d.near.forEach(x => n.appendChild(nearRow(x)));
-    v.appendChild(n);
+    heading(v, t("ui.near_title"));
+    const b = band(v);
+    d.near.forEach(x => b.appendChild(nearRow(x)));
   }
 
   if (d.undecided && d.undecided.length) {
-    const u = el("div","card");
-    u.appendChild(el("h2", null, t("ui.undecided_title") || "Could not check these"));
-    u.appendChild(el("p","sub", t("ui.undecided_body") || ""));
+    heading(v, t("ui.undecided_title") || "Could not check these",
+            t("ui.undecided_body") || "");
+    const b = band(v);
     d.undecided.forEach(x => {
-      const row = el("div","row");
-      row.appendChild(el("div","tag near","?"));
-      const txt = el("div","txt");
-      txt.appendChild(el("b", null, x.name));
-      txt.appendChild(el("div","sub",
+      const row = el("div","item near");
+      row.appendChild(el("h3", null, x.name));
+      row.appendChild(el("div","what",
         (t("ui.undecided_need") || "We still need") + ": " + x.missing.join(", ")));
-      row.appendChild(txt);
-      u.appendChild(row);
+      b.appendChild(row);
     });
-    const finish_ = el("button","cta mt", t("ui.undecided_go") || "Answer the rest");
-    finish_.onclick = ask;
-    u.appendChild(finish_);
-    v.appendChild(u);
+    const more = el("button","cta", t("ui.undecided_go") || "Answer the rest");
+    more.onclick = ask;
+    b.appendChild(more);
   }
 
   if (d.paperwork && d.paperwork.steps.length) {
-    const p = el("div","card");
-    p.appendChild(el("h2", null, t("ui.papers_title")));
-    p.appendChild(el("p","sub", t("ui.papers_summary",
-      {trips:d.paperwork.trips, fee:d.paperwork.fee, days:d.paperwork.days})));
-    const jump = el("button","cta mt", t("ui.papers_open") || "Open the list");
+    heading(v, t("ui.papers_title"), t("ui.papers_summary",
+      {trips:d.paperwork.trips, fee:d.paperwork.fee, days:d.paperwork.days}));
+    const jump = el("button","cta", t("ui.papers_open") || "Open the list");
     jump.onclick = () => go("papers");
-    p.appendChild(jump);
-    v.appendChild(p);
+    plain(v).appendChild(jump);
   }
 
-  const acts = el("div","card");
+  const acts = plain(v);
   const pr = el("button", null, "🖨️  " + (t("ui.print") || "Print"));
   pr.onclick = () => window.print();
   acts.appendChild(pr);
   const ag = el("button","ghost", t("ui.start_over") || "Start again");
   ag.onclick = restart;
   acts.appendChild(ag);
-  v.appendChild(acts);
 }
 
 function claimRow(x) {
-  const row = el("div","row");
-  row.appendChild(el("div","tag ok","✓"));
-  const txt = el("div","txt");
-  txt.appendChild(el("b", null, x.name));
-  txt.appendChild(el("div","sub", x.benefit));
-  txt.appendChild(el("div", null, (t("ui.apply_at")||"Go to") + ": " + x.apply_at));
+  const row = el("div","item ok");
+  const txt = el("div");
+  txt.appendChild(el("h3", null, x.name));
+  txt.appendChild(el("div","what", x.benefit));
+  txt.appendChild(el("div","where", (t("ui.apply_at")||"Go to") + ": " + x.apply_at));
   if (x.check) {
     txt.appendChild(el("div","note warn",
       t("ui.please_check") + ". " + t("ui.check_body",
@@ -586,11 +647,10 @@ function claimRow(x) {
 }
 
 function nearRow(x) {
-  const row = el("div","row");
-  row.appendChild(el("div","tag near","!"));
-  const txt = el("div","txt");
-  txt.appendChild(el("b", null, x.name));
-  txt.appendChild(el("div","sub", x.benefit));
+  const row = el("div","item near");
+  const txt = el("div");
+  txt.appendChild(el("h3", null, x.name));
+  txt.appendChild(el("div","what", x.benefit));
   if (x.needed) {
     const n = el("div","note");
     n.style.background = "var(--bg)";
@@ -634,7 +694,7 @@ function working(schemeId) {
 function stepBlock(s) {
   const st = el("div","step");
   st.appendChild(el("div","how", s.method));
-  st.appendChild(el("div","what", s.headline));
+  st.appendChild(el("div","what2", s.headline));
   const bits = el("div","bits");
   (s.detail || []).forEach(x => bits.appendChild(el("div", null, x)));
   st.appendChild(bits);
