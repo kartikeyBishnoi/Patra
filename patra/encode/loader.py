@@ -51,6 +51,7 @@ def load_schema(path: Path) -> Schema:
                 high=spec.get("high"),
                 options=tuple(spec.get("options", ())),
                 sensitive=spec.get("sensitive", False),
+                open_ended=spec.get("open_ended", False),
                 asset=spec.get("asset", False),
             )
         )

@@ -41,6 +41,7 @@ attributes:
 
   annual_income:
     kind: int
+    open_ended: true
     low: 0
     high: 5000000
     unit: rupees a year
@@ -63,6 +64,7 @@ attributes:
 
   land_acres:
     kind: int
+    open_ended: true
     low: 0
     high: 500
     unit: acres
@@ -132,6 +134,7 @@ attributes:
 
   household_size:
     kind: int
+    open_ended: true
     low: 1
     high: 30
     label: People in the household
@@ -170,6 +173,7 @@ attributes:
 
   adult_male_count:
     kind: int
+    open_ended: true
     low: 0
     high: 20
     label: Working-age men in the house
@@ -205,6 +209,7 @@ attributes:
 
   age:
     kind: int
+    open_ended: true
     low: 0
     high: 120
     unit: years

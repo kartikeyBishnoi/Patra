@@ -59,6 +59,13 @@ class Attribute:
     low: int | None = None
     high: int | None = None
     options: tuple[str, ...] = field(default_factory=tuple)
+    open_ended: bool = False
+    """Hitting `high` means "this much or more" rather than exactly this.
+
+    Age, land and income have no real upper bound, only a bound we picked to
+    keep the solver honest. Anything at or above it is reported with a plus.
+    """
+
     sensitive: bool = False
     """Caste, religion, disability, income. We ask these last and skip them
     entirely when the answer is already settled."""

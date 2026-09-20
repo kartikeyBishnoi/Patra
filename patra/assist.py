@@ -1,19 +1,19 @@
 """The question answerer.
 
-People have questions the questionnaire does not cover. What is a domicile
-certificate. Which schemes need Aadhaar. Why did it say no. How do I get a
-ration card. Where do I go for a pension.
+People arrive with questions the interview does not cover. Which pensions
+exist. What do I need for Ujjwala. How much money is it. Where do I go. What is
+a domicile certificate and how do I get one.
 
-This answers them from the knowledge base, not from a language model. Intent is
-matched by keyword against a fixed set of question shapes, the answer is looked
-up or computed by the reasoner, and anything that does not match gets an honest
-"I do not know that one" rather than an invention.
+Everything is answered from the knowledge base. Intent comes from keyword
+matching, the subject from a word index built over scheme and document names in
+whatever language is loaded, and the answer is looked up or computed by the
+same reasoner the rest of the app uses. Nothing is generated.
 
-That is a deliberate trade. A language model would handle phrasing far better
-and would occasionally state, fluently and with confidence, that somebody
-qualifies for a pension they do not. In a tool about welfare entitlements the
-second failure is much worse than the first, and it is the one the user cannot
-detect.
+A language model would read phrasing far better. It would also, now and then,
+state fluently that somebody qualifies for a pension they do not, and the
+person reading it has no way to tell. Between a tool that sometimes says "ask
+me differently" and one that sometimes invents an entitlement, the first is the
+only defensible choice here.
 """
 
 from __future__ import annotations
@@ -29,12 +29,14 @@ from .reason.planner import Unreachable, plan
 
 
 class Intent(Enum):
-    WHAT_IS_DOC = "what_is_doc"
-    HOW_TO_GET_DOC = "how_to_get_doc"
-    WHAT_IS_SCHEME = "what_is_scheme"
+    LIST_SCHEMES = "list_schemes"
+    SCHEME_ABOUT = "scheme_about"
     SCHEME_NEEDS = "scheme_needs"
-    WHO_NEEDS_DOC = "who_needs_doc"
-    WHERE_TO_APPLY = "where_to_apply"
+    SCHEME_DOCS = "scheme_docs"
+    SCHEME_WHERE = "scheme_where"
+    DOC_ABOUT = "doc_about"
+    DOC_HOW = "doc_how"
+    DOC_WHO = "doc_who"
     PRIVACY = "privacy"
     UNKNOWN = "unknown"
 
@@ -43,19 +45,44 @@ class Intent(Enum):
 class Answer:
     intent: Intent
     text: str = ""
-    """The headline sentence, already in the user's language where available."""
-
     bullets: list[str] = field(default_factory=list)
     steps: list[dict] = field(default_factory=list)
-    """An acquisition route, when the question was about getting a document."""
-
     subject: str | None = None
     suggestions: list[str] = field(default_factory=list)
-    """Questions we can answer, offered when we could not answer this one."""
 
 
 def fold(text: str) -> str:
     return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", text).casefold()).strip()
+
+
+def words_of(text: str) -> set[str]:
+    return {w for w in re.split(r"[^\wऀ-෿]+", fold(text)) if len(w) > 2}
+
+
+# Topic words that should find a scheme even when its official name is never
+# typed. Somebody says "pension", not "Indira Gandhi National Old Age Pension".
+TOPICS = {
+    "ignoaps":     ["pension", "old age", "elderly", "60", "sixty", "बुढ़ापा", "वृद्ध", "पेंशन", "बुजुर्ग"],
+    "ignwps":      ["widow", "pension", "husband died", "विधवा", "पेंशन", "पति"],
+    "igndps":      ["disability", "disabled", "handicap", "pension", "दिव्यांग", "विकलांग", "पेंशन"],
+    "pm_kisan":    ["kisan", "farmer", "farming", "6000", "किसान", "खेती", "सम्मान"],
+    "ration_aay":  ["ration", "antyodaya", "grain", "wheat", "rice", "food", "राशन", "अनाज", "अंत्योदय"],
+    "ration_phh":  ["ration", "priority", "grain", "food", "राशन", "अनाज", "प्राथमिकता"],
+    "pmay_g":      ["house", "housing", "awas", "pucca", "घर", "मकान", "आवास"],
+    "pmuy":        ["gas", "lpg", "ujjwala", "cylinder", "गैस", "उज्ज्वला", "सिलेंडर", "चूल्हा"],
+    "pmjay":       ["health", "hospital", "illness", "ayushman", "treatment", "इलाज", "अस्पताल", "आयुष्मान", "बीमारी"],
+    "pmmvy":       ["pregnant", "maternity", "matru", "baby", "गर्भ", "मातृ", "बच्चा", "प्रसव"],
+    "jsy":         ["delivery", "janani", "hospital birth", "pregnant", "जननी", "प्रसव", "गर्भ"],
+    "mgnrega":     ["work", "job", "employment", "mgnrega", "nrega", "labour", "wage", "काम", "मज़दूरी", "रोज़गार", "मनरेगा"],
+    "sukanya":     ["girl", "daughter", "savings", "sukanya", "बेटी", "लड़की", "बचत", "सुकन्या"],
+    "apy":         ["pension", "atal", "savings", "अटल", "पेंशन", "बचत"],
+    "jan_dhan":    ["bank", "account", "jan dhan", "खाता", "बैंक", "जनधन"],
+    "pmsby":       ["accident", "insurance", "suraksha", "दुर्घटना", "बीमा", "सुरक्षा"],
+    "pmjjby":      ["life insurance", "insurance", "jeevan", "जीवन", "बीमा"],
+    "kcc":         ["credit", "loan", "kisan credit", "कर्ज़", "ऋण", "क्रेडिट"],
+    "nfbs":        ["death", "died", "family benefit", "मृत्यु", "देहांत", "परिवार लाभ"],
+    "pmfby":       ["crop", "fasal", "insurance", "harvest", "फ़सल", "बीमा", "खेती"],
+}
 
 
 class Assistant:
@@ -66,227 +93,233 @@ class Assistant:
 
     # ---- naming, in whatever language is loaded ----
 
-    def _doc_name(self, doc_id: str) -> str:
-        node = self.words.get("doc", {}).get(doc_id, {})
-        return node.get("name") or self.documents[doc_id].name
+    def doc_name(self, doc_id):
+        return self.words.get("doc", {}).get(doc_id, {}).get("name") \
+            or self.documents[doc_id].name
 
-    def _doc_issuer(self, doc_id: str) -> str:
-        node = self.words.get("doc", {}).get(doc_id, {})
-        return node.get("issuer") or self.documents[doc_id].issuer
+    def doc_issuer(self, doc_id):
+        return self.words.get("doc", {}).get(doc_id, {}).get("issuer") \
+            or self.documents[doc_id].issuer
 
-    def _scheme_field(self, scheme: Scheme, field_name: str) -> str:
+    def sch(self, scheme, field_name):
         node = self.words.get("scheme", {}).get(scheme.id, {})
-        fallback = {
-            "name": scheme.name,
-            "benefit": " ".join(scheme.benefit.split()),
-            "apply_at": scheme.apply_at,
-        }[field_name]
+        fallback = {"name": scheme.name,
+                    "benefit": " ".join(scheme.benefit.split()),
+                    "apply_at": scheme.apply_at}[field_name]
         return node.get(field_name) or fallback
 
-    def _criterion(self, scheme: Scheme, criterion) -> str:
-        node = self.words.get("criterion", {}).get(scheme.id, {})
-        return node.get(criterion.id) or criterion.text
+    def crit(self, scheme, criterion):
+        return self.words.get("criterion", {}).get(scheme.id, {}).get(criterion.id) \
+            or criterion.text
 
-    def _ui(self, key: str, default: str = "") -> str:
+    def ui(self, key, default=""):
         return self.words.get("ui", {}).get(key) or default
 
-    # ---- finding what the question is about ----
+    # ---- finding the subject ----
 
-    def _find_document(self, text: str) -> str | None:
-        """Match on the name in the current language and on the English id.
+    def find_scheme(self, text):
+        """Longest name match first, then topic words, then shared vocabulary.
 
-        Somebody typing in Hindi should be understood, and so should somebody
-        typing "aadhaar" in Latin script, which is extremely common.
+        Three passes because people refer to schemes three ways: by the official
+        name, by what it is for, and by a word from the benefit description.
         """
+        folded, tokens = fold(text), words_of(text)
+
+        best, best_len = None, 0
+        for s in self.schemes:
+            for cand in (self.sch(s, "name"), s.name):
+                c = fold(cand)
+                if len(c) > 5 and c in folded and len(c) > best_len:
+                    best, best_len = s, len(c)
+        if best:
+            return best
+
+        scored = {}
+        by_id = {s.id: s for s in self.schemes}
+        for sid, topics in TOPICS.items():
+            if sid not in by_id:
+                continue
+            hits = sum(1 for kw in topics if fold(kw) in folded)
+            if hits:
+                scored[sid] = hits * 10
+        if scored:
+            return by_id[max(scored, key=scored.get)]
+
+        for s in self.schemes:
+            shared = tokens & (words_of(self.sch(s, "name")) | words_of(self.sch(s, "benefit")))
+            if shared:
+                scored[s.id] = len(shared)
+        return by_id[max(scored, key=scored.get)] if scored else None
+
+    def find_doc(self, text):
         folded = fold(text)
         best, best_len = None, 0
-        for doc in self.documents:
-            for candidate in (self._doc_name(doc.id), doc.name, doc.id.replace("_", " ")):
-                c = fold(candidate)
-                if c and c in folded and len(c) > best_len:
-                    best, best_len = doc.id, len(c)
+        for d in self.documents:
+            for cand in (self.doc_name(d.id), d.name, d.id.replace("_", " ")):
+                c = fold(cand)
+                if len(c) > 3 and c in folded and len(c) > best_len:
+                    best, best_len = d.id, len(c)
         return best
 
-    def _find_scheme(self, text: str) -> Scheme | None:
-        folded = fold(text)
-        best, best_len = None, 0
-        for scheme in self.schemes:
-            for candidate in (self._scheme_field(scheme, "name"), scheme.name,
-                              scheme.id.replace("_", " ")):
-                c = fold(candidate)
-                # Short ids like "apy" would match inside unrelated words.
-                if len(c) < 4:
-                    continue
-                if c in folded and len(c) > best_len:
-                    best, best_len = scheme, len(c)
-        return best
-
-    # Keyword sets per intent, in the languages we ship. Crude on purpose: the
-    # cost of a wrong match is a wrong-but-checkable answer, and the cost of a
-    # miss is a polite refusal, so both are recoverable.
-    HOW = ("how do i get", "how to get", "how can i get", "where do i get",
-           "kaise", "कैसे", "कहाँ से", "कसे", "কীভাবে", "எப்படி")
-    WHAT = ("what is", "what's", "meaning of", "kya hai", "क्या है", "काय आहे",
-            "কী", "என்ன")
-    NEEDS = ("what do i need", "what is needed", "requirements", "documents for",
-             "kya chahiye", "क्या चाहिए", "ज़रूरी", "काय लागते", "কী লাগবে", "தேவை")
-    WHO = ("which scheme", "what scheme", "which schemes", "kaun si yojana",
-           "कौन सी योजना", "कोणती योजना", "কোন প্রকল্প", "எந்தத் திட்டம்")
-    WHERE = ("where do i apply", "where to apply", "kahan jaana", "कहाँ जाएँ",
-             "कहाँ जाना", "कुठे जायचे", "কোথায় যাব", "எங்கே")
-    PRIVATE = ("private", "safe", "data", "store", "privacy", "सुरक्षित",
-               "निजी", "डेटा", "गोपनीय")
+    HOW    = ("how do i get","how to get","how can i get","where do i get","how do i make",
+              "kaise","कैसे","कहाँ से","बनवा","कसे","কীভাবে","எப்படி")
+    WHAT   = ("what is","what's","meaning","tell me about","about","kya hai","क्या है",
+              "के बारे","बताइए","बताओ","काय आहे","কী","என்ன")
+    NEEDS  = ("what do i need","need for","required","requirement","eligib","qualify",
+              "criteria","kya chahiye","क्या चाहिए","ज़रूरी","पात्र","योग्य","शर्त",
+              "काय लागते","কী লাগবে","தேவை")
+    DOCS   = ("which document","what document","papers for","documents for","kaunse kagaz",
+              "कौन से कागज़","कागज़","दस्तावेज़")
+    WHERE  = ("where do i apply","where to apply","where should i go","kahan","कहाँ",
+              "कुठे","কোথায়","எங்கே")
+    LIST   = ("what schemes","which schemes","list","all schemes","show me schemes",
+              "kya kya","कौन कौन","कौन सी योजना","सारी योजना","योजनाएँ","सब योजना")
+    WHO    = ("which scheme needs","who needs","what needs this","kis yojana",
+              "किस योजना","किन योजना")
+    PRIVATE= ("private","safe","secure","my data","privacy","सुरक्षित","निजी","डेटा","गोपनीय")
 
     def ask(self, question: str) -> Answer:
         folded = fold(question)
         if not folded:
-            return self._dunno()
+            return self.dunno()
 
         if any(k in folded for k in self.PRIVATE):
-            return Answer(
-                intent=Intent.PRIVACY,
-                text=self._ui("privacy", "Your answers stay on this device."),
-                bullets=[
-                    self._ui("assist_privacy_1",
-                             "Nothing is sent over the internet."),
-                    self._ui("assist_privacy_2",
-                             "Nothing is saved after you close the page."),
-                    self._ui("assist_privacy_3",
-                             "We never ask for your Aadhaar number, only whether "
-                             "your account is linked."),
-                ],
-            )
+            return Answer(Intent.PRIVACY, self.ui("privacy", "Your answers stay here."),
+                          [self.ui("assist_privacy_1", "Nothing is sent over the internet."),
+                           self.ui("assist_privacy_2", "Nothing is saved."),
+                           self.ui("assist_privacy_3", "We never ask for your Aadhaar number.")])
 
-        doc = self._find_document(question)
-        scheme = self._find_scheme(question)
+        doc = self.find_doc(question)
 
-        if doc and any(k in folded for k in self.HOW):
-            return self._how_to_get(doc)
-        if doc and any(k in folded for k in self.WHO):
-            return self._who_needs(doc)
-        if doc and any(k in folded for k in self.WHAT):
-            return self._what_is_doc(doc)
-
-        if scheme and any(k in folded for k in self.WHERE):
-            return self._where_to_apply(scheme)
-        if scheme and any(k in folded for k in (*self.NEEDS, *self.HOW)):
-            return self._scheme_needs(scheme)
-        if scheme:
-            return self._what_is_scheme(scheme)
-
-        # A bare document name with no question word is almost always "what is
-        # this", which is the commonest thing people type.
+        # A document question beats a scheme question when the document is
+        # named outright, because "how do I get a ration card" is about the
+        # card even though ration schemes exist.
         if doc:
-            return self._what_is_doc(doc)
+            if any(k in folded for k in self.HOW):
+                return self.doc_how(doc)
+            if any(k in folded for k in self.WHO):
+                return self.doc_who(doc)
+            scheme_named = any(fold(self.sch(s, "name")) in folded for s in self.schemes)
+            if not scheme_named:
+                return self.doc_about(doc)
 
-        return self._dunno()
+        if any(k in folded for k in self.LIST):
+            return self.list_schemes(question)
 
-    # ---- the answers ----
+        scheme = self.find_scheme(question)
+        if scheme:
+            if any(k in folded for k in self.DOCS):
+                return self.scheme_docs(scheme)
+            if any(k in folded for k in self.WHERE):
+                return self.scheme_where(scheme)
+            if any(k in folded for k in (*self.NEEDS, *self.HOW)):
+                return self.scheme_needs(scheme)
+            return self.scheme_about(scheme)
 
-    def _what_is_doc(self, doc_id: str) -> Answer:
-        doc = self.documents[doc_id]
-        wanted = [s for s in self.schemes if doc_id in s.documents]
-        bullets = [f"{self._ui('papers_where', 'Go to')}: {self._doc_issuer(doc_id)}"]
-        if doc.fee:
-            bullets.append(f"{self._ui('papers_cost', 'Cost')}: Rs {doc.fee}")
-        if doc.days:
-            bullets.append(self._ui("papers_time", "About {days} days")
-                           .replace("{days}", str(doc.days)))
-        if doc.note:
-            bullets.append(" ".join(doc.note.split()))
-        if wanted:
-            names = ", ".join(self._scheme_field(s, "name") for s in wanted[:4])
-            bullets.append(f"{self._ui('assist_used_by', 'Needed for')}: {names}")
-        return Answer(intent=Intent.WHAT_IS_DOC, text=self._doc_name(doc_id),
-                      bullets=bullets, subject=doc_id)
+        if doc:
+            return self.doc_about(doc)
+        return self.dunno()
 
-    def _how_to_get(self, doc_id: str) -> Answer:
+    # ---- answers ----
+
+    def list_schemes(self, question):
+        """All of them, or the ones matching a topic word in the question."""
+        folded = fold(question)
+        by_id = {s.id: s for s in self.schemes}
+        picked = [by_id[sid] for sid, topics in TOPICS.items()
+                  if sid in by_id and any(fold(k) in folded for k in topics)]
+        chosen = picked or self.schemes
+        return Answer(
+            Intent.LIST_SCHEMES,
+            self.ui("assist_list", "Schemes in this app") + f" ({len(chosen)})",
+            [self.sch(s, "name") for s in chosen],
+            suggestions=[f"{self.ui('assist_eg_needs','What do I need for')} "
+                         f"{self.sch(chosen[0], 'name')}?"] if chosen else [],
+        )
+
+    def scheme_about(self, s):
+        return Answer(Intent.SCHEME_ABOUT, self.sch(s, "name"), [
+            self.sch(s, "benefit"),
+            f"{self.ui('apply_at','Go to')}: {self.sch(s,'apply_at')}",
+        ], subject=s.id, suggestions=[
+            f"{self.ui('assist_eg_needs','What do I need for')} {self.sch(s,'name')}?",
+        ])
+
+    def scheme_needs(self, s):
+        bullets = [self.crit(s, c) for c in s.criteria]
+        if s.documents:
+            names = ", ".join(self.doc_name(d) for d in s.documents if d in self.documents)
+            bullets.append(f"{self.ui('assist_papers','Papers')}: {names}")
+        return Answer(Intent.SCHEME_NEEDS, self.sch(s, "name"), bullets, subject=s.id)
+
+    def scheme_docs(self, s):
+        have = [d for d in s.documents if d in self.documents]
+        return Answer(Intent.SCHEME_DOCS, self.sch(s, "name"),
+                      [self.doc_name(d) for d in have]
+                      or [self.ui("assist_none", "No papers listed.")],
+                      subject=s.id,
+                      suggestions=[f"{self.ui('assist_eg_how','How do I get')} "
+                                   f"{self.doc_name(have[0])}?"] if have else [])
+
+    def scheme_where(self, s):
+        return Answer(Intent.SCHEME_WHERE, self.sch(s, "name"),
+                      [self.sch(s, "apply_at")], subject=s.id)
+
+    def doc_about(self, doc_id):
+        d = self.documents[doc_id]
+        used = [s for s in self.schemes if doc_id in s.documents]
+        bullets = [f"{self.ui('papers_where','Go to')}: {self.doc_issuer(doc_id)}"]
+        if d.fee:
+            bullets.append(f"{self.ui('papers_cost','Cost')}: Rs {d.fee}")
+        if d.days:
+            bullets.append(self.ui("papers_time", "About {days} days").replace("{days}", str(d.days)))
+        if d.note:
+            bullets.append(" ".join(d.note.split()))
+        if used:
+            bullets.append(f"{self.ui('assist_used_by','Needed for')}: "
+                           + ", ".join(self.sch(s, "name") for s in used[:4]))
+        return Answer(Intent.DOC_ABOUT, self.doc_name(doc_id), bullets, subject=doc_id,
+                      suggestions=[f"{self.ui('assist_eg_how','How do I get')} "
+                                   f"{self.doc_name(doc_id)}?"])
+
+    def doc_how(self, doc_id):
         try:
             route = plan(self.documents, [doc_id], held=set())
         except Unreachable:
-            return Answer(intent=Intent.HOW_TO_GET_DOC,
-                          text=self._doc_name(doc_id),
-                          bullets=[self._ui("assist_no_route",
-                                            "We could not work out a route to this one.")])
-        steps = [
-            {
-                "name": self._doc_name(s.id),
-                "issuer": self._doc_issuer(s.id),
-                "fee": s.document.fee,
-                "days": s.document.days,
-                "trips": s.document.trips,
-            }
-            for s in route.steps
-        ]
+            return Answer(Intent.DOC_HOW, self.doc_name(doc_id),
+                          [self.ui("assist_no_route", "No route found.")])
         return Answer(
-            intent=Intent.HOW_TO_GET_DOC,
-            text=self._doc_name(doc_id),
-            bullets=[self._ui("papers_summary", "About {trips} trips, Rs {fee}, {days} days")
-                     .replace("{trips}", str(route.trips))
-                     .replace("{fee}", str(route.fee))
-                     .replace("{days}", str(route.days))],
-            steps=steps,
-            subject=doc_id,
-        )
+            Intent.DOC_HOW, self.doc_name(doc_id),
+            [self.ui("papers_summary", "About {trips} trips, Rs {fee}, {days} days")
+                 .replace("{trips}", str(route.trips))
+                 .replace("{fee}", str(route.fee))
+                 .replace("{days}", str(route.days))],
+            steps=[{"name": self.doc_name(s.id), "issuer": self.doc_issuer(s.id),
+                    "fee": s.document.fee, "days": s.document.days,
+                    "trips": s.document.trips} for s in route.steps],
+            subject=doc_id)
 
-    def _who_needs(self, doc_id: str) -> Answer:
-        wanted = [s for s in self.schemes if doc_id in s.documents]
-        return Answer(
-            intent=Intent.WHO_NEEDS_DOC,
-            text=self._doc_name(doc_id),
-            bullets=[self._scheme_field(s, "name") for s in wanted]
-                    or [self._ui("assist_none", "No scheme in our list needs this.")],
-            subject=doc_id,
-        )
+    def doc_who(self, doc_id):
+        used = [s for s in self.schemes if doc_id in s.documents]
+        return Answer(Intent.DOC_WHO, self.doc_name(doc_id),
+                      [self.sch(s, "name") for s in used]
+                      or [self.ui("assist_none", "No scheme in this app needs it.")],
+                      subject=doc_id)
 
-    def _what_is_scheme(self, scheme: Scheme) -> Answer:
-        return Answer(
-            intent=Intent.WHAT_IS_SCHEME,
-            text=self._scheme_field(scheme, "name"),
-            bullets=[
-                self._scheme_field(scheme, "benefit"),
-                f"{self._ui('apply_at', 'Go to')}: {self._scheme_field(scheme, 'apply_at')}",
-            ],
-            subject=scheme.id,
-        )
+    def dunno(self):
+        """Say so, and hand back questions that do work.
 
-    def _scheme_needs(self, scheme: Scheme) -> Answer:
-        bullets = [self._criterion(scheme, c) for c in scheme.criteria]
-        if scheme.documents:
-            names = ", ".join(self._doc_name(d) for d in scheme.documents
-                              if d in self.documents)
-            bullets.append(f"{self._ui('assist_papers', 'Papers')}: {names}")
-        return Answer(intent=Intent.SCHEME_NEEDS,
-                      text=self._scheme_field(scheme, "name"),
-                      bullets=bullets, subject=scheme.id)
-
-    def _where_to_apply(self, scheme: Scheme) -> Answer:
-        return Answer(intent=Intent.WHERE_TO_APPLY,
-                      text=self._scheme_field(scheme, "name"),
-                      bullets=[self._scheme_field(scheme, "apply_at")],
-                      subject=scheme.id)
-
-    def _dunno(self) -> Answer:
-        """Say so, and show what can be asked instead.
-
-        Offering examples turns a dead end into a working query, which matters
-        far more here than pretending to have understood.
+        A dead end that shows three working examples turns into a useful query
+        far more often than one that just apologises.
         """
-        examples = []
-        if self.documents.ids:
-            first = self._doc_name("ration_card") if "ration_card" in self.documents \
-                    else self._doc_name(self.documents.ids[0])
-            examples.append(f"{self._ui('assist_eg_how', 'How do I get')} {first}?")
-            examples.append(f"{self._ui('assist_eg_what', 'What is')} {first}?")
+        eg = []
         if self.schemes:
-            examples.append(
-                f"{self._ui('assist_eg_needs', 'What do I need for')} "
-                f"{self._scheme_field(self.schemes[0], 'name')}?"
-            )
-        return Answer(
-            intent=Intent.UNKNOWN,
-            text=self._ui("assist_unknown",
-                          "I do not know that one. I can only answer about the "
-                          "schemes and papers in this app."),
-            suggestions=examples,
-        )
+            eg.append(self.ui("chat_eg_list", "What schemes are there?"))
+            eg.append(f"{self.ui('assist_eg_needs','What do I need for')} "
+                      f"{self.sch(self.schemes[0], 'name')}?")
+        if "ration_card" in self.documents:
+            eg.append(f"{self.ui('assist_eg_how','How do I get')} "
+                      f"{self.doc_name('ration_card')}?")
+        return Answer(Intent.UNKNOWN,
+                      self.ui("assist_unknown", "I do not know that one."),
+                      suggestions=eg)

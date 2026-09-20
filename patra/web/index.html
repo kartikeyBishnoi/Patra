@@ -249,15 +249,27 @@ async function api(path, body) {
 /* Voice uses the browser's own synthesiser, so it needs no network and no
    model. Where a language has no voice installed the button is simply quiet,
    which is why text is never replaced by audio. */
+function bestVoice() {
+  const want = S.speech.toLowerCase();
+  const all = speechSynthesis.getVoices();
+  return all.find(v => v.lang && v.lang.toLowerCase() === want)
+      || all.find(v => v.lang && v.lang.toLowerCase().startsWith(want.slice(0,2)))
+      || null;
+}
+
 function say(text) {
   if (!("speechSynthesis" in window) || !text) return;
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = S.speech; u.rate = .92;
-  const v = speechSynthesis.getVoices().find(v =>
-    v.lang && v.lang.toLowerCase().startsWith(S.speech.slice(0,2)));
-  if (v) u.voice = v;
-  speechSynthesis.speak(u);
+  const voice = bestVoice();
+  // One utterance per clause. The browser voice is what it is, but reading a
+  // long sentence as a single breathless run is most of what makes it hard to
+  // follow, and splitting on punctuation fixes that much.
+  String(text).split(/(?<=[.!?।])\s+|,\s+/).filter(Boolean).forEach(part => {
+    const u = new SpeechSynthesisUtterance(part.trim());
+    u.lang = S.speech; u.rate = .85; u.pitch = 1.0;
+    if (voice) u.voice = voice;
+    speechSynthesis.speak(u);
+  });
 }
 
 function view() { const v = $("view"); v.innerHTML = ""; return v; }
@@ -363,7 +375,6 @@ function startScreen() {
   api("/api/documents?lang=" + S.lang).then(docs => {
     docs.forEach(d => {
       const b = el("button","opt");
-      b.appendChild(el("span","pic", PIC[d.id] || "📄"));
       b.appendChild(el("span", null, d.name));
       if (S.held.has(d.id)) b.classList.add("on");
       b.onclick = () => {
@@ -425,10 +436,12 @@ async function ask() {
     box.appendChild(inp);
     const nxt = el("button","cta", t("ui.next") || "Next");
     const send = () => {
-      const n = parseInt(inp.value, 10);
+      let n = parseInt(inp.value, 10);
       if (Number.isNaN(n)) return inp.focus();
-      if (q.low != null && n < q.low) return inp.focus();
-      if (q.high != null && n > q.high) return inp.focus();
+      if (q.low != null && n < q.low) n = q.low;
+      // Somebody typing 500 for their age has not told us they are 500. Cap it
+      // and show it back as "120+" rather than refusing the answer.
+      if (q.high != null && n > q.high) n = q.high;
       answer(q.attribute, n);
     };
     nxt.onclick = send;
@@ -509,6 +522,26 @@ function renderResult() {
     n.appendChild(el("h2", null, t("ui.near_title")));
     d.near.forEach(x => n.appendChild(nearRow(x)));
     v.appendChild(n);
+  }
+
+  if (d.undecided && d.undecided.length) {
+    const u = el("div","card");
+    u.appendChild(el("h2", null, t("ui.undecided_title") || "Could not check these"));
+    u.appendChild(el("p","sub", t("ui.undecided_body") || ""));
+    d.undecided.forEach(x => {
+      const row = el("div","row");
+      row.appendChild(el("div","tag near","?"));
+      const txt = el("div","txt");
+      txt.appendChild(el("b", null, x.name));
+      txt.appendChild(el("div","sub",
+        (t("ui.undecided_need") || "We still need") + ": " + x.missing.join(", ")));
+      row.appendChild(txt);
+      u.appendChild(row);
+    });
+    const finish_ = el("button","cta mt", t("ui.undecided_go") || "Answer the rest");
+    finish_.onclick = ask;
+    u.appendChild(finish_);
+    v.appendChild(u);
   }
 
   if (d.paperwork && d.paperwork.steps.length) {

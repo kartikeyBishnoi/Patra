@@ -110,6 +110,8 @@ class Brain:
             return self.option_label(words, name, raw)
         unit = dig(words, "attr", name, "unit", default=attr.unit)
         text = f"{raw:,}" if isinstance(raw, int) else str(raw)
+        if attr.open_ended and attr.high is not None and raw >= attr.high:
+            text += "+"
         return f"{text} {unit}" if unit else text
 
     # ---- the interview ----
@@ -165,10 +167,20 @@ class Brain:
                 "claims": [], "near": [], "paperwork": None,
             }
 
-        claims, near = [], []
+        claims, near, undecided = [], [], []
         for scheme in self.schemes:
             state = status(self.engine, scheme, known)
-            if state is Status.OPEN or state is Status.INELIGIBLE:
+            if state is Status.INELIGIBLE:
+                continue
+            if state is Status.OPEN:
+                # Skipping a question used to make these vanish silently, so a
+                # scheme somebody might well qualify for simply never appeared.
+                missing = sorted(scheme.attributes_used - set(known.facts))
+                undecided.append({
+                    "id": scheme.id,
+                    "name": self.scheme_text(words, scheme, "name"),
+                    "missing": [self.attr_label(words, m) for m in missing],
+                })
                 continue
 
             verdict = self.engine.adjudicate(scheme, known)
@@ -193,6 +205,7 @@ class Brain:
         near.sort(key=lambda n: n["effort"])
         return {
             "clashes": [], "claims": claims, "near": near, "paperwork": paper,
+            "undecided": undecided,
             "targets": sorted({d for s in winners for d in s.documents}),
         }
 

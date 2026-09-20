@@ -24,6 +24,12 @@ strings:
     "no": "No"
     dont_know: I am not sure
     print: Print this page
+    assist_list: Schemes in this app
+    chat_eg_list: What schemes are there?
+    undecided_title: Could not check these
+    undecided_body: You skipped a question these depend on. Answer it and we can check them too.
+    undecided_need: We still need
+    undecided_go: Answer the rest
     start_over: Start again
     question_of: "Question {n}"
     why_asking: We ask this only because one of the schemes depends on it.
