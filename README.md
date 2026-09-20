@@ -2,30 +2,71 @@
 
 **पात्र, "eligible"**
 
-Tells a rural household what government schemes they can claim, why they were
-refused the others, and exactly which papers to collect in which order.
+A household in a village answers a few questions and finds out which government
+schemes they can claim, why they were refused the others, and exactly which
+papers to collect in what order.
 
-Everything runs on the device. There is no server to call, because the
-reasoning is a constraint solver and a few YAML files rather than a model that
-needs one. Answers about caste, income and disability never leave the machine,
-and that is a property of the architecture rather than a promise in a policy.
+The whole thing runs on the device. There is no server to call and no account to
+make, because the reasoning is a constraint solver and a few YAML files rather
+than a model that needs hosting. Answers about caste, income and disability never
+leave the machine, which is a property of how it is built rather than a promise
+in a policy.
 
 Nothing here is trained. There are no weights, no dataset, no model.
 
 ---
 
-## Languages
+## Why
 
-English, Hindi, Marathi, Bengali and Tamil. The language is chosen once on the
-first screen, with each name written in its own script, and remembered after
-that. It can be changed any time from the button in the header.
+India's own audit record documents the problem. The Comptroller and Auditor
+General reports that over 69 percent of the genuinely poor lack a BPL card and
+that leakage in the Public Distribution System runs at 36 percent, and describes
+wrongful exclusion as systemic rather than accidental. Courts have repeatedly
+held that clerical errors cannot be grounds to deny welfare rights, which would
+not need restating if it were rare.
 
-Only English and Hindi have been checked properly. The rest are flagged in the
-picker and fall back to English key by key. Adding a language is a data task,
-no code: see [docs/LANGUAGES.md](docs/LANGUAGES.md).
+The practical failure is narrower than the statistics suggest. A family is told
+to bring an income certificate, walks to the tehsil office, and is turned away
+because they needed a ration card first. They go again. Each trip is a lost day
+of wages. Nobody ever tells them the order.
 
-Every question and result can be read aloud by tapping the speaker, using the
-browser's own synthesiser so it works with no network.
+## What it does
+
+**Finds the claims.** Twenty schemes checked against every member of the
+household and against the household itself, so a pension for the grandmother, a
+savings account for the daughter and a crop payment for whoever farms all come
+out of one conversation.
+
+**Explains refusals.** Not "you do not qualify" but the irreducible reason:
+
+```
+Indira Gandhi National Widow Pension
+  To get this you need: a bank account linked to Aadhaar
+  You told us:          Bank account linked to Aadhaar, no
+
+  What would change it: Bank account linked to Aadhaar, no to yes
+                        This is only paperwork
+```
+
+That one free errand also unlocks two insurance schemes.
+
+**Plans the paperwork.** Document requirements are not a chain. An income
+certificate wants proof of identity, proof of address and proof of age, and each
+accepts several alternatives, which makes the whole structure an AND-OR graph.
+The app searches it and returns an ordered route with offices, fees and how many
+trips each takes.
+
+**Says when nothing will help.** If a refusal rests on age or caste, the app
+names the blocker and offers no advice. A system that always has a suggestion is
+a system that sometimes lies.
+
+**Asks as little as it can.** Questions stop the moment the answers are settled,
+and the sensitive ones go last, so in most interviews caste and disability never
+come up at all.
+
+**Shows its working.** Every result has a panel that opens into the actual
+derivation: what was encoded, what the solver found, how the smallest reason was
+isolated and at what cost, and how the repair was chosen.
 
 ## Running it
 
@@ -33,102 +74,65 @@ browser's own synthesiser so it works with no network.
 pip3 install -r requirements.txt
 ```
 
-The app:
-
 ```bash
 python3 -m patra.web.server
 ```
 
-Then open `http://127.0.0.1:8765`. Pick a language, tap the papers you already
-hold, and answer a short series of questions. It stops as soon as the answers
-are settled, then shows what the family can claim, what is one errand away, and
-the paperwork route in order. The result page prints, so it can be carried to
-the office or checked by a literate neighbour.
+Open `http://127.0.0.1:8765`. Pick a language, tap the papers you already hold,
+answer the questions. Opening `index.html` straight off the disk will not work,
+because the page needs the app running behind it; it says so rather than sitting
+blank.
 
-Opening `index.html` straight off the disk will not work: the page needs the
-app running behind it. It says so rather than sitting blank.
-
-From the terminal:
+There is a terminal interface too:
 
 ```bash
 python3 -m patra.cli screen --household sunita
-```
-
-```bash
 python3 -m patra.cli plan --household munni
-```
-
-```bash
 python3 -m patra.cli ask
-```
-
-```bash
 python3 -m patra.cli documents
 ```
 
-## What it does
+## Languages
 
-**Finds the claims.** Twenty schemes, checked against every member of the
-household and against the household itself. A pension for the grandmother, a
-savings account for the daughter and a crop payment for whoever farms all come
-out of one conversation.
+English, Hindi, Marathi, Bengali and Tamil. The language is chosen once, with
+each name written in its own script, and remembered after that. It can be changed
+from the header at any time. Questions and results can be read aloud.
 
-**Explains refusals.** Not "you do not qualify" but the irreducible reason:
-
-```
-Indira Gandhi National Widow Pension for sunita
-  The rule says: Payment needs a bank account linked to Aadhaar
-  Your answer:   Bank account linked to Aadhaar: no
-
-  Bank account linked to Aadhaar: no -> yes   (paperwork only)
-```
-
-That one free errand also unlocks two insurance schemes.
-
-**Plans the paperwork.** The thing that actually defeats people is being told
-to bring an income certificate, walking to the tehsil office, and finding out
-they needed a ration card first. Document requirements form an AND-OR graph, so
-the app searches it and returns an ordered route:
-
-```
-1. Passport photographs      Rs 60, 1 trip
-   After this you can apply for:
-     - MGNREGA job card
-     - Antyodaya Anna Yojana ration card
-2. Bank account in your own name
-   ...
-```
-
-**Says when nothing will help.** If the refusal rests on age or caste, the app
-names the blocker and offers no advice, because a system that always has a
-suggestion is a system that sometimes lies.
-
-**Asks as little as it can.** Questions stop the moment the answers are
-settled, and sensitive ones go last, so in most interviews caste and disability
-never come up at all.
+English and Hindi are complete and checked. Marathi, Bengali and Tamil have their
+interface, questions, scheme names and document names translated, but not the
+criterion texts that explain a refusal, so those still appear in English. All
+three are flagged in the picker. Adding or finishing a language is a data task
+with no code involved: see [docs/LANGUAGES.md](docs/LANGUAGES.md).
 
 ## How it works
 
 ```
-answers -> constraint encoding -> Z3 -> QuickXPlain / MARCO / hitting sets
+answers -> constraint encoding -> Z3 -> QuickXPlain, MARCO, hitting sets
                                      -> AND-OR search over documents
                                      -> templated explanation
 ```
 
-| Layer | What it is |
+| Layer | Technique |
 |---|---|
 | Eligibility | constraint satisfaction |
 | Why refused | minimal unsatisfiable subsets, via QuickXPlain |
 | All the reasons | MARCO traversal of the subset lattice |
 | What would fix it | minimal correction sets, restricted to changeable facts |
 | Which paper first | minimum-cost AND-OR search |
-| Which questions | adaptive test selection |
-| Did we mishear | domain axioms plus the same conflict detection |
+| Which question next | adaptive test selection |
+| Did we mishear | domain axioms and the same conflict detection |
+| Questions in plain words | keyword intent matching over the knowledge base |
 
-The mathematics is load-bearing rather than decorative. Minimal correction sets
-are exactly the minimal hitting sets of the minimal conflicts, which is why one
-traversal of the lattice answers both "why not" and "what now". We check that
-on our own instances rather than citing it.
+The mathematics carries weight rather than decorating. Minimal correction sets
+are exactly the minimal hitting sets of the minimal conflicts, which is why a
+single traversal of the subset lattice answers both "why not" and "what now". We
+verify that on our own instances rather than citing it and moving on.
+
+The assistant answers from the knowledge base, not a language model. A language
+model would read phrasing far better and would also, now and then, state fluently
+that somebody qualifies for a pension they do not, in a way the reader cannot
+detect. Between a tool that sometimes says "ask me differently" and one that
+sometimes invents an entitlement, only the first is defensible here.
 
 ## Layout
 
@@ -138,44 +142,39 @@ patra/
   encode/     YAML loader, Z3 compiler
   reason/     oracle, quickxplain, marco, hitting sets,
               planner, unlock, questions, consistency, sensitivity
-  explain/    templated rendering
-  web/        local server and the app itself
+  explain/    templated rendering and the derivation trace
+  web/        local server and the app
+  assist.py   the question answerer
   engine.py   adjudication and household screening
   cli.py      terminal interface
 data/
-  attributes.yaml   33 attributes, with mutability and sensitivity
+  attributes.yaml   33 facts, with mutability and sensitivity
   schemes/          20 encoded schemes
   documents.yaml    17 documents and what each needs first
   axioms.yaml       what cannot be true of anybody
-  cases/            five households used for testing and the walkthrough
+  i18n/             five languages
+  cases/            five households used for testing
 tests/        129 tests
 eval/         six experiments
+docs/         limitations, languages, build plan
 ```
 
 ## Tests and measurements
 
 ```bash
 python3 -m pytest tests/ -q
-```
-
-```bash
 python3 eval/benchmark.py
 ```
 
-Measured, reproducible, nothing hard-coded:
+Measured by running the system, nothing hard-coded:
 
 | | |
 |---|---|
-| Finding a minimal reason | 1238 solver queries against 3671 for linear deletion, a 66% saving |
+| Finding a minimal reason | 1238 solver queries against 3671 for linear deletion, 66 percent fewer |
 | Growth with rulebook size | 17 queries at 160 criteria, against 162 |
 | Hitting-set duality | held in 106 of 106 refusals, both directions |
 | Acquisition planner | optimal on 12 of 12 targets, against exhaustive search |
-| Adaptive questioning | mean 7.0 questions instead of 12, a 42% saving |
-
-The questioning saving was 64% before we made the interview keep going when a
-refusal rests on something fixable. That costs extra questions and buys the
-ability to tell a widow her pension is one free errand away, which is worth
-more than the shorter interview.
+| Adaptive questioning | mean 7 questions instead of 12 |
 
 ## Adding a scheme
 
@@ -199,17 +198,34 @@ criteria:
 ```
 
 The engine is not welfare-specific. Swap the rulebook and the same machinery
-explains infeasible timetables or broken configurations.
+explains infeasible timetables or broken product configurations.
 
 ## Please read this before trusting it
 
-The twenty encoded schemes and the document requirements are **research
-artefacts, not authoritative**. They are transcribed from published criteria
-and simplified, and both vary by state and change over time. Verify against
-your own district before relying on anything here. See
-[docs/LIMITATIONS.md](docs/LIMITATIONS.md).
+**The encoded schemes and document requirements are research artefacts, not
+authoritative.** They were transcribed from published criteria and simplified.
+Thresholds vary by state, change over time, and are subject to administrative
+discretion we do not model. Nothing here should be relied on for a real
+application. Verify against the current notification at
+[scholarships.gov.in](https://scholarships.gov.in/),
+[myScheme](https://www.myscheme.gov.in/) or your own district office.
+
+Other limits, including where the effort estimates come from and what the
+evaluation does not prove, are in [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
+
+## Prior work
+
+[Haqdarshak](https://www.haqdarshak.com/) covers far more ground, with over
+6,000 schemes and a network of trained field agents. [myScheme](https://www.myscheme.gov.in/)
+is the government's own discovery portal. Both tell you which schemes you match.
+Neither tells you why you were excluded, what the smallest change would be, or
+which paper to collect first.
 
 ## Requirements
 
-Python 3.11 or newer, `z3-solver`, `PyYAML`. The web app is standard library
-only. No GPU, no network, no API keys.
+Python 3.11 or newer, `z3-solver`, `PyYAML`. The web app uses the standard
+library only. No GPU, no network, no API keys.
+
+## Licence
+
+MIT.
