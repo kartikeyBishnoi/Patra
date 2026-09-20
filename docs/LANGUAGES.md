@@ -12,15 +12,38 @@ and the picker marks them.
 |---|---|---|---|
 | `en` | English | yes | everything |
 | `hi` | हिन्दी | yes | everything, including all 71 criterion texts |
-| `mr` | मराठी | **no** | interface and questions |
-| `bn` | বাংলা | **no** | interface and questions |
-| `ta` | தமிழ் | **no** | interface and questions |
+| `mr` | मराठी | **no** | everything, criteria generated |
+| `bn` | বাংলা | **no** | everything, criteria generated |
+| `ta` | தமிழ் | **no** | everything, criteria generated |
 
 **Only English and Hindi are fit to put in front of a real applicant.** The
 other three were written without a native speaker and are flagged in the picker
 as "not checked yet". A wrong word in a question about caste or income sends
 somebody on a wasted trip to a government office, so please do not promote them
 until somebody who speaks the language has read every line.
+
+## Criteria you do not have to translate
+
+A criterion is not prose, it is a constraint tree, and every attribute label,
+enum option and unit is already translated. So `patra/explain/phrase.py` builds
+the sentence from the tree at read time out of a dozen fragments in the
+`phrase` section, and a language needs none of the seventy-one criterion texts
+to be readable.
+
+Hand-written text in `criterion` always wins where it exists, which is why
+English and Hindi read as natural sentences and the rest read as labelled
+requirements:
+
+    वय, 60 वर्षे किंवा त्याहून जास्त
+    রেশন কার্ড, এর মধ্যে একটি: অগ্রাধিকার কার্ড, অন্ত্যোদয় কার্ড
+
+Blunter than prose, and it cannot end up saying something untrue, which
+composing grammar out of labels in a language you do not speak very easily can.
+It also means a scheme added tomorrow is readable in all five languages at once.
+
+Each fragment carries its own `{v}` placeholder because word order moves.
+English puts the comparison before the number and Hindi after, so a prefix
+template would produce "उम्र, से ज़्यादा 60".
 
 ## Adding a language
 

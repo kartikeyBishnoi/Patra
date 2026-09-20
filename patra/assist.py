@@ -25,6 +25,7 @@ from enum import Enum
 
 from .model.document import DocumentGraph
 from .model.scheme import Scheme
+from .explain.phrase import criterion as say_criterion
 from .reason.planner import Unreachable, plan
 
 
@@ -86,10 +87,11 @@ TOPICS = {
 
 
 class Assistant:
-    def __init__(self, schemes: list[Scheme], documents: DocumentGraph, words: dict):
+    def __init__(self, schemes, documents: DocumentGraph, words: dict, schema=None):
         self.schemes = schemes
         self.documents = documents
         self.words = words
+        self.schema = schema
 
     # ---- naming, in whatever language is loaded ----
 
@@ -109,6 +111,8 @@ class Assistant:
         return node.get(field_name) or fallback
 
     def crit(self, scheme, criterion):
+        if self.schema is not None:
+            return say_criterion(self.schema, self.words, scheme.id, criterion)
         return self.words.get("criterion", {}).get(scheme.id, {}).get(criterion.id) \
             or criterion.text
 

@@ -141,6 +141,20 @@ strings:
     order: topological ordering
     order_head: Ordered so nothing is attempted before its inputs exist
 
+  phrase:
+    ge_val: "{v} or more"
+    le_val: "{v} or less"
+    gt_val: "more than {v}"
+    lt_val: "less than {v}"
+    ne_val: "not {v}"
+    one_of: "one of"
+    none_of: "not one of"
+    and: "and"
+    or: "or"
+    not: "not"
+    if_then: "if {a} then {b}"
+    join: ", "
+
   attr:
     age:
       label: Age

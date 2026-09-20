@@ -85,6 +85,20 @@ strings:
     error_title: काहीतरी चूक झाली
     error_body: कृपया पुन्हा सुरू करा.
 
+  phrase:
+    ge_val: "{v} किंवा त्याहून जास्त"
+    le_val: "{v} किंवा त्याहून कमी"
+    gt_val: "{v} पेक्षा जास्त"
+    lt_val: "{v} पेक्षा कमी"
+    ne_val: "{v} नाही"
+    one_of: "यापैकी एक"
+    none_of: "यापैकी कोणतेही नाही"
+    and: "आणि"
+    or: "किंवा"
+    not: "नाही"
+    if_then: "जर {a} तर {b}"
+    join: ", "
+
   attr:
     age:
       label: वय

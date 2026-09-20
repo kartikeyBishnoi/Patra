@@ -1,6 +1,6 @@
-# PATRA
+# PATRA (पात्र)
 
-**पात्र, "eligible"**
+"पात्र" means "eligible".
 
 A household in a village answers a few questions and finds out which government
 schemes they can claim, why they were refused the others, and exactly which
@@ -98,11 +98,19 @@ English, Hindi, Marathi, Bengali and Tamil. The language is chosen once, with
 each name written in its own script, and remembered after that. It can be changed
 from the header at any time. Questions and results can be read aloud.
 
-English and Hindi are complete and checked. Marathi, Bengali and Tamil have their
-interface, questions, scheme names and document names translated, but not the
-criterion texts that explain a refusal, so those still appear in English. All
-three are flagged in the picker. Adding or finishing a language is a data task
-with no code involved: see [docs/LANGUAGES.md](docs/LANGUAGES.md).
+Every language is complete end to end: interface, questions, options, scheme
+names, benefit descriptions, document names and the criterion texts that explain
+a refusal. The chatbot answers in whichever language is selected.
+
+English and Hindi carry hand-written criterion wording. The other three generate
+theirs from the constraint tree at read time, using about a dozen sentence
+fragments per language instead of seventy-one translations, so they read as
+labelled requirements ("वय, 60 वर्षे किंवा त्याहून जास्त") rather than prose.
+That also means a newly added scheme is readable in every language immediately,
+with no translation step. Marathi, Bengali and Tamil are still marked in the
+picker as awaiting a native speaker's review.
+
+See [docs/LANGUAGES.md](docs/LANGUAGES.md).
 
 ## How it works
 
@@ -122,6 +130,7 @@ answers -> constraint encoding -> Z3 -> QuickXPlain, MARCO, hitting sets
 | Which question next | adaptive test selection |
 | Did we mishear | domain axioms and the same conflict detection |
 | Questions in plain words | keyword intent matching over the knowledge base |
+| Rules read aloud in any language | sentence generation from the constraint tree |
 
 The mathematics carries weight rather than decorating. Minimal correction sets
 are exactly the minimal hitting sets of the minimal conflicts, which is why a

@@ -64,6 +64,20 @@ strings:
     error_title: ஏதோ தவறு நடந்துவிட்டது
     error_body: மீண்டும் தொடங்குங்கள்.
 
+  phrase:
+    ge_val: "{v} அல்லது அதற்கு மேல்"
+    le_val: "{v} அல்லது அதற்குக் கீழ்"
+    gt_val: "{v} க்கு மேல்"
+    lt_val: "{v} க்குக் கீழ்"
+    ne_val: "{v} இல்லை"
+    one_of: "இவற்றில் ஒன்று"
+    none_of: "இவற்றில் எதுவும் அல்ல"
+    and: "மற்றும்"
+    or: "அல்லது"
+    not: "இல்லை"
+    if_then: "{a} என்றால் {b}"
+    join: ", "
+
   attr:
     age: {label: வயது, unit: வயது, question: "உங்கள் வயது என்ன?"}
     gender:

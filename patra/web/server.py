@@ -31,6 +31,7 @@ from ..model.attributes import Kind
 from ..model.household import Profile
 from ..model.scheme import say
 from ..reason.questions import Status, next_question, status
+from ..explain.phrase import criterion as say_criterion
 from ..explain.trace import decision_trace, paperwork_trace
 from ..reason.unlock import ladder
 
@@ -89,7 +90,11 @@ class Brain:
         This is the explanation itself, so leaving it in English would undo
         the point of translating anything else.
         """
-        return dig(words, "criterion", scheme_id, rule.id, default=rule.text)
+        crit = next((c for s in self.schemes if s.id == scheme_id
+                     for c in s.criteria if c.id == rule.id), None)
+        if crit is None:
+            return dig(words, "criterion", scheme_id, rule.id, default=rule.text)
+        return say_criterion(self.schema, words, scheme_id, crit)
 
     def scheme_text(self, words, scheme, field: str) -> str:
         fallback = {"name": scheme.name, "benefit": " ".join(scheme.benefit.split()),
@@ -210,7 +215,7 @@ class Brain:
         }
 
     def answer(self, question: str, words) -> dict:
-        assistant = Assistant(self.schemes, self.documents, words)
+        assistant = Assistant(self.schemes, self.documents, words, self.schema)
         with self._lock:
             a = assistant.ask(question)
         return {

@@ -23,6 +23,7 @@ from ..reason.oracle import Oracle
 from ..reason.planner import Unreachable, acquire, plan
 from ..reason.quickxplain import deletion_mus, quickxplain
 from ..model.scheme import facts_as_labelled
+from .phrase import criterion as say_criterion
 
 
 def decision_trace(engine: Engine, scheme: Scheme, profile, words=None) -> dict:
@@ -37,8 +38,7 @@ def decision_trace(engine: Engine, scheme: Scheme, profile, words=None) -> dict:
         return text
 
     def criterion_text(c):
-        node = words.get("criterion", {}).get(scheme.id, {})
-        return node.get(c.id) or c.text
+        return say_criterion(engine.schema, words, scheme.id, c)
 
     def label(name):
         return words.get("attr", {}).get(name, {}).get("label") \

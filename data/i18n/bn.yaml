@@ -66,6 +66,20 @@ strings:
     error_title: কিছু একটা ভুল হয়েছে
     error_body: দয়া করে আবার শুরু করুন।
 
+  phrase:
+    ge_val: "{v} বা তার বেশি"
+    le_val: "{v} বা তার কম"
+    gt_val: "{v} এর বেশি"
+    lt_val: "{v} এর কম"
+    ne_val: "{v} নয়"
+    one_of: "এর মধ্যে একটি"
+    none_of: "এর মধ্যে কোনওটিই নয়"
+    and: "এবং"
+    or: "বা"
+    not: "নয়"
+    if_then: "যদি {a} তবে {b}"
+    join: ", "
+
   attr:
     age: {label: বয়স, unit: বছর, question: "আপনার বয়স কত?"}
     gender:
