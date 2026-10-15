@@ -1,0 +1,742 @@
+# What a sentence has to contain before we are willing to believe a fact.
+#
+# This is the vocabulary of the understanding layer. It is data rather than
+# code for the same reason the scheme rules are: somebody who speaks Marathi
+# can correct a phrase here without reading any Python, and a wrong phrase here
+# sends a real family to the wrong office.
+#
+# Nothing in this file decides anything. A match proposes a fact, the solver
+# adjudicates it, and anything proposed with low confidence is read back to the
+# person before it is used. See patra/guard.py.
+#
+# confidence  how much a phrase on its own is worth.
+#             high    the phrase means the fact and nothing else ("widow")
+#             medium  the phrase usually means it ("husband passed away")
+#             low     the phrase hints at it and must be confirmed
+#                     ("no husband" could be unmarried just as easily)
+
+numbers:
+
+  # Indic digits are written in their own script far more often than Latin
+  # digits in handwriting and in speech-to-text output.
+  digits:
+    devanagari: "०१२३४५६७८९"
+    bengali: "০১২৩৪৫৬৭৮৯"
+    tamil: "௦௧௨௩௪௫௬௭௮௯"
+    gujarati: "૦૧૨૩૪૫૬૭૮૯"
+
+  # Transliterated number words, which turn up in every language's typing
+  # because phone keyboards default to Latin.
+  shared:
+    one: 1
+    two: 2
+    three: 3
+    four: 4
+    five: 5
+    six: 6
+    seven: 7
+    eight: 8
+    nine: 9
+    ten: 10
+    eleven: 11
+    twelve: 12
+    fifteen: 15
+    sixteen: 16
+    eighteen: 18
+    nineteen: 19
+    twenty: 20
+    thirty: 30
+    forty: 40
+    fifty: 50
+    sixty: 60
+    sixty-five: 65
+    seventy: 70
+    eighty: 80
+    ninety: 90
+    hundred: 100
+    ek: 1
+    do: 2
+    teen: 3
+    char: 4
+    paanch: 5
+    panch: 5
+    chhe: 6
+    che: 6
+    saat: 7
+    aath: 8
+    nau: 9
+    das: 10
+    gyarah: 11
+    barah: 12
+    pandrah: 15
+    solah: 16
+    satrah: 17
+    atharah: 18
+    unnees: 19
+    bees: 20
+    bis: 20
+    pachees: 25
+    tees: 30
+    tis: 30
+    chalis: 40
+    chalees: 40
+    pachas: 50
+    pachaas: 50
+    pannas: 50
+    saath: 60
+    sath: 60
+    painsath: 65
+    sattar: 70
+    pachhattar: 75
+    assi: 80
+    ainshi: 80
+    nabbe: 90
+    navvad: 90
+    sau: 100
+    shambhar: 100
+
+  words:
+    hi:
+      एक: 1
+      दो: 2
+      तीन: 3
+      चार: 4
+      पाँच: 5
+      पांच: 5
+      छह: 6
+      सात: 7
+      आठ: 8
+      नौ: 9
+      दस: 10
+      बारह: 12
+      पंद्रह: 15
+      अठारह: 18
+      उन्नीस: 19
+      बीस: 20
+      पच्चीस: 25
+      तीस: 30
+      चालीस: 40
+      पचास: 50
+      साठ: 60
+      पैंसठ: 65
+      सत्तर: 70
+      पचहत्तर: 75
+      अस्सी: 80
+      नब्बे: 90
+      सौ: 100
+    mr:
+      एक: 1
+      दोन: 2
+      तीन: 3
+      चार: 4
+      पाच: 5
+      सहा: 6
+      सात: 7
+      आठ: 8
+      नऊ: 9
+      दहा: 10
+      अठरा: 18
+      वीस: 20
+      तीस: 30
+      चाळीस: 40
+      पन्नास: 50
+      साठ: 60
+      सत्तर: 70
+      ऐंशी: 80
+      नव्वद: 90
+      शंभर: 100
+    bn:
+      এক: 1
+      দুই: 2
+      তিন: 3
+      চার: 4
+      পাঁচ: 5
+      ছয়: 6
+      সাত: 7
+      আট: 8
+      নয়: 9
+      দশ: 10
+      আঠারো: 18
+      বিশ: 20
+      ত্রিশ: 30
+      চল্লিশ: 40
+      পঞ্চাশ: 50
+      ষাট: 60
+      সত্তর: 70
+      আশি: 80
+      নব্বই: 90
+      একশো: 100
+    ta:
+      ஒன்று: 1
+      இரண்டு: 2
+      மூன்று: 3
+      நான்கு: 4
+      ஐந்து: 5
+      ஆறு: 6
+      ஏழு: 7
+      எட்டு: 8
+      ஒன்பது: 9
+      பத்து: 10
+      இருபது: 20
+      முப்பது: 30
+      நாற்பது: 40
+      ஐம்பது: 50
+      அறுபது: 60
+      எழுபது: 70
+      எண்பது: 80
+      தொண்ணூறு: 90
+      நூறு: 100
+
+  # A scale word multiplies whatever came before it. "do lakh" is 200000, and
+  # a bare "lakh" is 100000 rather than an error.
+  scales:
+    thousand: 1000
+    hazaar: 1000
+    hazar: 1000
+    hajar: 1000
+    हज़ार: 1000
+    हजार: 1000
+    হাজার: 1000
+    ஆயிரம்: 1000
+    lakh: 100000
+    lac: 100000
+    lakhs: 100000
+    लाख: 100000
+    লাখ: 100000
+    লক্ষ: 100000
+    லட்சம்: 100000
+    crore: 10000000
+    करोड़: 10000000
+    कोटी: 10000000
+    কোটি: 10000000
+
+# "About a lakh" is not a figure, it is an estimate, and treating it as one is
+# how somebody gets told they are over a threshold they may well be under.
+hedges:
+  - around
+  - about
+  - roughly
+  - approximately
+  - nearly
+  - almost
+  - maybe
+  - some
+  - or so
+  - ish
+  - lagbhag
+  - karib
+  - qareeb
+  - takriban
+  - andaza
+  - shayad
+  - लगभग
+  - करीब
+  - क़रीब
+  - तकरीबन
+  - अंदाज़
+  - शायद
+  - के आसपास
+  - जितना
+  - सुमारे
+  - अंदाजे
+  - প্রায়
+  - মোটামুটি
+  - சுமார்
+  - ஏறக்குறைய
+
+# YAML 1.1 reads a bare `no` as the boolean false, which is the same trap
+# documented in docs/LANGUAGES.md. Quoted, and the loader coerces anyway.
+negations:
+  - not
+  - "no"
+  - none
+  - nobody
+  - no one
+  - noone
+  - none of us
+  - never
+  - without
+  - dont
+  - "don't"
+  - doesnt
+  - "doesn't"
+  - nahi
+  - nahin
+  - nai
+  - koi nahi
+  - bilkul nahi
+  - naste
+  - नहीं
+  - नही
+  - ना
+  - कोई नहीं
+  - बिल्कुल नहीं
+  - नाही
+  - नसलेले
+  - নেই
+  - নয়
+  - না
+  - இல்லை
+  - இல்ல
+
+# Wanting a thing is not having it.
+#
+# "Mujhe pension chahiye" means somebody is asking for a pension, and reading
+# it as somebody who already draws one rules them out of the pension they came
+# to ask about. That is the exact failure this project exists to prevent, and
+# it is structural rather than a bad phrase: a possession cue inside a clause
+# that expresses a wish or asks a question is not an assertion.
+#
+# Scoped to the clause and skipped where the cue contains the marker itself,
+# so "kaam chahiye" still reads as wanting work, because there the wish is
+# the fact.
+inquiries:
+  - want
+  - wants
+  - need
+  - needs
+  - looking for
+  - apply for
+  - applying
+  - how do i
+  - how can i
+  - how much
+  - how many
+  - how to
+  - what is
+  - what are
+  - which
+  - where
+  - who can
+  - should i
+  - can i get
+  - give me
+  - tell me
+  - chahiye
+  - chahie
+  - milega
+  - milegi
+  - kaise
+  - kaisa
+  - kitna
+  - kahan
+  - batao
+  - bataiye
+  - चाहिए
+  - चाहिये
+  - मिलेगा
+  - मिलेगी
+  - कैसे
+  - कितना
+  - कहाँ
+  - बताओ
+  - बताइए
+  - लेना है
+  - हवे
+  - कसे
+  - किती
+  - कुठे
+  - सांगा
+  - দরকার
+  - কীভাবে
+  - কত
+  - কোথায়
+  - বলুন
+  - வேண்டும்
+  - எப்படி
+  - எவ்வளவு
+  - எங்கே
+  - சொல்லுங்கள்
+
+# Who the answers are about. The interview asks "how old are you", but people
+# arrive asking on behalf of somebody: a mother, a father, a daughter. Getting
+# this wrong attaches a widow's pension to the wrong person, so it is reported
+# back rather than assumed, and a relation that implies a gender says so.
+#
+# first_person marks the possessives that introduce the subject. "Meri maa ka
+# husband nahi hai" mentions two relatives and is about the first one, so a
+# relation introduced by "my" outranks one introduced by "their", and position
+# settles the rest.
+first_person:
+  - my
+  - mine
+  - mera
+  - meri
+  - mere
+  - hamari
+  - hamara
+  - apni
+  - apna
+  - मेरा
+  - मेरी
+  - मेरे
+  - हमारी
+  - हमारा
+  - अपनी
+  - माझा
+  - माझी
+  - आमचा
+  - আমার
+  - আমাদের
+  - என்
+  - எனது
+
+relations:
+  self:
+    phrases: [i am, my own, mera, meri, mujhe, मैं, मेरा, मेरी, माझे, আমার, என்]
+  mother:
+    phrases: [my mother, mother, mummy, maa, maaji, ammi, aai, मां, माँ, माता, माताजी, आई, মা, আম্মা, அம்மா]
+    implies: {gender: female}
+  father:
+    phrases: [my father, father, papa, pita, abba, baba, पिता, पिताजी, बाप, वडील, বাবা, অপ্পা, அப்பா]
+    implies: {gender: male}
+  wife:
+    phrases: [my wife, wife, patni, biwi, बीवी, पत्नी, बायको, স্ত্রী, மனைவி]
+    implies: {gender: female}
+  husband:
+    phrases: [my husband, husband, pati, shauhar, पति, नवरा, স্বামী, கணவர்]
+    implies: {gender: male}
+  daughter:
+    phrases: [my daughter, daughter, beti, ladki, बेटी, लड़की, मुलगी, মেয়ে, মেয়ে, மகள்]
+    implies: {gender: female}
+  son:
+    phrases: [my son, son, beta, ladka, बेटा, लड़का, मुलगा, ছেলে, மகன்]
+    implies: {gender: male}
+  grandmother:
+    phrases: [grandmother, dadi, nani, दादी, नानी, आजी, ঠাকুমা, பாட்டி]
+    implies: {gender: female}
+  grandfather:
+    phrases: [grandfather, dada, nana, दादा, नाना, आजोबा, ঠাকুরদা, தாத்தா]
+    implies: {gender: male}
+
+# One block per attribute in data/attributes.yaml. Only the attributes a person
+# plausibly volunteers are here; the rest are asked.
+#
+# anchors   for a number: the words that say which number this is. A number
+#           with no anchor near it is not used at all, because "62" on its own
+#           could be an age, an income or a house number.
+# high/low/medium
+#           for a bool or an enum: phrases that assert the value.
+attributes:
+
+  age:
+    kind: int
+    anchors:
+      - age
+      - aged
+      - i am
+      - he is
+      - she is
+      - years old
+      - year old
+      - years of age
+      - aged
+      - saal
+      - sal
+      - varsh
+      - umar
+      - umr
+      - उम्र
+      - साल
+      - वर्ष
+      - बरस
+      - वय
+      - वयाची
+      - বয়স
+      - বছর
+      - வயது
+      - வயதில்
+    # "62 saal" is an age; "62000 saal" is a typo, and the schema catches it.
+    plausible: [0, 120]
+
+  annual_income:
+    kind: int
+    anchors:
+      - income
+      - earn
+      - earns
+      - earning
+      - salary
+      - wages
+      - kamai
+      - kamate
+      - aamdani
+      - aay
+      - आय
+      - आमदनी
+      - कमाई
+      - कमाते
+      - कमाता
+      - तनख्वाह
+      - वेतन
+      - उत्पन्न
+      - মাসিক আয়
+      - আয়
+      - রোজগার
+      - வருமானம்
+      - வருமானத்தில்
+      - சம்பளம்
+    # Said as a month's figure far more often than a year's, so a monthly
+    # anchor rescales. Without this "I earn 6000 a month" becomes a household
+    # on 6000 a year, which clears every threshold in the book.
+    per_month:
+      - a month
+      - per month
+      - monthly
+      - mahina
+      - mahine
+      - महीने
+      - महीना
+      - माह
+      - মাসে
+      - মাসিক
+      - மாதம்
+    plausible: [0, 5000000]
+
+  land_acres:
+    kind: int
+    anchors:
+      - acre
+      - acres
+      - bigha
+      - killa
+      - zameen
+      - land
+      - एकड़
+      - एकर
+      - बीघा
+      - ज़मीन
+      - जमीन
+      - खेत
+      - एकर
+      - জমি
+      - বিঘা
+      - ஏக்கர்
+      - நிலம்
+      - நிலத்தில்
+      - நிலத்தை
+    plausible: [0, 500]
+
+  household_size:
+    kind: int
+    anchors:
+      - people in
+      - members
+      - family of
+      - log hain
+      - log
+      - sadasya
+      - लोग
+      - सदस्य
+      - जने
+      - माणसे
+      - জন
+      - সদস্য
+      - பேர்
+      - நபர்
+    plausible: [1, 30]
+
+  disability_percent:
+    kind: int
+    anchors:
+      - percent disability
+      - disability
+      - divyang
+      - viklang
+      - apang
+      - प्रतिशत
+      - दिव्यांग
+      - विकलांग
+      - अपंग
+      - প্রতিবন্ধী
+      - மாற்றுத்திறனாளி
+    plausible: [0, 100]
+
+  gender:
+    kind: enum
+    options:
+      female:
+        high: [woman, female, she is, aurat, mahila, औरत, महिला, स्त्री, महिला,
+             মহিলা, নারী, பெண்]
+      male:
+        high: [man, male, he is, aadmi, purush, आदमी, पुरुष, মানুষ, পুরুষ, ஆண்]
+
+  marital_status:
+    kind: enum
+    options:
+      widowed:
+        high:
+          - widow
+          - widowed
+          - vidhwa
+          - vidhva
+          - विधवा
+          - विधवेची
+          - বিধবা
+          - விதவை
+        medium:
+          - husband died
+          - husband passed away
+          - husband expired
+          - pati ki mrityu
+          - pati guzar
+          - pati nahi rahe
+          - पति की मृत्यु
+          - पति का देहांत
+          - पति गुज़र
+          - पति नहीं रहे
+          - नवरा गेला
+          - স্বামী মারা
+          - கணவர் இறந்து
+        # "There is no husband" is said by unmarried women just as often, so
+        # this is never acted on without asking.
+        low:
+          - no husband
+          - husband nahi
+          - pati nahi
+          - पति नहीं
+          - पति नही
+      married:
+        high: [married, shaadi hui, shadi ho gayi, विवाहित, शादीशुदा, शादी हुई, विवाहित, বিবাহিত, திருமணமான]
+      unmarried:
+        high: [unmarried, single, not married, kunwara, kunwari, shaadi nahi hui, अविवाहित, कुंवारा, कुंवारी, शादी नहीं हुई, অবিবাহিত, திருமணமாகாத]
+      divorced:
+        high: [divorced, talaq, तलाक, तलाकशुदा, বিবাহবিচ্ছেদ, விவாகரத்து]
+      separated:
+        high: [separated, alag rehte, अलग रहते, আলাদা থাকে, பிரிந்து]
+
+  area_type:
+    kind: enum
+    options:
+      rural:
+        high: [village, villages, gaon, gaav, rural, pind, गाँव, गांव, ग्रामीण, देहात,
+             गाव, গ্রাম, கிராம, கிராமத்தில், கிராமத்தை]
+      urban:
+        high: [city, town, towns, urban, shahar, sheher, शहर, नगर, शहरी, শহর,
+             நகர, நகரத்தில்]
+
+  ration_card_type:
+    kind: enum
+    options:
+      aay:
+        high: [antyodaya, aay card, antodaya, अंत्योदय, অন্ত্যোদয়, அந்தியோதயா]
+      phh:
+        high: [priority card, priority household, bpl card, patrta grihasthi, प्राथमिकता, पात्र गृहस्थी, बीपीएल कार्ड, প্রাধিকার, முன்னுரிமை]
+      apl:
+        high: [apl card, above poverty, एपीएल, सामान्य राशन कार्ड]
+      none:
+        medium: [no ration card, ration card nahi, राशन कार्ड नहीं, राशन कार्ड नही, রেশন কার্ড নেই, ரேஷன் அட்டை இல்லை]
+
+  occupation:
+    kind: enum
+    options:
+      farmer:
+        high: [farmer, farmers, kisan, khet karta, किसान, खेती करता, शेतकरी, कृषक,
+             কৃষক, விவசாயி, விவசாயம்]
+      farm_labour:
+        high: [farm labour, farm labourer, farm labourers, khet mazdoor,
+             खेत मज़दूर, खेत मजदूर, शेतमजूर, ক্ষেতমজুর, வேளாண் கூலி]
+      daily_wage:
+        high: [daily wage, labourer, labourers, dihaadi, majdoori, mazdoor, dihadi,
+             मज़दूरी, मजदूरी, दिहाड़ी, मजूरी, দিনমজুর, கூலி]
+      salaried:
+        high: [job, salaried, naukri, naukari, नौकरी, वेतनभोगी, চাকরি, சம்பளம் பெறும்]
+      self_employed:
+        high: [shop, business, dukaan, vyapar, दुकान, व्यापार, धंधा, ব্যবসা, வணிகம்]
+      unemployed:
+        high: [unemployed, no work, kaam nahi, berozgar, बेरोज़गार, बेरोजगार, काम नहीं, বেকার, வேலையில்லை]
+      student:
+        high: [student, students, padhta, padhai, छात्र, पढ़ता, पढ़ाई, विद्यार्थी,
+             বিদ্যার্থী, மாணவ]
+      homemaker:
+        high: [housewife, homemaker, grihini, ghar ka kaam, गृहिणी, घर का काम, গৃহিণী, இல்லத்தரசி]
+
+  is_pregnant:
+    kind: bool
+    "true":
+      high: [pregnant, expecting, garbhvati, pet se, गर्भवती, गर्भ से, पेट से, उम्मीद से, गर्भवती, গর্ভবতী, கர்ப்பிணி]
+
+  has_bank_account:
+    kind: bool
+    "true":
+      # A bare "khata" is listed because the negated form is said far more
+      # often than the positive one, and "khata nahi hai" contains neither
+      # "khata hai" nor "bank khata".
+      high: [bank account, bank khata, khata hai, khata, account hai, bank ka khata,
+             बैंक खाता, खाता है, खाता, बैंक अकाउंट, बँक खाते, খাতা, ব্যাংক অ্যাকাউন্ট,
+             ব্যাংক হিসাব, வங்கி கணக்கு]
+
+  bank_aadhaar_linked:
+    kind: bool
+    "true":
+      high: [aadhaar linked, linked to aadhaar, aadhaar se juda, आधार से जुड़ा, आधार लिंक, আধার লিঙ্ক, ஆதார் இணைக்க]
+
+  already_receiving_pension:
+    kind: bool
+    "true":
+      high: [pension, getting pension, receive pension, get a pension, gets a pension,
+             already pension, pension milti, pension aati, pension milti hai,
+             पेंशन, पेंशन मिलती, पेंशन आती, पेंशन मिल रही, पेन्शन मिळते,
+             পেনশন, ஓய்வூதியம்]
+
+  owns_pucca_house:
+    kind: bool
+    "true":
+      high: [pucca, pakka, pucca house, pakka ghar, pucca ghar, pakka makan,
+             brick house, पक्का, पक्का घर, पक्का मकान, पक्के घर, पक्कं घर,
+             পাকা বাড়ি, கான்கிரீட் வீடு]
+    "false":
+      high: [kaccha, kachcha, kaccha house, kaccha ghar, kachcha ghar, kachcha makan,
+             mud house, mitti ka ghar, कच्चा, कच्चा घर, कच्चा मकान, कच्चे घर,
+             मिट्टी का घर, कच्चं घर, কাঁচা বাড়ি, குடிசை]
+
+  owns_vehicle:
+    kind: bool
+    "true":
+      high: [vehicle, vehicles, motorcycle, scooter, tractor, car, bike, bullet,
+             gaadi, gadi, मोटरसाइकिल, स्कूटर, ट्रैक्टर, गाड़ी, वाहन, दुचाकी,
+             মোটরসাইকেল, গাড়ি, ட்ராக்டர், வாகனம்]
+
+  lpg_connection:
+    kind: bool
+    "true":
+      high: [gas connection, gas, lpg, cylinder, gas kanekshan, गैस कनेक्शन, गैस,
+             सिलेंडर, गॅस जोडणी, গ্যাস সংযোগ, গ্যাস, எரிவாயு இணைப்பு]
+
+  income_tax_payer:
+    kind: bool
+    "true":
+      high: [income tax, itr, tax bharta, आयकर, इनकम टैक्स, आईटीआर, আয়কর, வருமான வரி]
+
+  govt_employee_in_family:
+    kind: bool
+    "true":
+      high: [government job, sarkari naukri, govt service, सरकारी नौकरी, सरकारी नोकरी, সরকারি চাকরি, அரசு வேலை]
+
+  cultivates_land:
+    kind: bool
+    "true":
+      high: [we farm, i farm, khud kheti, kheti karte, खुद खेती, खेती करते, शेती करतो, চাষ করি, விவசாயம் செய்]
+
+  breadwinner_died_recently:
+    kind: bool
+    "true":
+      medium:
+        - earner died
+        - breadwinner died
+        - kamane wala nahi raha
+        - ghar ka kamane wala
+        - कमाने वाले की मृत्यु
+        - कमाने वाला नहीं रहा
+        - উপার্জনকারী মারা
+        - சம்பாதிப்பவர் இறந்து
+
+  willing_unskilled_work:
+    kind: bool
+    "true":
+      high: [want work, need work, kaam chahiye, kaam karna hai, काम चाहिए, काम करना है, कामाची गरज, কাজ দরকার, வேலை வேண்டும்]
+
+  first_child:
+    kind: bool
+    "true":
+      high: [first child, pehla bachcha, pehla baccha, पहला बच्चा, पहली संतान, প্রথম সন্তান, முதல் குழந்தை]

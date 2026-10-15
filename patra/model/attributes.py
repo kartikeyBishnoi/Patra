@@ -70,6 +70,14 @@ class Attribute:
     """Caste, religion, disability, income. We ask these last and skip them
     entirely when the answer is already settled."""
 
+    document: str | None = None
+    """The paper that puts this fact on record, where there is one.
+
+    "Get your account seeded with Aadhaar" is advice. "Get your account seeded
+    with Aadhaar, at the bank branch, free, one trip" is an errand somebody can
+    actually run, and the difference is this link into the document graph.
+    """
+
     asset: bool = False
     """Something the household has gained and would not sensibly give up.
 

@@ -47,3 +47,41 @@ def households(schema):
 @pytest.fixture
 def engine(schema, axioms, documents):
     return Engine(schema, axioms, documents)
+
+
+@pytest.fixture(scope="session")
+def cues():
+    import yaml
+    return yaml.safe_load((DATA / "cues.yaml").read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="session")
+def signatures():
+    import yaml
+    return yaml.safe_load((DATA / "papers.yaml").read_text(encoding="utf-8"))
+
+
+@pytest.fixture
+def extractor(schema, cues):
+    from patra.nlp.extract import Extractor
+    return Extractor(schema, cues)
+
+
+@pytest.fixture
+def guard(engine, schema):
+    from patra.guard import Guard
+    return Guard(engine, schema)
+
+
+@pytest.fixture
+def profile_of(schema, households):
+    """A household flattened for a named member, as the reasoner sees it."""
+    from patra.model.household import project
+
+    def make(household_id, member_id=None):
+        household = households[household_id]
+        if member_id is None and household.members:
+            member_id = household.members[0].id
+        return project(household, schema, member_id)
+
+    return make

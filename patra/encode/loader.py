@@ -53,6 +53,7 @@ def load_schema(path: Path) -> Schema:
                 sensitive=spec.get("sensitive", False),
                 open_ended=spec.get("open_ended", False),
                 asset=spec.get("asset", False),
+                document=spec.get("document"),
             )
         )
     return Schema(attributes)

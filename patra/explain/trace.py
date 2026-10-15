@@ -237,3 +237,124 @@ def paperwork_trace(documents: DocumentGraph, targets, held, words=None) -> dict
         "detail": [f"{i}. {name(s.id)}" for i, s in enumerate(route.steps, 1)],
     })
     return {"steps": steps}
+
+
+def reading_trace(extractor, guard, text: str, known: dict, words=None) -> dict:
+    """How a sentence became facts, step by step.
+
+    The derivation panel on a decision answers "is this reasoning or a lookup
+    table". This answers the same question one layer earlier, where it matters
+    more, because a gazetteer that cannot show its working is indistinguishable
+    from a model that guessed.
+
+    Each step names what it did and what it threw away. The last two are the
+    ones worth reading: the schema check and the axiom check are where a
+    plausible reading stops being a fact.
+    """
+    words = words or {}
+    schema = guard.schema
+
+    def w(key, default, **vars):
+        text_ = words.get("trace", {}).get(key) or default
+        for k, v in vars.items():
+            text_ = text_.replace("{" + k + "}", str(v))
+        return text_
+
+    def label(name):
+        return words.get("attr", {}).get(name, {}).get("label") or schema[name].label
+
+    def value(name, raw):
+        """The same rendering the rest of the app uses, not a Python repr.
+
+        A trace that reports `False` and `widowed` is a trace written for
+        whoever wrote the code, and this panel is also read by the person it
+        is about.
+        """
+        attr = schema[name]
+        if isinstance(raw, bool):
+            return words.get("ui", {}).get("yes" if raw else "no",
+                                           "yes" if raw else "no")
+        if attr.options:
+            return words.get("attr", {}).get(name, {}).get("options", {}).get(
+                raw, str(raw).replace("_", " "))
+        unit = words.get("attr", {}).get(name, {}).get("unit") or attr.unit
+        shown = f"{raw:,}" if isinstance(raw, int) else str(raw)
+        return f"{shown} {unit}" if unit else shown
+
+    def sureness(level):
+        return words.get("ui", {}).get("conf_" + level.value, level.value)
+
+    reading = extractor.understand(text)
+    intake = guard.admit_understanding(reading, known)
+
+    steps = [{
+        "stage": "normalise",
+        "method": w("read_normalise", "normalising"),
+        "headline": w("read_normalise_head",
+                      "{n} words, after folding case and Indic digits",
+                      n=len(reading.reading.tokens)),
+        "detail": [reading.reading.text],
+    }, {
+        "stage": "match",
+        "method": w("read_match", "gazetteer and pattern matching"),
+        "headline": w("read_match_head", "{n} readings proposed", n=len(reading.mentions)),
+        "detail": [
+            f"{label(m.attribute)}: {value(m.attribute, m.value)}"
+            f"  ←  “{m.evidence}”  ({sureness(m.confidence)})"
+            for m in reading.mentions
+        ] or [w("read_match_none", "nothing in the sentence named a fact")],
+    }]
+
+    if reading.relation:
+        steps.append({
+            "stage": "subject",
+            "method": w("read_subject", "whose answers these are"),
+            "headline": w("read_subject_head", "read as {who}",
+                          who=words.get("relation", {}).get(reading.relation)
+                          or reading.relation),
+            "detail": [f"“{reading.relation_evidence}”"],
+        })
+
+    if reading.numbers_unused:
+        steps.append({
+            "stage": "unbound",
+            "method": w("read_unbound", "numbers with no anchor"),
+            "headline": w("read_unbound_head",
+                          "{n} numbers discarded for naming nothing",
+                          n=len(reading.numbers_unused)),
+            "detail": [n.text for n in reading.numbers_unused],
+        })
+
+    steps.append({
+        "stage": "schema",
+        "method": w("read_schema", "schema check"),
+        "headline": w("read_schema_head", "{n} readings outside what the schema allows",
+                      n=len(intake.refused)),
+        "detail": [
+            f"{label(r.attribute)}: {r.value}  ·  {r.detail or r.axiom}"
+            for r in intake.refused if r.reason.value == "out_of_range"
+        ],
+    })
+
+    impossible = [r for r in intake.refused if r.reason.value == "impossible"]
+    steps.append({
+        "stage": "axioms",
+        "method": w("read_axioms", "domain axioms"),
+        "headline": w("read_axioms_head",
+                      "{n} readings contradict what cannot be false of anybody",
+                      n=len(impossible)),
+        "detail": [f"{label(r.attribute)}: {r.value}  ·  {r.axiom}"
+                   for r in impossible],
+    })
+
+    steps.append({
+        "stage": "admit",
+        "method": w("read_admit", "admission"),
+        "headline": w("read_admit_head", "{used} used, {asked} read back, {dropped} refused",
+                      used=len(intake.accepted), asked=len(intake.confirm),
+                      dropped=len(intake.refused)),
+        "detail": [f"{label(a.attribute)}: {value(a.attribute, a.value)}"
+                   for a in intake.accepted],
+    })
+
+    return {"steps": steps}

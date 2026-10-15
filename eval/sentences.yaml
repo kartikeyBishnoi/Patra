@@ -1,0 +1,230 @@
+# Labelled sentences for measuring the understanding layer.
+#
+# Read the caveat before the numbers. These sentences and the cue vocabulary in
+# data/cues.yaml were written by the same hand, so what this measures is the
+# coverage of that vocabulary over phrasings we thought of. It is not a
+# held-out set and it says nothing about phrasings we did not think of. A real
+# figure needs sentences collected from people who have never seen the app, and
+# we do not have those.
+#
+# It is still worth running. It catches a cue edit that breaks another
+# language, it keeps the negatives honest, and it is the number to replace
+# first when field data exists.
+#
+# expect   the facts that should come out. An empty mapping means the sentence
+#          carries no facts and anything extracted is a false positive.
+# unsure   facts that should be proposed but held back for confirmation.
+
+sentences:
+
+  # ---- English ----
+  - text: "My mother is 62 years old and she is a widow"
+    lang: en
+    expect: {age: 62, gender: female, marital_status: widowed}
+  - text: "I am 34, a daily wage labourer, we live in a village"
+    lang: en
+    expect: {age: 34, occupation: daily_wage, area_type: rural}
+  - text: "We have two acres and we farm it ourselves"
+    lang: en
+    expect: {land_acres: 2, cultivates_land: true}
+  - text: "I have a bank account but no gas connection"
+    lang: en
+    expect: {has_bank_account: true, lpg_connection: false}
+  - text: "There are five people in the family"
+    lang: en
+    expect: {household_size: 5}
+  - text: "My wife is pregnant with our first child"
+    lang: en
+    expect: {gender: female, is_pregnant: true, first_child: true}
+  - text: "We earn 6000 a month"
+    lang: en
+    expect: {annual_income: 72000}
+  - text: "Our house is kaccha and we own no vehicle"
+    lang: en
+    expect: {owns_pucca_house: false, owns_vehicle: false}
+  - text: "Nobody in the family has a government job"
+    lang: en
+    expect: {govt_employee_in_family: false}
+  - text: "I already get a pension"
+    lang: en
+    expect: {already_receiving_pension: true}
+  - text: "My income is around a lakh"
+    lang: en
+    expect: {}
+    unsure: {annual_income: 100000}
+  - text: "My daughter is 9"
+    lang: en
+    expect: {age: 9, gender: female}
+
+  # ---- Hindi ----
+  - text: "मेरी माँ 62 साल की हैं और वे विधवा हैं"
+    lang: hi
+    expect: {age: 62, gender: female, marital_status: widowed}
+  - text: "मैं 45 साल का किसान हूँ, 3 एकड़ ज़मीन है"
+    lang: hi
+    expect: {age: 45, occupation: farmer, land_acres: 3}
+  - text: "हम गाँव में रहते हैं, घर कच्चा है"
+    lang: hi
+    expect: {area_type: rural, owns_pucca_house: false}
+  - text: "मेरे पास राशन कार्ड नहीं है"
+    lang: hi
+    expect: {ration_card_type: none}
+  - text: "मेरा बैंक खाता नहीं है"
+    lang: hi
+    expect: {has_bank_account: false}
+  - text: "घर में छह लोग हैं"
+    lang: hi
+    expect: {household_size: 6}
+  - text: "मुझे पेंशन मिलती है"
+    lang: hi
+    expect: {already_receiving_pension: true}
+  - text: "आय पचास हजार है"
+    lang: hi
+    expect: {annual_income: 50000}
+  - text: "मैं गर्भवती हूँ, पहला बच्चा है"
+    lang: hi
+    expect: {is_pregnant: true, first_child: true}
+  - text: "अंत्योदय कार्ड है"
+    lang: hi
+    expect: {ration_card_type: aay}
+  - text: "घर में कोई सरकारी नौकरी नहीं है"
+    lang: hi
+    expect: {govt_employee_in_family: false}
+  - text: "उनका पति नहीं है"
+    lang: hi
+    expect: {}
+    unsure: {marital_status: widowed}
+
+  # ---- Marathi ----
+  - text: "माझे वय 68 वर्षे आहे, मी विधवा आहे"
+    lang: mr
+    expect: {age: 68, marital_status: widowed}
+  - text: "मी शेतकरी आहे, 3 एकर जमीन आहे"
+    lang: mr
+    expect: {occupation: farmer, land_acres: 3}
+  - text: "आम्ही गावात राहतो"
+    lang: mr
+    expect: {area_type: rural}
+  - text: "उत्पन्न 50 हजार आहे"
+    lang: mr
+    expect: {annual_income: 50000}
+  - text: "घरात पाच माणसे आहेत"
+    lang: mr
+    expect: {household_size: 5}
+  - text: "मला पेन्शन मिळते"
+    lang: mr
+    expect: {already_receiving_pension: true}
+
+  # ---- Bengali ----
+  - text: "আমার মা 65 বছর, তিনি বিধবা"
+    lang: bn
+    expect: {age: 65, gender: female, marital_status: widowed}
+  - text: "আমি গ্রামে থাকি, বয়স 70"
+    lang: bn
+    expect: {area_type: rural, age: 70}
+  - text: "আমার ব্যাংক অ্যাকাউন্ট আছে"
+    lang: bn
+    expect: {has_bank_account: true}
+  - text: "পরিবারে চার জন"
+    lang: bn
+    expect: {household_size: 4}
+  - text: "আমি কৃষক, জমি 2 বিঘা"
+    lang: bn
+    expect: {occupation: farmer, land_acres: 2}
+
+  # ---- Tamil ----
+  - text: "என் வயது 65, நான் கிராமத்தில் வாழ்கிறேன்"
+    lang: ta
+    expect: {age: 65, area_type: rural}
+  - text: "என் அம்மா விதவை"
+    lang: ta
+    expect: {gender: female, marital_status: widowed}
+  - text: "எனக்கு 3 ஏக்கர் நிலம் உள்ளது"
+    lang: ta
+    expect: {land_acres: 3}
+  - text: "நான் விவசாயி"
+    lang: ta
+    expect: {occupation: farmer}
+  - text: "வருமானம் 50 ஆயிரம்"
+    lang: ta
+    expect: {annual_income: 50000}
+
+  # ---- sentences carrying no facts at all ----
+  # The expensive mistake is the invented fact, not the missed one, so these
+  # weigh as heavily as the rest.
+  - text: "What schemes are there?"
+    lang: en
+    expect: {}
+  - text: "How do I get a ration card?"
+    lang: en
+    expect: {}
+  - text: "Where is the panchayat office?"
+    lang: en
+    expect: {}
+  - text: "Thank you very much"
+    lang: en
+    expect: {}
+  - text: "कौन कौन सी योजनाएँ हैं?"
+    lang: hi
+    expect: {}
+  - text: "राशन कार्ड कैसे बनवाएँ?"
+    lang: hi
+    expect: {}
+  - text: "नमस्ते"
+    lang: hi
+    expect: {}
+  - text: "मेरा नाम रामलाल है"
+    lang: hi
+    expect: {}
+
+  # ---- wanting a thing is not having it ----
+  #
+  # Each of these reads as a possession under a plain word list, and each of
+  # them is somebody asking for the thing. "Mujhe pension chahiye" read as
+  # already drawing a pension rules them out of the pension they came to ask
+  # about, which is the most expensive mistake this system can make.
+  - text: "I want to apply for the old age pension"
+    lang: en
+    expect: {}
+  - text: "How do I get the widow pension?"
+    lang: en
+    expect: {}
+  - text: "We need a gas connection"
+    lang: en
+    expect: {}
+  - text: "I want a vehicle loan"
+    lang: en
+    expect: {}
+  - text: "How much does a pucca house cost?"
+    lang: en
+    expect: {}
+  - text: "Which schemes give a bank account?"
+    lang: en
+    expect: {}
+  - text: "मुझे पेंशन चाहिए"
+    lang: hi
+    expect: {}
+  - text: "गैस कनेक्शन कैसे मिलेगा?"
+    lang: hi
+    expect: {}
+  - text: "मुझे पक्का घर चाहिए"
+    lang: hi
+    expect: {}
+
+  # ---- but a wish that is itself the fact must still read ----
+  - text: "I want work"
+    lang: en
+    expect: {willing_unskilled_work: true}
+  - text: "मुझे काम चाहिए"
+    lang: hi
+    expect: {willing_unskilled_work: true}
+
+  # ---- sentences that must be refused outright ----
+  - text: "she is 15 years old and a widow"
+    lang: en
+    expect: {age: 15, gender: female}
+    refused: [marital_status]
+  - text: "my age is 480"
+    lang: en
+    expect: {}
+    refused: [age]

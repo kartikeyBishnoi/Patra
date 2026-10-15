@@ -4,6 +4,10 @@
     python3 -m patra.cli ask
     python3 -m patra.cli plan --household munni
     python3 -m patra.cli documents
+    python3 -m patra.cli read "meri maa 62 saal ki hain"
+    python3 -m patra.cli whatif --household sunita --set annual_income=300000
+    python3 -m patra.cli next --household sunita
+    python3 -m patra.cli paper --household sunita --image card.png
 """
 
 from __future__ import annotations
@@ -19,12 +23,18 @@ from .encode.loader import (
     load_schema,
     load_schemes,
 )
+from .advise import Move, next_actions
 from .engine import Engine
 from .explain.render import BAR, paperwork, screening, trust_note, what_would_fix, why_refused
+from .guard import Guard
 from .model.attributes import Kind, Scope
-from .model.household import Profile
+from .model.household import Profile, project
+from .nlp.extract import Extractor
 from .reason.planner import plan as make_plan
 from .reason.questions import Status, next_question, status
+from .reason.simulate import simulate
+from .vision.ocr import capability, scan
+from .vision.papers import Papers
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 
@@ -181,6 +191,229 @@ def cmd_ask(args) -> int:
     return 0
 
 
+# ---- the perception and simulation commands ----
+
+
+def _facts_of(bundle, ident: str, member: str | None):
+    """One household flattened the way the reasoner sees it.
+
+    Member scope matters: an age and a marital status belong to a person, and
+    screening a household without naming one leaves every member-scoped
+    scheme undecidable.
+    """
+    household = bundle.household(ident)
+    if member is None and household.members:
+        member = household.members[0].id
+    profile = project(household, bundle.schema, member)
+    return household, profile
+
+
+def cmd_read(args) -> int:
+    """Read a sentence, and show every check it had to pass."""
+    bundle = Bundle(args.data)
+    extractor = Extractor(bundle.schema)
+    guard = Guard(bundle.engine, bundle.schema)
+
+    known = {}
+    if args.household:
+        _, profile = _facts_of(bundle, args.household, args.member)
+        known = profile.facts
+
+    reading = extractor.understand(args.text)
+    intake = guard.admit_understanding(reading, known)
+
+    print(BAR)
+    print(f"  {args.text}")
+    print(BAR)
+    if reading.relation:
+        print(f"\n  about: {reading.relation}   from \"{reading.relation_evidence}\"")
+
+    if intake.accepted:
+        print("\n  used")
+        for a in intake.accepted:
+            where = f"inferred from {a.inferred_from}" if a.inferred_from \
+                else f'from "{a.evidence}"'
+            print(f"    {bundle.schema[a.attribute].label:34} {str(a.value):12} {where}")
+
+    if intake.confirm:
+        print("\n  would have to be confirmed")
+        for q in intake.confirm:
+            extra = f" (or {q.alternative}?)" if q.alternative is not None else ""
+            print(f"    {bundle.schema[q.attribute].label:34} {str(q.value):12} "
+                  f"{q.doubt.value}{extra}")
+
+    if intake.refused:
+        print("\n  refused")
+        for r in intake.refused:
+            print(f"    {bundle.schema[r.attribute].label:34} {str(r.value):12} "
+                  f"{r.axiom or r.detail}")
+
+    if reading.numbers_unused:
+        print("\n  numbers with nothing to attach them to: "
+              + ", ".join(n.text for n in reading.numbers_unused))
+    if not (intake.accepted or intake.confirm or intake.refused):
+        print("\n  nothing in that sentence named a fact.")
+    return 0
+
+
+def cmd_whatif(args) -> int:
+    """Re-decide every scheme against one changed answer."""
+    bundle = Bundle(args.data)
+    _, profile = _facts_of(bundle, args.household, args.member)
+
+    changes = {}
+    for pair in args.set:
+        if "=" not in pair:
+            raise SystemExit(f"--set wants name=value, got {pair!r}")
+        name, _, raw = pair.partition("=")
+        if name not in bundle.schema:
+            raise SystemExit(f"no attribute called {name!r}")
+        changes[name] = _coerce(bundle.schema[name], raw)
+
+    result = simulate(bundle.engine, bundle.schema, bundle.schemes,
+                      profile.facts, changes)
+
+    print(BAR)
+    for shift in result.shifts:
+        print(f"  {bundle.schema[shift.attribute].label}: "
+              f"{shift.was} -> {shift.now}")
+    print(BAR)
+
+    if result.rejected:
+        for shift, detail in result.rejected:
+            print(f"\n  cannot: {detail}")
+        return 1
+    if result.impossible:
+        for shift, axiom in result.impossible:
+            print(f"\n  impossible: {axiom}")
+        return 1
+
+    names = bundle.by_id
+    print(f"\n  eligible now {len(result.before)}, after the change {len(result.after)}")
+    for scheme_id in result.gained:
+        print(f"    + {names[scheme_id].name}")
+    for loss in result.lost:
+        why = loss.blocked_by[0].text if loss.blocked_by else ""
+        print(f"    - {names[loss.scheme_id].name}"
+              + (f"   ({why})" if why else ""))
+    if not result.gained and not result.lost:
+        print("    nothing changes either way")
+    if result.undecided:
+        print(f"\n  {len(result.undecided)} could not be judged either way")
+    return 0
+
+
+def cmd_next(args) -> int:
+    """The ranked errands, with every unlock count re-derived."""
+    bundle = Bundle(args.data)
+    household, profile = _facts_of(bundle, args.household, args.member)
+
+    advice = next_actions(bundle.engine, bundle.schema, bundle.schemes,
+                          profile.facts, bundle.documents, household.documents,
+                          limit=args.limit)
+    names = bundle.by_id
+
+    print(BAR)
+    print(f"  claimable now: {len(advice.eligible)}"
+          f"   within reach: {len(advice.reachable)}"
+          f"   out of reach: {len(advice.hopeless)}")
+    print(BAR)
+
+    for i, action in enumerate(advice.actions, 1):
+        if action.move is Move.FACT:
+            attr = bundle.schema[action.attribute]
+            head = f"{attr.label}: {action.now} -> {action.needed}"
+        else:
+            head = action.errand.name
+        print(f"\n  {i}. {head}")
+        if action.errand:
+            e = action.errand
+            cost = "free" if not e.fee else f"Rs {e.fee}"
+            print(f"     {e.issuer}   {cost}, {e.days} days, "
+                  f"{e.trips} trip{'s' if e.trips > 1 else ''}")
+        if action.unlocks:
+            print("     opens up: "
+                  + ", ".join(names[s].name for s in action.unlocks))
+        if action.toward:
+            print("     needed for: "
+                  + ", ".join(names[s].name for s in action.toward))
+        if action.loses:
+            print("     would lose: "
+                  + ", ".join(names[s].name for s in action.loses))
+    if not advice.actions:
+        print("\n  nothing left that would change the answer")
+    if advice.hopeless:
+        print("\n  nothing will help with: "
+              + ", ".join(names[s].name for s in advice.hopeless))
+    return 0
+
+
+def cmd_paper(args) -> int:
+    """Read a photographed document, and show what reached the solver."""
+    bundle = Bundle(args.data)
+    cap = capability()
+    if not cap.available:
+        raise SystemExit(cap.note or "no text reader on this machine")
+    if cap.missing:
+        print(f"  note: {cap.note}\n")
+
+    got = scan(args.image.read_bytes(), args.lang, cap)
+    if not got.ok:
+        raise SystemExit(got.error or "could not read that picture")
+
+    reading = Papers(bundle.schema).interpret(got)
+    guard = Guard(bundle.engine, bundle.schema)
+
+    known = {}
+    if args.household:
+        _, profile = _facts_of(bundle, args.household, args.member)
+        known = profile.facts
+    intake = guard.admit_document(reading, known)
+
+    print(BAR)
+    print(f"  {args.image.name}")
+    print(BAR)
+    for guess in reading.guesses[:3]:
+        mark = "*" if guess is reading.guesses[0] else " "
+        print(f"  {mark} {guess.document:24} score {guess.score}   "
+              f'matched "{guess.matched[0]}"')
+    if not reading.guesses:
+        print("  no document recognised")
+    print(f"\n  confident: {reading.sure}")
+
+    for x in reading.redacted:
+        print(f"  redacted: {x.field}, {x.shape}, used to recognise the card "
+              f"and then discarded")
+    if intake.confirm:
+        print("\n  read off it, every field to be confirmed before use")
+        for q in intake.confirm:
+            print(f"    {bundle.schema[q.attribute].label:30} {str(q.value):12} "
+                  f'from "{q.evidence}"')
+    for r in intake.refused:
+        print(f"    refused: {bundle.schema[r.attribute].label} "
+              f"{r.value}   {r.axiom or r.detail}")
+    if reading.unreadable:
+        print("\n  could not read: " + ", ".join(reading.unreadable))
+    return 0
+
+
+def _coerce(attr, raw: str):
+    if attr.kind is Kind.BOOL:
+        if raw.lower() in ("yes", "true", "y", "1"):
+            return True
+        if raw.lower() in ("no", "false", "n", "0"):
+            return False
+        raise SystemExit(f"{attr.name} wants yes or no, got {raw!r}")
+    if attr.kind is Kind.INT:
+        try:
+            return int(raw)
+        except ValueError:
+            raise SystemExit(f"{attr.name} wants a number, got {raw!r}") from None
+    if raw not in attr.options:
+        raise SystemExit(f"{attr.name} wants one of {list(attr.options)}")
+    return raw
+
+
 def _prompt(attr, text: str):
     """Ask one question. Returns None if the person would rather not say."""
     print(f"  {text}")
@@ -240,6 +473,31 @@ def main(argv=None) -> int:
 
     p = sub.add_parser("documents", help="what each document needs first")
     p.set_defaults(func=cmd_documents)
+
+    p = sub.add_parser("read", help="read facts out of a sentence")
+    p.add_argument("text")
+    p.add_argument("--household", help="check against this household's answers")
+    p.add_argument("--member")
+    p.set_defaults(func=cmd_read)
+
+    p = sub.add_parser("whatif", help="re-decide everything against a changed answer")
+    p.add_argument("--household", required=True)
+    p.add_argument("--member")
+    p.add_argument("--set", action="append", required=True, metavar="NAME=VALUE")
+    p.set_defaults(func=cmd_whatif)
+
+    p = sub.add_parser("next", help="the ranked errands, cheapest useful one first")
+    p.add_argument("--household", required=True)
+    p.add_argument("--member")
+    p.add_argument("--limit", type=int, default=6)
+    p.set_defaults(func=cmd_next)
+
+    p = sub.add_parser("paper", help="read a photographed document")
+    p.add_argument("--image", type=Path, required=True)
+    p.add_argument("--lang", default="en")
+    p.add_argument("--household")
+    p.add_argument("--member")
+    p.set_defaults(func=cmd_paper)
 
     args = parser.parse_args(argv)
     return args.func(args)

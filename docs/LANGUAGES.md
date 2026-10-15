@@ -45,6 +45,37 @@ Each fragment carries its own `{v}` placeholder because word order moves.
 English puts the comparison before the number and Hindi after, so a prefix
 template would produce "उम्र, से ज़्यादा 60".
 
+## The other half of a language: what it can hear
+
+`data/i18n/<code>.yaml` is what the app says. `data/cues.yaml` is what it can
+understand, and it is one file covering every language rather than one per
+language, because transliterated Latin turns up in all of them.
+
+A cue is riskier than an interface string, and in the opposite direction. A
+wrong interface word reads as broken and somebody notices. A wrong cue word
+silently reads a fact nobody stated, and the only sign is a refusal that makes
+no sense. So the file is organised to make a mistake visible:
+
+- a phrase under `high` means the words mean that and nothing else
+- under `medium`, they usually do
+- under `low`, they hint at it and the person is always asked first
+
+`negations` and `inquiries` are both scoped to the clause and both skipped
+where the cue contains the marker itself. That is what lets "khata nahi hai"
+read as having no account while "kaam chahiye" still reads as wanting work, and
+what stops "mujhe pension chahiye" reading as already drawing one.
+
+Two language-specific traps worth knowing before you edit it. Devanagari,
+Bengali and Tamil vowel signs are combining marks, so a cue may run into a
+following vowel sign and "गाव" reaches "गावात"; that is why the matcher needs
+no entry for the inflected form. Tamil is different: its cases change the stem
+rather than adding a mark, so "கிராமம்" and "கிராமத்தில்" both have to be
+listed. And English plurals need listing too, since "s" is not a mark.
+
+Numbers are in the same file. Indic digits, number words per language, and the
+scale words, which stack by addition with falling scale so "do lakh pachas
+hazaar" is one figure of 250000 rather than two.
+
 ## Adding a language
 
 It is a data task. No code changes.
@@ -54,9 +85,14 @@ It is a data task. No code changes.
    Tamil cannot necessarily read the word "Tamil"), and `speech` to the BCP 47
    tag the browser's speech synthesiser expects.
 3. Translate. Leave `complete: false` while you work.
-4. Set `complete: true` once a native speaker has checked it.
+4. Add that language's phrases to `data/cues.yaml`, which is shared across
+   all of them, so the app can understand as well as speak.
+5. Set `complete: true` once a native speaker has checked both files.
 
-Restart the server and it appears in the picker.
+Restart the server and it appears in the picker. `python3 eval/benchmark.py`
+runs the labelled sentences in `eval/sentences.yaml` as experiment E7, and
+adding a few in the new language is the cheapest way to keep a later cue edit
+from quietly breaking it.
 
 ## What each section is for
 

@@ -7,3 +7,15 @@ PyYAML>=6.0        # the knowledge base is YAML
 pytest>=7.0
 
 # The web app uses the standard library only.
+
+# Reading a photographed document uses the tesseract binary, not a Python
+# wrapper, so there is nothing to install here for it. On Debian or Ubuntu:
+#
+#   sudo apt install tesseract-ocr tesseract-ocr-hin tesseract-ocr-mar \
+#                    tesseract-ocr-ben tesseract-ocr-tam
+#
+# Without it the camera card does not appear and everything else works.
+
+# Only for tools/samplecards.py, which draws the specimen documents the
+# document reader is tested against. The app itself does not import it.
+Pillow>=10.0

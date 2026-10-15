@@ -9,10 +9,18 @@ Six experiments, each answering something somebody would reasonably ask:
         intrusive questions?
     E5  What happens across many households rather than our five?
     E6  How does cost grow as the rulebook grows?
+    E7  How much of what people say does the understanding layer actually get?
+    E8  Does saying it in a sentence shorten the interview?
+    E9  What does the guard between the two halves actually stop?
 
 Every number printed here comes from running the system. Run with:
 
     python3 eval/benchmark.py
+
+E7 carries a caveat printed beside it, and it is not a small one: the labelled
+sentences and the cue vocabulary were written by the same hand, so the number
+measures coverage of phrasings we thought of rather than generalisation. It is
+the first figure that should be replaced with field data.
 """
 
 from __future__ import annotations
@@ -389,6 +397,217 @@ def e6_scaling(engine, schema):
     print()
 
 
+def _labelled():
+    import yaml
+    return yaml.safe_load(
+        (Path(__file__).resolve().parent / "sentences.yaml").read_text(
+            encoding="utf-8"))["sentences"]
+
+
+def e7_understanding(schema):
+    """Precision and recall of the reading layer, per language.
+
+    Counted per fact rather than per sentence, and false positives are counted
+    against sentences that carry no facts at all, because a question read as
+    an answer is the failure that costs somebody a wasted trip.
+    """
+    from patra.nlp.extract import Extractor
+
+    print(LINE)
+    print("  E7  reading facts out of a sentence")
+    print(LINE)
+
+    extractor = Extractor(schema)
+    cases = _labelled()
+    per_lang = {}
+
+    for case in cases:
+        got = {m.attribute: m.value for m in extractor.understand(case["text"]).mentions}
+        want = dict(case.get("expect") or {})
+        unsure = dict(case.get("unsure") or {})
+        refused = set(case.get("refused") or ())
+
+        # A fact the sentence only hints at, and one the axioms will refuse,
+        # both belong in the extractor's output; the guard decides their fate.
+        allowed = {**want, **unsure}
+        for name in refused:
+            allowed.setdefault(name, got.get(name))
+
+        row = per_lang.setdefault(case["lang"], [0, 0, 0, 0])
+        for name, value in want.items():
+            if got.get(name) == value:
+                row[0] += 1           # found, right
+            else:
+                row[1] += 1           # wanted, missed
+        for name, value in got.items():
+            if name not in allowed:
+                row[2] += 1           # invented
+            elif allowed[name] != value and name in want:
+                row[2] += 1           # found, wrong value
+        row[3] += 1
+
+    print(f"  {'lang':<6}{'sentences':>11}{'found':>8}{'missed':>8}"
+          f"{'wrong':>8}{'recall':>9}{'precision':>11}")
+    totals = [0, 0, 0, 0]
+    for lang in ("en", "hi", "mr", "bn", "ta"):
+        if lang not in per_lang:
+            continue
+        hit, miss, bad, n = per_lang[lang]
+        for i, v in enumerate((hit, miss, bad, n)):
+            totals[i] += v
+        recall = hit / (hit + miss) if hit + miss else 1.0
+        precision = hit / (hit + bad) if hit + bad else 1.0
+        print(f"  {lang:<6}{n:>11}{hit:>8}{miss:>8}{bad:>8}"
+              f"{recall:>8.0%}{precision:>11.0%}")
+
+    hit, miss, bad, n = totals
+    print(f"  {'all':<6}{n:>11}{hit:>8}{miss:>8}{bad:>8}"
+          f"{hit/(hit+miss):>8.0%}{hit/(hit+bad):>11.0%}")
+
+    empty = [c for c in cases if not c.get("expect") and not c.get("unsure")
+             and not c.get("refused")]
+    invented = sum(
+        1 for c in empty if extractor.understand(c["text"]).mentions)
+    print(f"\n  of {len(empty)} sentences carrying no facts, "
+          f"{invented} produced one anyway")
+    print("\n  Caveat: these sentences and the cue vocabulary were written by the")
+    print("  same hand. This is coverage of phrasings we thought of, not")
+    print("  generalisation, and field data should replace it.")
+    print()
+
+
+def e8_spoken_shortens_the_interview(engine, schema, schemes, households):
+    """How many questions does describing your family in words save.
+
+    Measured against the adaptive interview, not against asking everything, so
+    whatever is saved is saved on top of a baseline that is already short. The
+    baseline here counts household and member schemes together, which is why
+    it is larger than E4's twelve.
+
+    A fact the reader got wrong cannot show up as a saving: only readings that
+    match the household's real answers are credited. That makes the number a
+    joint measure of the reader and the interview, which is the honest way to
+    report a feature that only exists as the two together.
+    """
+    from patra.guard import Guard, Source
+    from patra.nlp.extract import Extractor
+
+    print(LINE)
+    print("  E8  saying it in a sentence, against answering questions")
+    print(LINE)
+
+    extractor = Extractor(schema)
+    guard = Guard(engine, schema)
+
+    # Written as somebody would actually answer "tell us about your family":
+    # two or three sentences, mixed Hinglish, nothing the interview prompted.
+    OPENERS = {
+        "sunita": "meri maa 62 saal ki hain aur vo vidhwa hain. hum gaon mein "
+                  "rehte hain, ghar kaccha hai, koi gaadi nahi hai. antyodaya "
+                  "card hai. ghar mein koi sarkari naukri nahi hai",
+        "ramlal": "main 45 saal ka kisan hoon, gaon mein rehta hoon. 3 ekad "
+                  "zameen hai aur khud kheti karte hain. pakka ghar hai, "
+                  "gaadi nahi hai. koi income tax nahi bharta",
+        "munni": "main garbhvati hoon aur pehla bachcha hai. hum gaon mein "
+                 "rehte hain, ghar kaccha hai. antyodaya card hai, koi "
+                 "sarkari naukri nahi hai",
+        "kishore": "main shahar mein rehta hoon, naukri hai. pakka ghar hai "
+                   "aur gaadi bhi hai. income tax bharta hoon",
+        "bhola": "main 52 saal ka hoon, gaon mein rehte hain. mera bank khata "
+                 "nahi hai. ghar kaccha hai, gaadi nahi hai. kaam chahiye",
+    }
+
+    print(f"  {'household':<10}{'read':>6}{'right':>7}{'asked cold':>12}"
+          f"{'asked after':>13}{'saved':>7}")
+
+    saved_total = cold_total = 0
+    for household in households:
+        if household.id not in OPENERS:
+            continue
+        member = household.members[0].id if household.members else None
+        full = project(household, schema, member).facts
+
+        cold = len(interview(engine, schema, schemes, full))
+
+        reading = extractor.understand(OPENERS[household.id])
+        intake = guard.admit(reading.mentions, {}, Source.SPOKEN,
+                             reading.disagreements)
+        # Only readings that match the household's real answers are credited,
+        # so a mis-read fact cannot show up as a saving.
+        given = {k: v for k, v in intake.facts.items() if full.get(k) == v}
+
+        asked = [q for q in interview(engine, schema, schemes, full)
+                 if q.attribute not in given]
+        saved = cold - len(asked)
+        saved_total += saved
+        cold_total += cold
+        print(f"  {household.id:<10}{len(intake.facts):>6}{len(given):>7}"
+              f"{cold:>12}{len(asked):>13}{saved:>7}")
+
+    print(f"\n  {saved_total} of {cold_total} questions skipped, "
+          f"{saved_total / cold_total:.0%}")
+    print("  The saving is bounded by what the sentence actually covered: the")
+    print("  interview was already asking only what it needed.")
+    print()
+
+
+def e9_guard(engine, schema):
+    """What the boundary between the two halves actually refuses.
+
+    Four kinds of bad reading, each put through on purpose. A guard nobody can
+    see working is indistinguishable from no guard.
+    """
+    from patra.guard import Doubt, Guard, Refused, Source
+    from patra.nlp.extract import Extractor
+
+    print(LINE)
+    print("  E9  the guard between understanding and deciding")
+    print(LINE)
+
+    extractor = Extractor(schema)
+    guard = Guard(engine, schema)
+
+    PROBES = [
+        ("hedged estimate", "our income is around a lakh", {}),
+        ("a hint, not a statement", "unka husband nahi hai", {}),
+        ("impossible together", "she is 15 years old and a widow", {}),
+        ("outside the schema", "my age is 480", {}),
+        ("contradicts an answer", "I am 70 years old", {"age": 65}),
+        ("two readings at once", "I am married and unmarried", {}),
+        ("a number naming nothing", "house number 42", {}),
+        ("plain and usable", "I am 62 years old, we live in a village", {}),
+        ("asking, not telling", "mujhe pension chahiye", {}),
+    ]
+
+    print(f"  {'probe':<26}{'used':>6}{'read back':>11}{'refused':>9}  why")
+    for label, text, known in PROBES:
+        reading = extractor.understand(text)
+        intake = guard.admit_understanding(reading, known)
+        why = ""
+        if intake.refused:
+            why = intake.refused[0].reason.value
+        elif intake.confirm:
+            why = intake.confirm[0].doubt.value
+        elif reading.numbers_unused and not intake.accepted:
+            why = "no anchor"
+        print(f"  {label:<26}{len(intake.accepted):>6}"
+              f"{len(intake.confirm):>11}{len(intake.refused):>9}  {why}")
+
+    cases = _labelled()
+    proposed = used = asked = refused = 0
+    for case in cases:
+        reading = extractor.understand(case["text"])
+        intake = guard.admit_understanding(reading, {})
+        proposed += len(reading.mentions)
+        used += len(intake.accepted)
+        asked += len(intake.confirm)
+        refused += len(intake.refused)
+    print(f"\n  over the {len(cases)} labelled sentences: {proposed} readings "
+          f"proposed, {used} used,")
+    print(f"  {asked} read back for confirmation, {refused} refused outright")
+    print()
+
+
 def main():
     schema = load_schema(DATA / "attributes.yaml")
     schemes = load_schemes(DATA / "schemes", schema)
@@ -411,6 +630,9 @@ def main():
     e4_questions(engine, schema, schemes, households)
     e5_population(engine, schema, schemes)
     e6_scaling(engine, schema)
+    e7_understanding(schema)
+    e8_spoken_shortens_the_interview(engine, schema, schemes, households)
+    e9_guard(engine, schema)
 
 
 if __name__ == "__main__":

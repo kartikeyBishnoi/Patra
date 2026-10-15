@@ -2,17 +2,26 @@
 
 "पात्र" means "eligible".
 
-A household in a village answers a few questions and finds out which government
-schemes they can claim, why they were refused the others, and exactly which
-papers to collect in what order.
+A household in a village says a sentence, answers a few questions, or
+photographs a paper, and finds out which government schemes they can claim, why
+they were refused the others, what the smallest change would be, and exactly
+which papers to collect in what order.
+
+Speech, typing and photographs go through a layer that reads facts out of them
+and can point at the words it read each one from. Nothing that layer produces is
+believed. A constraint solver decides, and between the two sits a gate that
+refuses anything the schema or the domain axioms will not accept.
 
 The whole thing runs on the device. There is no server to call and no account to
 make, because the reasoning is a constraint solver and a few YAML files rather
 than a model that needs hosting. Answers about caste, income and disability never
 leave the machine, which is a property of how it is built rather than a promise
-in a policy.
+in a policy. The one exception is the microphone, which is off until you say
+yes, and says so in your own language when you press it.
 
-Nothing here is trained. There are no weights, no dataset, no model.
+Nothing here is trained. There are no weights and no dataset. The only trained
+models anywhere near it are tesseract's character recogniser and the voice that
+reads the screen aloud, and neither decides anything.
 
 ---
 
@@ -31,6 +40,30 @@ because they needed a ration card first. They go again. Each trip is a lost day
 of wages. Nobody ever tells them the order.
 
 ## What it does
+
+**Takes it however you can give it.** Type or speak a sentence and it reads
+what it can:
+
+```
+"Meri maa 62 saal ki hain aur unka husband nahi hai"
+
+  about           your mother        from "maa"
+  Age             62                 from "62 saal"
+  Gender          female             worked out from the relation
+  Marital status  widowed?           from "husband nahi", so we ask
+```
+
+That last line is the design. "No husband" is said by unmarried women as often
+as by widows, so it is read back rather than assumed. The questions then skip
+whatever the sentence already covered.
+
+**Reads a photographed paper.** Point the camera at an income certificate and
+it says which document it thinks that is and what it matched on, then reads the
+figure off it and asks you to confirm it. Every field off a photograph is a
+question, never an answer, because a five read as a six moves an income by ten
+thousand rupees and only the person holding the paper can see it happened.
+Aadhaar and PAN numbers are used to recognise the card and then thrown away
+unread.
 
 **Finds the claims.** Twenty schemes checked against every member of the
 household and against the household itself, so a pension for the grandmother, a
@@ -56,17 +89,59 @@ accepts several alternatives, which makes the whole structure an AND-OR graph.
 The app searches it and returns an ordered route with offices, fees and how many
 trips each takes.
 
+**Says what to do next, in order.** Not six checklists for six refusals, one
+ranked list:
+
+```
+1. Link your bank account to Aadhaar
+   Your own bank branch, free, one trip
+   Opens up: widow pension, life insurance, accident insurance
+   Needed for: family benefit, rural housing
+
+2. Passport photographs
+   Any photo studio in the market, Rs 60, one trip
+   Opens up: job card, Antyodaya ration card
+```
+
+Those counts are re-derived, not tallied. A fact that appears in four refusals
+may unlock nothing on its own, because each of those schemes is also blocked by
+something else, so every candidate action is assumed and the solver is asked
+again. Changing a fact and obtaining a paper are costed in the same currency, so
+they can be ranked against each other, and one trip to the bank is listed once.
+
+**Answers "what if".** Change one answer and every scheme is decided again:
+
+```
+Yearly income: 42,000 -> 300,000
+
+  6 now, 5 after the change
+  - Antyodaya ration card: yearly household income must be very low
+```
+
+Both directions, always. A change that gains three schemes and quietly costs
+two is not an improvement, and somebody weighing up a better-paying job is
+entitled to see the whole trade. A change that could not be true of anybody is
+refused with the rule that says so.
+
 **Says when nothing will help.** If a refusal rests on age or caste, the app
 names the blocker and offers no advice. A system that always has a suggestion is
 a system that sometimes lies.
+
+**Will not say what it cannot verify.** Ask the chatbot whether you qualify and
+it puts the question to the solver. If a fact the scheme reads is missing, the
+answer is not a guess, it is "PATRA could not verify this" and a list of what is
+still needed.
 
 **Asks as little as it can.** Questions stop the moment the answers are settled,
 and the sensitive ones go last, so in most interviews caste and disability never
 come up at all.
 
-**Shows its working.** Every result has a panel that opens into the actual
+**Shows its working, on both halves.** Every result opens into the actual
 derivation: what was encoded, what the solver found, how the smallest reason was
-isolated and at what cost, and how the repair was chosen.
+isolated and at what cost, and how the repair was chosen. So does every sentence
+it reads, down to the numbers it threw away for naming nothing. A word list that
+cannot show its working is indistinguishable from a model that guessed, which is
+the whole reason for using a word list.
 
 ## Running it
 
@@ -79,17 +154,38 @@ python3 -m patra.web.server
 ```
 
 Open `http://127.0.0.1:8765`. Pick a language, tap the papers you already hold,
-answer the questions. Opening `index.html` straight off the disk will not work,
-because the page needs the app running behind it; it says so rather than sitting
-blank.
+say or type a sentence about your family if you want to, answer the questions.
+Opening `index.html` straight off the disk will not work, because the page needs
+the app running behind it; it says so rather than sitting blank.
 
-There is a terminal interface too:
+Reading photographed documents needs tesseract, which is a system package rather
+than a Python one. Without it the camera card simply does not appear.
+
+```bash
+sudo apt install tesseract-ocr tesseract-ocr-hin tesseract-ocr-mar tesseract-ocr-ben tesseract-ocr-tam
+```
+
+The app asks which language packs are installed and names the missing ones
+rather than returning an empty read that looks like a bad photograph.
+
+There is a terminal interface too, and every feature is reachable from it:
 
 ```bash
 python3 -m patra.cli screen --household sunita
 python3 -m patra.cli plan --household munni
 python3 -m patra.cli ask
 python3 -m patra.cli documents
+python3 -m patra.cli read "meri maa 62 saal ki hain aur unka husband nahi hai"
+python3 -m patra.cli next --household sunita
+python3 -m patra.cli whatif --household sunita --set annual_income=300000
+python3 -m patra.cli paper --image some-certificate.png
+```
+
+Specimen documents to try the reader on, drawn from scratch and stamped
+SPECIMEN so nothing here resembles a real record:
+
+```bash
+python3 tools/samplecards.py --out /tmp/cards
 ```
 
 ## Languages
@@ -152,10 +248,26 @@ the voice models are build artefacts and are not in the repository.
 ## How it works
 
 ```
-answers -> constraint encoding -> Z3 -> QuickXPlain, MARCO, hitting sets
-                                     -> AND-OR search over documents
-                                     -> templated explanation
+   speech / typing / a photograph
+             |
+     perception            gazetteer, numeral grammar, OCR, signatures
+             |             guesses, and can cite the words it read
+             |
+      the guard            schema, no overwriting, domain axioms,
+             |             unsure readings go back to the person
+             |
+      reasoning            Z3 -> QuickXPlain, MARCO, hitting sets
+             |                -> AND-OR search over documents
+             |                -> counterfactual simulation
+             |                -> utility-ranked actions
+             |
+     explanation           sentences built from the constraint tree,
+                           the derivation, pre-recorded speech
 ```
+
+Perception proposes. The solver decides. Nothing crosses the middle that the
+schema and the axioms do not accept, and that is enforced in `patra/guard.py`
+rather than left to whoever calls it.
 
 | Layer | Technique |
 |---|---|
@@ -165,8 +277,13 @@ answers -> constraint encoding -> Z3 -> QuickXPlain, MARCO, hitting sets
 | What would fix it | minimal correction sets, restricted to changeable facts |
 | Which paper first | minimum-cost AND-OR search |
 | Which question next | adaptive test selection |
+| What if | counterfactual re-decision over the whole rulebook |
+| What to do next | candidate actions costed and ranked by re-derived payoff |
 | Did we mishear | domain axioms and the same conflict detection |
+| Reading a sentence | gazetteer, positional rules, clause-scoped negation |
+| Reading a document | signature classification and pattern extraction over local OCR |
 | Questions in plain words | keyword intent matching over the knowledge base |
+| Will not say what it cannot prove | re-derivation at the verification boundary |
 | Rules read aloud in any language | sentence generation from the constraint tree |
 
 The mathematics carries weight rather than decorating. Minimal correction sets
@@ -174,11 +291,20 @@ are exactly the minimal hitting sets of the minimal conflicts, which is why a
 single traversal of the subset lattice answers both "why not" and "what now". We
 verify that on our own instances rather than citing it and moving on.
 
-The assistant answers from the knowledge base, not a language model. A language
-model would read phrasing far better and would also, now and then, state fluently
-that somebody qualifies for a pension they do not, in a way the reader cannot
-detect. Between a tool that sometimes says "ask me differently" and one that
-sometimes invents an entitlement, only the first is defensible here.
+Three things that look like one feature and are not. The understanding layer is
+a word list, so it can point at the evidence for every fact and fails by saying
+it did not catch that. The explanation is generated from the same constraint
+tree the solver decided on, so it cannot drift from the decision. And no
+statement about entitlement leaves the system unless the solver derived it from
+facts that are all known, which is why the chatbot can answer "PATRA could not
+verify this" to its own most important question, and does.
+
+A language model would read phrasing far better than any of this and would
+also, now and then, state fluently that somebody qualifies for a pension they do
+not, in a way the reader cannot detect. Between a tool that sometimes says "ask
+me differently" and one that sometimes invents an entitlement, only the first is
+defensible here. The full argument, and the one place a language model would
+earn its keep, is in [docs/AI.md](docs/AI.md).
 
 ## Layout
 
@@ -186,23 +312,29 @@ sometimes invents an entitlement, only the first is defensible here.
 patra/
   model/      attributes, households, schemes, the document graph
   encode/     YAML loader, Z3 compiler
-  reason/     oracle, quickxplain, marco, hitting sets,
-              planner, unlock, questions, consistency, sensitivity
-  explain/    templated rendering and the derivation trace
+  nlp/        normalising, numeral grammar, fact extraction
+  vision/     local OCR and document signatures
+  reason/     oracle, quickxplain, marco, hitting sets, planner,
+              unlock, questions, consistency, sensitivity, simulate
+  explain/    templated rendering and the derivation traces
   web/        local server and the app
+  guard.py    the boundary: what may become a fact, what may be claimed
+  advise.py   candidate actions, costed and ranked by re-derived payoff
   assist.py   the question answerer
   engine.py   adjudication and household screening
   cli.py      terminal interface
 data/
-  attributes.yaml   33 facts, with mutability and sensitivity
+  attributes.yaml   33 facts, with mutability, sensitivity and paper
   schemes/          20 encoded schemes
   documents.yaml    17 documents and what each needs first
   axioms.yaml       what cannot be true of anybody
+  cues.yaml         the phrases that propose a fact, in five languages
+  papers.yaml       what is printed on each document, and what to read off it
   i18n/             five languages
   cases/            five households used for testing
-tests/        129 tests
-eval/         six experiments
-docs/         limitations, languages, build plan
+tests/        249 tests
+eval/         nine experiments, and the labelled sentences for one of them
+docs/         the AI argument, limitations, languages
 ```
 
 ## Tests and measurements
@@ -221,6 +353,14 @@ Measured by running the system, nothing hard-coded:
 | Hitting-set duality | held in 106 of 106 refusals, both directions |
 | Acquisition planner | optimal on 12 of 12 targets, against exhaustive search |
 | Adaptive questioning | mean 7 questions instead of 12 |
+| Reading a sentence | 61 labelled sentences across five languages, no fact invented from the 17 that carry none |
+| Describing your family in words | 21 of 120 interview questions skipped |
+| The guard | 70 readings proposed, 66 used, 2 read back, 2 refused |
+
+The reading figure is the weakest number here and the harness says so when it
+prints it: the labelled sentences and the cue vocabulary were written by the
+same hand, so it measures coverage of phrasings we thought of rather than
+generalisation. It is the first number that should be replaced with field data.
 
 ## Adding a scheme
 

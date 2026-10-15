@@ -1,0 +1,218 @@
+# Recognising a photographed document by what is printed on it.
+#
+# This is a signature file, not a model. A document is identified by the
+# phrases its issuing authority prints on every copy, which is why it can say
+# which phrase it matched on, and why adding a state's own certificate layout
+# is a few lines here rather than a retraining run.
+#
+# signatures  phrases that appear on the real thing. Each one matched adds to
+#             the score; the strongest candidate wins and the rest are offered
+#             as alternatives, because a photograph of a creased card in bad
+#             light is not something to be certain about.
+#
+# fields      what to read off it, and which attribute the value belongs to.
+#             A value read here is never used directly. It is proposed, the
+#             person is shown what was read and where, and only their
+#             confirmation puts it in front of the solver.
+#
+# redact      true means the value is used to recognise the document and then
+#             discarded. Aadhaar and PAN numbers are matched because their
+#             shape identifies the card, and then thrown away unread: this app
+#             tells people it never asks for their Aadhaar number, and that has
+#             to hold when it is looking at the card itself.
+
+papers:
+
+  aadhaar:
+    signatures:
+      - unique identification authority
+      - unique identification
+      - government of india
+      - aadhaar
+      - aadhar
+      - uidai
+      - भारत सरकार
+      - आधार
+      - भारतीय विशिष्ट पहचान
+      - मेरा आधार मेरी पहचान
+    fields:
+      - name: number
+        pattern: '\b\d{4}\s?\d{4}\s?\d{4}\b'
+        redact: true
+      - name: year_of_birth
+        attribute: age
+        pattern: '(?:year of birth|dob|date of birth|जन्म)\D{0,12}(\d{4})'
+        reads: year
+
+  pan_card:
+    signatures:
+      - income tax department
+      - permanent account number
+      - आयकर विभाग
+      - स्थायी लेखा संख्या
+    fields:
+      - name: number
+        pattern: '\b[A-Z]{5}\d{4}[A-Z]\b'
+        redact: true
+
+  voter_id:
+    signatures:
+      - election commission of india
+      - elector photo identity
+      - भारत निर्वाचन आयोग
+      - निर्वाचक फोटो पहचान
+
+  ration_card:
+    signatures:
+      - ration card
+      - public distribution
+      - food security
+      - राशन कार्ड
+      - खाद्य सुरक्षा
+      - सार्वजनिक वितरण
+    fields:
+      - name: card_type
+        attribute: ration_card_type
+        pattern: '(antyodaya|अंत्योदय|priority household|प्राथमिकता|पात्र गृहस्थी|above poverty)'
+        map:
+          antyodaya: aay
+          अंत्योदय: aay
+          priority household: phh
+          प्राथमिकता: phh
+          पात्र गृहस्थी: phh
+          above poverty: apl
+
+  income_certificate:
+    signatures:
+      - income certificate
+      - annual income
+      - certificate of income
+      - आय प्रमाण पत्र
+      - वार्षिक आय
+      - tehsildar
+      - तहसीलदार
+    fields:
+      - name: annual_income
+        attribute: annual_income
+        pattern: '(?:annual income|income|आय)\D{0,24}([\d,]{3,12})'
+        reads: money
+
+  caste_certificate:
+    signatures:
+      - caste certificate
+      - scheduled caste
+      - scheduled tribe
+      - other backward
+      - जाति प्रमाण पत्र
+      - अनुसूचित जाति
+      - अनुसूचित जनजाति
+      - अन्य पिछड़ा
+    fields:
+      - name: category
+        attribute: category
+        pattern: '(scheduled caste|scheduled tribe|other backward|अनुसूचित जाति|अनुसूचित जनजाति|अन्य पिछड़ा)'
+        map:
+          scheduled caste: sc
+          अनुसूचित जाति: sc
+          scheduled tribe: st
+          अनुसूचित जनजाति: st
+          other backward: obc
+          अन्य पिछड़ा: obc
+
+  disability_certificate:
+    signatures:
+      - disability certificate
+      - certificate of disability
+      - permanent disability
+      - दिव्यांगता प्रमाण पत्र
+      - विकलांगता प्रमाण पत्र
+      - unique disability
+    fields:
+      - name: disability_percent
+        attribute: disability_percent
+        pattern: '(\d{1,3})\s?(?:%|percent|प्रतिशत)'
+
+  death_certificate:
+    signatures:
+      - death certificate
+      - registration of death
+      - मृत्यु प्रमाण पत्र
+      - मृत्यु पंजीकरण
+
+  birth_certificate:
+    signatures:
+      - birth certificate
+      - registration of birth
+      - जन्म प्रमाण पत्र
+      - जन्म पंजीकरण
+    fields:
+      - name: year_of_birth
+        attribute: age
+        pattern: '(?:date of birth|जन्म तिथि|जन्म की तारीख)\D{0,16}(\d{4})'
+        reads: year
+
+  domicile_certificate:
+    signatures:
+      - domicile certificate
+      - residence certificate
+      - निवास प्रमाण पत्र
+      - मूल निवास
+
+  bank_account:
+    signatures:
+      - passbook
+      - account number
+      - ifsc
+      - branch
+      - बैंक
+      - खाता संख्या
+      - पासबुक
+    fields:
+      - name: number
+        pattern: '\b\d{9,18}\b'
+        redact: true
+
+  electricity_bill:
+    signatures:
+      - electricity
+      - energy bill
+      - units consumed
+      - consumer number
+      - विद्युत
+      - बिजली
+      - उपभोक्ता संख्या
+
+  land_records:
+    signatures:
+      - khatauni
+      - khasra
+      - record of rights
+      - jamabandi
+      - खतौनी
+      - खसरा
+      - जमाबंदी
+      - भूमि अभिलेख
+    fields:
+      - name: land_acres
+        attribute: land_acres
+        pattern: '([\d.]{1,6})\s?(?:acre|acres|एकड़)'
+
+  job_card:
+    signatures:
+      - job card
+      - mgnrega
+      - nrega
+      - mahatma gandhi national rural employment
+      - रोजगार गारंटी
+      - जॉब कार्ड
+      - मनरेगा
+
+  school_certificate:
+    signatures:
+      - school leaving
+      - transfer certificate
+      - board of secondary
+      - विद्यालय
+      - स्थानांतरण प्रमाण पत्र
+
+  passport_photo: {}

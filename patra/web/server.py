@@ -11,6 +11,8 @@ Standard library only, so it starts anywhere Python does.
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
 import threading
@@ -25,20 +27,31 @@ from ..encode.loader import (
     load_schema,
     load_schemes,
 )
+from ..advise import Move, next_actions
 from ..assist import Assistant
 from ..engine import Engine, Trust
+from ..guard import Guard
 from ..i18n import Translations
 from ..model.attributes import Kind
 from ..model.household import Profile
 from ..model.scheme import say
+from ..nlp.extract import Extractor
 from ..reason.questions import Status, next_question, status
+from ..reason.simulate import simulate
 from ..explain.phrase import criterion as say_criterion
-from ..explain.trace import decision_trace, paperwork_trace
+from ..explain.trace import decision_trace, paperwork_trace, reading_trace
 from ..reason.unlock import ladder
+from ..vision.ocr import capability, packs_for, scan
+from ..vision.papers import Papers
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE.parent.parent / "data"
 AUDIO = DATA / "audio"
+
+# A phone camera photograph, with base64's third added on top and room to
+# spare. Bounded because the body is read into memory before it is parsed.
+MAX_IMAGE = 8 * 1024 * 1024
+MAX_BODY = 12 * 1024 * 1024
 
 
 def dig(tree, *path, default=None):
@@ -72,6 +85,12 @@ class Brain:
         self.axioms = load_axioms(data_dir / "axioms.yaml", self.schema)
         self.engine = Engine(self.schema, self.axioms, self.documents)
         self.translations = Translations(data_dir / "i18n")
+        self.extractor = Extractor(self.schema)
+        self.guard = Guard(self.engine, self.schema)
+        self.papers = Papers(self.schema)
+        # Asked once at start-up rather than per request, because it shells out
+        # to tesseract and the answer cannot change while the app is running.
+        self.ocr = capability()
         self._lock = threading.Lock()
 
     # ---- naming things in the chosen language ----
@@ -216,8 +235,9 @@ class Brain:
             "targets": sorted({d for s in winners for d in s.documents}),
         }
 
-    def answer(self, question: str, words) -> dict:
-        assistant = Assistant(self.schemes, self.documents, words, self.schema)
+    def answer(self, question: str, facts: dict, documents, words) -> dict:
+        assistant = Assistant(self.schemes, self.documents, words, self.schema,
+                              engine=self.engine, facts=facts, held=documents)
         with self._lock:
             a = assistant.ask(question)
         return {
@@ -226,6 +246,242 @@ class Brain:
             "bullets": a.bullets,
             "steps": a.steps,
             "suggestions": a.suggestions,
+            "apply": a.apply,
+        }
+
+    # ---- understanding what somebody said ----
+
+    def understand(self, text: str, facts: dict, words) -> dict:
+        """Read a sentence, and report every fact with the words behind it.
+
+        The shape of the reply is the architecture: `accepted` went through,
+        `confirm` is waiting on the person, `refused` could not be true. The
+        page cannot put a fact into the profile by any other route.
+        """
+        with self._lock:
+            reading = self.extractor.understand(text)
+            intake = self.guard.admit_understanding(reading, facts)
+
+        return {
+            "relation": self._relation(reading, words),
+            "accepted": [
+                {
+                    "attribute": a.attribute,
+                    "label": self.attr_label(words, a.attribute),
+                    "value": self.value_text(words, a.attribute, a.value),
+                    "raw": a.value,
+                    "evidence": a.evidence,
+                    "source": a.source.value,
+                    "inferred_from": a.inferred_from,
+                }
+                for a in intake.accepted
+            ],
+            "confirm": [
+                {
+                    "attribute": q.attribute,
+                    "label": self.attr_label(words, q.attribute),
+                    "value": self.value_text(words, q.attribute, q.value),
+                    "raw": q.value,
+                    "doubt": q.doubt.value,
+                    "why": dig(words, "ui", "doubt_" + q.doubt.value,
+                               default=q.doubt.value),
+                    "evidence": q.evidence,
+                    "alternative": (
+                        self.value_text(words, q.attribute, q.alternative)
+                        if q.alternative is not None else None
+                    ),
+                }
+                for q in intake.confirm
+            ],
+            "refused": [
+                {
+                    "attribute": r.attribute,
+                    "label": self.attr_label(words, r.attribute),
+                    "value": str(r.value),
+                    "reason": r.reason.value,
+                    "detail": r.axiom or r.detail,
+                }
+                for r in intake.refused
+            ],
+            "unused": [n.text for n in reading.numbers_unused],
+            "heard": reading.reading.text,
+        }
+
+    def _relation(self, reading, words):
+        if not reading.relation:
+            return None
+        return {
+            "id": reading.relation,
+            "label": dig(words, "relation", reading.relation,
+                         default=reading.relation.replace("_", " ")),
+            "evidence": reading.relation_evidence,
+        }
+
+    def confirm(self, attribute: str, value, facts: dict, words) -> dict:
+        """Take a fact the person has agreed to, with every check repeated."""
+        with self._lock:
+            intake = self.guard.confirm(attribute, value, facts)
+        if intake.refused:
+            r = intake.refused[0]
+            return {"ok": False,
+                    "label": self.attr_label(words, r.attribute),
+                    "detail": r.axiom or r.detail,
+                    "reason": r.reason.value}
+        a = intake.accepted[0]
+        return {"ok": True, "attribute": a.attribute, "raw": a.value,
+                "label": self.attr_label(words, a.attribute),
+                "value": self.value_text(words, a.attribute, a.value)}
+
+    # ---- what if, and what next ----
+
+    def what_if(self, facts: dict, changes: dict, words) -> dict:
+        with self._lock:
+            result = simulate(self.engine, self.schema, self.schemes,
+                              facts, changes)
+
+        if result.rejected:
+            shift, detail = result.rejected[0]
+            return {"ok": False, "detail": detail,
+                    "label": self.attr_label(words, shift.attribute)}
+        if result.impossible:
+            shift, axiom = result.impossible[0]
+            return {"ok": False, "impossible": True, "detail": axiom,
+                    "label": self.attr_label(words, shift.attribute)}
+
+        return {
+            "ok": True,
+            "shifts": [
+                {
+                    "label": self.attr_label(words, sh.attribute),
+                    "was": (self.value_text(words, sh.attribute, sh.was)
+                            if sh.was is not None else None),
+                    "now": self.value_text(words, sh.attribute, sh.now),
+                }
+                for sh in result.shifts
+            ],
+            "before": len(result.before),
+            "after": len(result.after),
+            "gained": [self._named(s, words) for s in result.gained],
+            "lost": [
+                {
+                    **self._named(l.scheme_id, words),
+                    "because": (self.criterion_text(words, l.scheme_id,
+                                                    l.blocked_by[0])
+                                if l.blocked_by else None),
+                }
+                for l in result.lost
+            ],
+            "kept": len(result.kept),
+            "undecided": len(result.undecided),
+        }
+
+    def advice(self, facts: dict, documents, words) -> dict:
+        with self._lock:
+            advice = next_actions(self.engine, self.schema, self.schemes,
+                                  facts, self.documents, set(documents))
+        return {
+            "eligible": len(advice.eligible),
+            "reachable": [self._named(s, words) for s in advice.reachable],
+            "hopeless": [self._named(s, words) for s in advice.hopeless],
+            "undecided": len(advice.undecided),
+            "actions": [self._action(a, words) for a in advice.actions],
+        }
+
+    def _action(self, action, words) -> dict:
+        out = {
+            "move": action.move.value,
+            "key": action.key,
+            "unlocks": [self._named(s, words) for s in action.unlocks],
+            "toward": [self._named(s, words) for s in action.toward],
+            "loses": [self._named(s, words) for s in action.loses],
+            "paperwork_only": action.paperwork_only,
+            "effort": action.effort,
+            "attribute": action.attribute,
+            "errand": None,
+            "threshold": None,
+        }
+        if action.errand:
+            doc = self.documents[action.errand.document]
+            out["errand"] = {
+                "id": doc.id,
+                "name": self.doc_text(words, doc, "name"),
+                "issuer": self.doc_text(words, doc, "issuer"),
+                "fee": doc.fee, "days": doc.days, "trips": doc.trips,
+            }
+        if action.attribute:
+            attr = self.schema[action.attribute]
+            out["label"] = self.attr_label(words, action.attribute)
+            out["now"] = (self.value_text(words, action.attribute, action.now)
+                          if action.now is not None else None)
+            out["needed"] = self.value_text(words, action.attribute, action.needed)
+            # A number the schema calls paperwork is a recorded figure, not a
+            # target. "Earn 46,080" is nonsense advice; "the limit is 46,080 or
+            # less, and a certificate settles what yours is" is not.
+            if attr.kind is Kind.INT and isinstance(action.needed, int) \
+                    and isinstance(action.now, int):
+                out["threshold"] = "le" if action.needed < action.now else "ge"
+        return out
+
+    def _named(self, scheme_id: str, words) -> dict:
+        scheme = next((s for s in self.schemes if s.id == scheme_id), None)
+        if scheme is None:
+            return {"id": scheme_id, "name": scheme_id}
+        return {"id": scheme_id, "name": self.scheme_text(words, scheme, "name")}
+
+    # ---- reading a photographed document ----
+
+    def read_document(self, image: bytes, lang: str, facts: dict, words) -> dict:
+        if not self.ocr.available:
+            return {"ok": False, "detail": self.ocr.note or "no text reader"}
+
+        got = scan(image, lang, self.ocr)
+        if not got.ok:
+            return {"ok": False,
+                    "detail": got.error or dig(words, "ui", "doc_unreadable",
+                                               default="Could not read that picture")}
+
+        with self._lock:
+            reading = self.papers.interpret(got)
+            intake = self.guard.admit_document(reading, facts)
+
+        return {
+            "ok": True,
+            "sure": reading.sure,
+            "guesses": [
+                {
+                    "id": g.document,
+                    "name": (self.doc_text(words, self.documents[g.document], "name")
+                             if g.document in self.documents else g.document),
+                    "matched": list(g.matched),
+                    "score": g.score,
+                }
+                for g in reading.guesses[:3]
+            ],
+            # Every field off a photograph is read back before it is used, so
+            # these all arrive as questions rather than as answers.
+            "confirm": [
+                {
+                    "attribute": q.attribute,
+                    "label": self.attr_label(words, q.attribute),
+                    "value": self.value_text(words, q.attribute, q.value),
+                    "raw": q.value,
+                    "evidence": q.evidence,
+                }
+                for q in intake.confirm
+            ],
+            "refused": [
+                {
+                    "label": self.attr_label(words, r.attribute),
+                    "detail": r.axiom or r.detail,
+                }
+                for r in intake.refused
+            ],
+            "redacted": [
+                {"shape": x.shape,
+                 "note": dig(words, "ui", "doc_redacted",
+                             default="read to identify the card, then discarded")}
+                for x in reading.redacted
+            ],
         }
 
     def trace(self, facts: dict, scheme_id: str, words) -> dict:
@@ -235,6 +491,15 @@ class Brain:
         with self._lock:
             return decision_trace(self.engine, scheme,
                                   Profile(id="web", facts=facts), words)
+
+    def reading_trace(self, text: str, facts: dict, words) -> dict:
+        """The derivation behind a sentence, the same way a decision has one.
+
+        A gazetteer that cannot show its working is indistinguishable from a
+        model that guessed, which is the whole argument for using one.
+        """
+        with self._lock:
+            return reading_trace(self.extractor, self.guard, text, facts, words)
 
     def paper_trace(self, targets, held, words) -> dict:
         with self._lock:
@@ -356,6 +621,20 @@ class Handler(BaseHTTPRequestHandler):
         if route == "/api/languages":
             return self._json(200, self.brain.translations.listing())
 
+        if route == "/api/capabilities":
+            # The page asks rather than assumes, so a machine without the
+            # Hindi text pack says so instead of failing silently on a photo.
+            cap = self.brain.ocr
+            return self._json(200, {
+                "documents": cap.available,
+                "scripts": list(cap.installed),
+                "missing_scripts": list(cap.missing),
+                # The package names stay in Latin because they are what you
+                # type; the sentence around them is the page's to translate.
+                "packs": packs_for(cap.missing),
+                "note": cap.note,
+            })
+
         if route == "/api/strings":
             return self._json(200, self.brain.translations.bundle(self._lang()))
 
@@ -421,7 +700,54 @@ class Handler(BaseHTTPRequestHandler):
             question = payload.get("question", "")
             if not isinstance(question, str) or len(question) > 400:
                 return self._json(400, {"error": "bad question"})
-            return self._json(200, self.brain.answer(question, words))
+            return self._json(200, self.brain.answer(
+                question, facts, self._documents(payload), words))
+
+        if route == "/api/understand":
+            text = payload.get("text", "")
+            if not isinstance(text, str) or len(text) > 600:
+                return self._json(400, {"error": "bad text"})
+            return self._json(200, self.brain.understand(text, facts, words))
+
+        if route == "/api/confirm":
+            name = payload.get("attribute")
+            if not isinstance(name, str) or name not in self.brain.schema:
+                return self._json(400, {"error": "unknown attribute"})
+            return self._json(200, self.brain.confirm(
+                name, payload.get("value"), facts, words))
+
+        if route == "/api/simulate":
+            changes = payload.get("changes", {})
+            if not isinstance(changes, dict) or not changes:
+                return self._json(400, {"error": "no changes given"})
+            try:
+                self._check(changes)
+            except (KeyError, ValueError) as exc:
+                return self._json(200, {"ok": False, "detail": str(exc)})
+            return self._json(200, self.brain.what_if(facts, changes, words))
+
+        if route == "/api/next":
+            return self._json(200, self.brain.advice(
+                facts, self._documents(payload), words))
+
+        if route == "/api/read-document":
+            encoded = payload.get("image", "")
+            if not isinstance(encoded, str) or not encoded:
+                return self._json(400, {"error": "no picture"})
+            try:
+                image = base64.b64decode(encoded, validate=True)
+            except (binascii.Error, ValueError):
+                return self._json(400, {"error": "bad picture"})
+            if len(image) > MAX_IMAGE:
+                return self._json(413, {"error": "picture too large"})
+            return self._json(200, self.brain.read_document(
+                image, payload.get("lang", "en"), facts, words))
+
+        if route == "/api/read-trace":
+            text = payload.get("text", "")
+            if not isinstance(text, str) or len(text) > 600:
+                return self._json(400, {"error": "bad text"})
+            return self._json(200, self.brain.reading_trace(text, facts, words))
 
         if route == "/api/trace":
             scheme_id = payload.get("scheme", "")
@@ -450,8 +776,16 @@ class Handler(BaseHTTPRequestHandler):
 
         self._json(404, {"error": "not found"})
 
+    def _documents(self, payload):
+        held = payload.get("documents", [])
+        if not isinstance(held, list):
+            return []
+        return [d for d in held if d in self.brain.documents]
+
     def _read_json(self):
         length = int(self.headers.get("Content-Length", 0))
+        if length > MAX_BODY:
+            raise json.JSONDecodeError("body too large", "", 0)
         return json.loads(self.rfile.read(length)) if length else {}
 
     def _check(self, facts):
@@ -465,9 +799,23 @@ class Handler(BaseHTTPRequestHandler):
             self.brain.schema[name].check(value)
 
 
+class Server(ThreadingHTTPServer):
+    """A listen backlog deep enough for a page that asks several things at once.
+
+    The default is five. The result screen opens by asking for the decision,
+    the ranked actions, the document list and a derivation at the same time,
+    and anything past the fifth connection is reset by the kernel before the
+    server ever sees it. That looks exactly like a crash from the browser and
+    is not one, which is the worst kind of bug to go looking for.
+    """
+
+    request_queue_size = 128
+    daemon_threads = True
+
+
 def serve(port: int = 8765, data_dir: Path = DATA):
     Handler.brain = Brain(data_dir)
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    server = Server(("127.0.0.1", port), Handler)
     print(f"PATRA is running. Open http://127.0.0.1:{port} in a browser.")
     print("Everything stays on this machine. Press Ctrl+C to stop.")
     try:

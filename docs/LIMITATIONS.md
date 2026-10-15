@@ -86,6 +86,84 @@ neighbour can check, which lowers the bar from "the user must read" to
 "somebody they trust must read". Full independence is not achievable and we do
 not claim it.
 
+## The understanding layer only knows phrases we wrote down
+
+`data/cues.yaml` is a gazetteer. It reads the phrasings we thought of and
+nothing else, so somebody saying something we did not anticipate gets "no
+answers came out of that" and falls back to the questions. That failure mode is
+the one we chose: a missed fact costs a question, an invented one costs a wasted
+trip.
+
+The evaluation figure for this (E7) is weaker than it looks, and the harness
+says so when it prints. The labelled sentences in `eval/sentences.yaml` and the
+cue vocabulary were written by the same hand, so the numbers measure coverage
+of phrasings we thought of rather than generalisation. **It is the first number
+in this project that should be thrown away and replaced with field data.**
+
+Dialect is the specific gap. The cues lean on standard Hindi, Marathi, Bengali
+and Tamil plus Latin transliteration. Bhojpuri, Awadhi, Haryanvi and Marwari
+speakers will not be read well, and those are a large part of the intended
+users.
+
+## Marathi, Bengali and Tamil cues were written without a native speaker
+
+The same caveat already on those languages' interface text now extends to their
+cue vocabulary, where it matters more. A wrong interface word reads as broken.
+A wrong cue word silently reads a fact nobody stated. Tamil marks case by
+changing the stem rather than adding a vowel sign, so the matcher cannot reach
+inflected forms and they are listed individually; the list is certainly
+incomplete.
+
+## Reading a photograph is bounded by what tesseract has installed
+
+The signatures and field patterns are ours, and the character recognition is
+tesseract's. On this machine only the English pack is installed, so a
+Devanagari-only document will not be read at all. The app says which pack is
+missing rather than returning an empty read that looks like a bad photograph,
+but the limit is real and most Indian documents are bilingual only by
+convention.
+
+Field patterns are regular expressions over OCR output, which is why every
+field read off a photograph is read back to the person before use, without
+exception and regardless of how clean the output looked. A five read as a six
+moves an income by ten thousand rupees, and the person holding the paper is
+the only one who can see that it happened.
+
+The specimen documents in `tools/samplecards.py` are drawn from scratch with
+invented names and stamped SPECIMEN. They exercise the pipeline and are not
+evidence that it works on a creased card photographed in bad light, which is
+the real case and which we have not tested.
+
+## The microphone is the one thing that leaves the machine
+
+Browser speech recognition sends the audio to whoever made the browser. There
+is no local alternative we can ship in a page. It is off until the person says
+yes, the warning says exactly that in their own language, and typing always
+works instead.
+
+Everything else is local, including the voice you hear, which is synthesised at
+build time. But "nothing leaves this machine" is not true of the microphone and
+we would rather say so than carry a privacy claim that is almost right.
+
+## The simulation answers a narrower question than it appears to
+
+"What if our income were eighty thousand" is answered against the encoded
+rules, which are research artefacts, and against this household's other answers
+held fixed. Real life does not hold them fixed: a better-paying job changes
+occupation, and sometimes where you live. The simulation is a conditional, not
+a forecast.
+
+## Ranked actions are ranked by our costs
+
+An action's payoff is re-derived by assuming it and asking the solver again,
+which is sound. Its cost is `Document.effort` and the schema's effort weights,
+which are our judgement. So the ordering of two actions with the same payoff
+reflects our assumptions about what is burdensome, not the household's.
+
+Actions are also considered one at a time. Two changes that only pay off
+together will not be found, and looking for them jointly is the same
+combinatorial problem the planner already avoids.
+
 ## Nobody validates the answers
 
 Without a field worker present, a misheard question produces a wrong answer
@@ -107,3 +185,8 @@ edges. Scoping properly would mean a state dimension on every rule.
 - Scraping live scheme data, so the corpus goes stale by hand
 - Detecting contradictions inside a rulebook, though the machinery supports it
 - Any evaluation with real households
+- Dialects, which is where most of the intended users actually speak
+- Reading handwriting, or any document photographed at an angle
+- A model proposing rule changes from a government notification, which is the
+  one place a language model would earn its place, because a human checks it
+  before it reaches anybody

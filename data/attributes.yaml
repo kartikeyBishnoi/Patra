@@ -11,8 +11,17 @@
 #                         to fix, which is why they are worth surfacing first.
 #             circumstance genuinely changeable, at real cost
 #
+# asset       something the household has and would never sensibly give up:
+#             land, a pucca house, a vehicle, a bank account, a ration card.
+#             A scheme that excludes asset holders is not refusing them, it is
+#             aimed at somebody else, and "sell three acres" is not advice.
+#
 # sensitive   caste, religion, disability, income. Asked last, and skipped
 #             entirely once the answer no longer depends on them.
+#
+# document    the paper in documents.yaml that puts this fact on record, where
+#             one exists. Turns "link your account to Aadhaar" into an errand
+#             with an office, a fee and a number of trips attached.
 #
 # question    written to be read aloud. Somebody is going to have to say this
 #             to a stranger on their doorstep.
@@ -51,6 +60,7 @@ attributes:
     effort: 3
     sensitive: true
     question: "Roughly how much does your whole family earn in a year?"
+    document: income_certificate
 
   ration_card_type:
     kind: enum
@@ -61,6 +71,7 @@ attributes:
     effort: 3
     asset: true
     question: "What kind of ration card does the family have, if any?"
+    document: ration_card
 
   land_acres:
     kind: int
@@ -72,6 +83,7 @@ attributes:
     scope: household
     mutability: circumstance
     effort: 9
+    asset: true
     question: "How much farm land does the family own, in acres?"
 
   cultivates_land:
@@ -88,6 +100,7 @@ attributes:
     scope: household
     mutability: circumstance
     effort: 9
+    asset: true
     question: "Is your house built of brick and concrete, with a solid roof?"
 
   owns_vehicle:
@@ -96,6 +109,7 @@ attributes:
     scope: household
     mutability: circumstance
     effort: 7
+    asset: true
     question: "Does the family own a motorcycle, car or tractor?"
 
   income_tax_payer:
@@ -129,6 +143,7 @@ attributes:
     scope: household
     mutability: fixed
     question: "Has the family's main earner passed away in the last three years?"
+    document: death_certificate
 
   # ---- derived from the members; never asked directly ----
 
@@ -204,6 +219,7 @@ attributes:
     effort: 2
     asset: true
     question: "Does anyone in the house have a bank account?"
+    document: bank_account
 
   # ---------------- member ----------------
 
@@ -253,6 +269,7 @@ attributes:
     mutability: fixed
     sensitive: true
     question: "Do you have a disability certificate, and what percentage does it show?"
+    document: disability_certificate
 
   is_pregnant:
     kind: bool
@@ -294,6 +311,7 @@ attributes:
     effort: 2
     asset: true
     question: "Do you have a bank account in your own name?"
+    document: bank_account
 
   bank_aadhaar_linked:
     kind: bool
@@ -302,6 +320,7 @@ attributes:
     mutability: paperwork
     effort: 1
     question: "Is that bank account linked to your Aadhaar?"
+    document: bank_aadhaar_seeding
 
   already_receiving_pension:
     kind: bool

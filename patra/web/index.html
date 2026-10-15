@@ -190,6 +190,40 @@
   .empty { text-align:center; color:var(--grey); padding:34px 18px; }
   .hide { display:none !important; }
 
+  /* What was understood, and where each piece came from. The evidence is the
+     point: a fact with the words that produced it beside it can be seen to be
+     wrong, and a fact on its own cannot. */
+  .heard { background:var(--green-soft); border:1px solid var(--green);
+           border-radius:2px; padding:12px 14px; margin-bottom:12px; }
+  .heard .who { font-family:var(--serif); font-size:16px; margin-bottom:8px; }
+  .fact { display:flex; gap:10px; align-items:baseline; padding:5px 0;
+          border-bottom:1px dotted var(--line); }
+  .fact:last-child { border-bottom:0; }
+  .fact b { font-size:16px; }
+  .fact .ev { font-size:13px; color:var(--grey); font-style:italic;
+              margin-left:auto; text-align:right; }
+  .askrow { background:var(--amber-soft); border-left:4px solid var(--amber);
+            border-radius:2px; padding:12px 14px; margin-bottom:10px; }
+  .askrow .why { font-size:13.5px; color:var(--amber); margin-bottom:8px; }
+  .askrow .pair button { font-size:15px; padding:10px; }
+  .tellbox { display:flex; gap:8px; align-items:flex-start; }
+  .tellbox input { margin:0; font-size:18px; }
+  .mic { width:auto; margin:0; padding:0 15px; align-self:stretch;
+         font-size:20px; line-height:1; }
+  .mic.on { background:var(--red); color:#fff; border-color:var(--red); }
+
+  /* One errand, costed, with what it opens up. */
+  .act { border:1px solid var(--line); border-radius:2px; padding:14px;
+         margin-bottom:12px; background:#fff; }
+  .act.first { border-left:5px solid var(--green); }
+  .act .rank { font-size:12.5px; font-weight:700; letter-spacing:.5px;
+               text-transform:uppercase; color:var(--green); }
+  .act h4 { margin:3px 0 5px; font-family:var(--serif); font-size:17.5px;
+            color:var(--green-dark); font-weight:700; }
+  .act .cost { font-size:14px; color:var(--grey); }
+  .lost { border-left-color:var(--red) !important; background:var(--red-soft); }
+  .src { font-size:12.5px; color:var(--grey); }
+
   @media (min-width: 760px) {
     .bar { justify-content:center; }
     .bar > div:first-child, .bar .lang { position:relative; }
@@ -256,7 +290,11 @@ const PIC = {
 const S = {
   lang:"en", speech:"en-IN", words:{}, langs:[],
   facts:{}, order:[], held:new Set(), asked:0,
-  result:null, tab:"home"
+  result:null, tab:"home",
+  /* Where each fact came from, so the result page can distinguish an answer
+     somebody gave from one we read off a photograph. */
+  sources:{}, relation:null,
+  can:{documents:false}, micOk:false, listening:null
 };
 const KEY = "patra.lang";
 
@@ -379,6 +417,9 @@ function offline() {
 async function boot() {
   try { S.langs = await api("/api/languages"); }
   catch { return offline(); }
+  // Whether this machine can read a photograph is a fact about the machine,
+  // so the page asks once instead of offering a button that cannot work.
+  try { S.can = await api("/api/capabilities"); } catch {}
   let saved = null;
   try { saved = localStorage.getItem(KEY); } catch {}
   const found = S.langs.find(l => l.code === saved);
@@ -418,7 +459,8 @@ async function pickLanguage(l) {
   $("tab-help").textContent   = t("ui.tab_help")   || "Help";
   $("chat-title").textContent = t("ui.chat_title") || "Ask a question";
   $("chat-sub").textContent   = t("ui.chat_sub")   || "";
-  $("chat-in").placeholder    = t("ui.chat_hint")  || "Type your question";
+  $("chat-in").placeholder    = t("ui.ask_or_tell") || t("ui.chat_hint")
+                                 || "Type your question";
 
   const b = $("lang-btn");
   b.textContent = "🌐 " + l.name;
@@ -428,6 +470,7 @@ async function pickLanguage(l) {
   show("tabs"); show("fab");
   $("chat-log").innerHTML = "";
   S.facts = {}; S.order = []; S.held = new Set(); S.asked = 0; S.result = null;
+  S.sources = {}; S.relation = null;
   go("home");
 }
 
@@ -455,6 +498,8 @@ function startScreen() {
   const priv = el("div","note ok");
   priv.textContent = t("ui.privacy");
   wrap.appendChild(priv);
+  wrap.appendChild(tellCard());
+  if (S.can.documents) wrap.appendChild(photoCard());
 
   const b = band(v);
   const box = el("div");
@@ -477,6 +522,293 @@ function startScreen() {
       box.appendChild(bt);
     });
   }).catch(offline);
+}
+
+/* ---------- saying it in your own words ---------- */
+
+/* The interview is a good way to be asked and a slow way to volunteer. Someone
+   who already knows their mother is 62 and widowed should be able to say so in
+   one sentence, and the questions should then skip what they covered.
+
+   What comes back is not applied blindly. The server returns three lists, and
+   the shape of the reply is the architecture: facts it accepted, facts it
+   wants confirmed, and readings it refused with the reason. */
+function tellCard() {
+  const c = el("div","card");
+  c.appendChild(el("h3", null, t("ui.tell_title")));
+  c.appendChild(el("div","sub", t("ui.tell_help")));
+
+  const row = el("div","tellbox mt");
+  const inp = document.createElement("input");
+  inp.type = "text";
+  inp.placeholder = t("ui.tell_hint");
+  row.appendChild(inp);
+
+  const mic = el("button","mic","🎤");
+  mic.title = t("ui.mic");
+  mic.onclick = () => speak(inp, mic, out);
+  row.appendChild(mic);
+  c.appendChild(row);
+
+  const go = el("button","cta", t("ui.tell_go"));
+  const out = el("div","mt");
+  go.onclick = () => understand(inp.value, out, inp);
+  inp.onkeydown = e => { if (e.key === "Enter") understand(inp.value, out, inp); };
+  c.appendChild(go);
+  c.appendChild(out);
+  return c;
+}
+
+async function understand(text, out, inp) {
+  if (!text || !text.trim()) return;
+  out.innerHTML = "";
+  out.appendChild(el("div","sub", t("ui.checking") || "Checking"));
+
+  let data;
+  try { data = await api("/api/understand", {text:text, facts:S.facts}); }
+  catch { out.innerHTML = ""; return out.appendChild(el("div","note stop",
+    t("ui.error_body") || "Could not read that")); }
+
+  out.innerHTML = "";
+  renderHeard(data, out);
+  if (!data.accepted.length && !data.confirm.length && !data.refused.length) {
+    return out.appendChild(el("div","note warn", t("ui.tell_nothing")));
+  }
+  out.appendChild(readWorking(text));
+  if (inp) inp.value = "";
+  const on = el("button","cta mt", t("ui.start"));
+  on.onclick = ask;
+  out.appendChild(on);
+}
+
+/* The same panel a decision gets, one layer earlier. A word list that cannot
+   show its working is indistinguishable from a model that guessed, which is
+   the entire argument for using a word list. */
+function readWorking(text) {
+  const box = el("details","work");
+  box.appendChild(el("summary", null, t("ui.working") || "How we worked this out"));
+  let loaded = false;
+  box.ontoggle = async () => {
+    if (!box.open || loaded) return;
+    loaded = true;
+    let tr;
+    try { tr = await api("/api/read-trace", {text:text, facts:S.facts}); }
+    catch { return; }
+    (tr.steps || []).forEach(s => box.appendChild(stepBlock(s)));
+  };
+  return box;
+}
+
+function renderHeard(data, out) {
+  data.accepted.forEach(a => adopt(a.attribute, a.raw, a.source));
+  if (data.relation) S.relation = data.relation;
+
+  if (data.accepted.length) {
+    const box = el("div","heard");
+    if (data.relation) {
+      box.appendChild(el("div","who",
+        t("ui.tell_relation") + ": " + data.relation.label));
+    }
+    data.accepted.forEach(a => {
+      const r = el("div","fact");
+      r.appendChild(el("b", null, a.label + ": " + a.value));
+      const why = a.inferred_from
+        ? t("ui.tell_inferred") + " " + (a.evidence || "")
+        : t("ui.tell_from") + " " + (a.evidence || "");
+      r.appendChild(el("span","ev", why));
+      box.appendChild(r);
+    });
+    out.appendChild(box);
+  }
+
+  data.confirm.forEach(q => out.appendChild(askRow(q, out)));
+
+  if (data.refused.length) {
+    const box = el("div","note stop");
+    box.appendChild(el("div", null, t("ui.refused_title")));
+    data.refused.forEach(r => box.appendChild(el("div","sub",
+      r.label + ": " + r.value + (r.detail ? "  ·  " + r.detail : ""))));
+    out.appendChild(box);
+  }
+}
+
+/* A reading the system is not sure enough to use. "Around a lakh" is an
+   estimate, and "husband nahi hai" is said by unmarried women as often as by
+   widows, so both are read back rather than assumed. */
+function askRow(q, out) {
+  const box = el("div","askrow");
+  box.appendChild(el("div","why", q.why));
+  let line = q.label + ": " + q.value;
+  if (q.alternative != null) line += "   (" + q.alternative + "?)";
+  box.appendChild(el("div", null, line));
+  if (q.evidence) box.appendChild(el("div","ev", t("ui.tell_from") + " " + q.evidence));
+
+  const pair = el("div","pair mt");
+  const yes = el("button","cta", t("ui.confirm_yes"));
+  yes.onclick = async () => {
+    let res;
+    try { res = await api("/api/confirm",
+      {attribute:q.attribute, value:q.raw, facts:S.facts}); }
+    catch { return; }
+    box.innerHTML = "";
+    if (!res.ok) {
+      box.className = "note stop";
+      return box.appendChild(el("div", null,
+        res.label + ": " + (res.detail || t("ui.assist_not_usable"))));
+    }
+    adopt(res.attribute, res.raw, "confirmed");
+    box.className = "heard";
+    const r = el("div","fact");
+    r.appendChild(el("b", null, res.label + ": " + res.value));
+    box.appendChild(r);
+  };
+  const no = el("button","ghost", t("ui.confirm_no"));
+  no.onclick = () => box.remove();
+  pair.appendChild(yes); pair.appendChild(no);
+  box.appendChild(pair);
+  return box;
+}
+
+/* ---------- speaking ---------- */
+
+/* The browser's speech recogniser sends the audio to whoever made the browser.
+   Everything else in this app stays on the machine, so this is the one place
+   that is not true, and it is said plainly and asked for once rather than
+   buried in a policy. Off unless the person says yes; typing always works. */
+function speak(inp, mic, out) {
+  const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Rec) {
+    out.innerHTML = "";
+    return out.appendChild(el("div","note warn", t("ui.mic_unavailable")));
+  }
+  if (S.listening) { S.listening.stop(); return; }
+  if (!S.micOk) return micConsent(inp, mic, out);
+
+  const rec = new Rec();
+  rec.lang = S.speech;
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  mic.classList.add("on");
+  mic.textContent = "■";
+  const done = () => {
+    mic.classList.remove("on"); mic.textContent = "🎤"; S.listening = null;
+  };
+  rec.onresult = e => {
+    const said = e.results[0][0].transcript;
+    inp.value = said;
+    done();
+    understand(said, out, inp);
+  };
+  rec.onerror = done;
+  rec.onend = done;
+  S.listening = rec;
+  try { rec.start(); } catch { done(); }
+}
+
+function micConsent(inp, mic, out) {
+  out.innerHTML = "";
+  const box = el("div","note warn");
+  box.appendChild(el("div", null, t("ui.mic_warn")));
+  const pair = el("div","pair mt");
+  const ok = el("button","cta", t("ui.mic"));
+  ok.onclick = () => { S.micOk = true; box.remove(); speak(inp, mic, out); };
+  const nope = el("button","ghost", t("ui.confirm_no"));
+  nope.onclick = () => box.remove();
+  pair.appendChild(ok); pair.appendChild(nope);
+  box.appendChild(pair);
+  out.appendChild(box);
+}
+
+/* ---------- reading a photographed paper ---------- */
+
+function photoCard() {
+  const c = el("div","card");
+  c.appendChild(el("h3", null, t("ui.doc_photo_title")));
+  c.appendChild(el("div","sub", t("ui.doc_photo_help")));
+
+  const pick = document.createElement("input");
+  pick.type = "file";
+  pick.accept = "image/*";
+  pick.className = "hide";
+  const out = el("div","mt");
+
+  const btn = el("button","ghost mt", "📷  " + t("ui.doc_photo_pick"));
+  btn.onclick = () => pick.click();
+  pick.onchange = () => { if (pick.files[0]) readPaper(pick.files[0], out); };
+
+  c.appendChild(btn); c.appendChild(pick); c.appendChild(out);
+  if (S.can.packs && S.can.packs.length) {
+    c.appendChild(el("div","src mt",
+      t("ui.doc_packs", {packs: S.can.packs.join(", ")})));
+  }
+  return c;
+}
+
+async function readPaper(file, out) {
+  out.innerHTML = "";
+  out.appendChild(el("div","sub", t("ui.doc_reading")));
+
+  let encoded;
+  try { encoded = await asBase64(file); }
+  catch { out.innerHTML = ""; return out.appendChild(
+    el("div","note stop", t("ui.doc_unreadable"))); }
+
+  let data;
+  try { data = await api("/api/read-document", {image:encoded, facts:S.facts}); }
+  catch { out.innerHTML = ""; return out.appendChild(
+    el("div","note stop", t("ui.doc_unreadable"))); }
+
+  out.innerHTML = "";
+  if (!data.ok) {
+    return out.appendChild(el("div","note stop",
+      data.detail || t("ui.doc_unreadable")));
+  }
+
+  if (data.guesses.length) {
+    const top = data.guesses[0];
+    const box = el("div", data.sure ? "note ok" : "note warn");
+    box.appendChild(el("div", null,
+      (data.sure ? t("ui.doc_looks_like") : t("ui.doc_not_sure")) + ": " + top.name));
+    if (top.matched.length) {
+      box.appendChild(el("div","sub",
+        t("ui.doc_matched") + ' "' + top.matched.slice(0,3).join('", "') + '"'));
+    }
+    out.appendChild(box);
+    // Ticking the paper they hold is low risk and visible, so the strongest
+    // guess is applied and the runners-up are offered.
+    data.guesses.forEach((g, i) => {
+      const b = el("button","opt");
+      b.appendChild(el("span", null, (PIC[g.id] || "📄") + "  " + g.name));
+      if (i === 0 && data.sure) { S.held.add(g.id); b.classList.add("on"); }
+      b.onclick = () => {
+        if (S.held.has(g.id)) { S.held.delete(g.id); b.classList.remove("on"); }
+        else { S.held.add(g.id); b.classList.add("on"); }
+      };
+      out.appendChild(b);
+    });
+  }
+
+  data.redacted.forEach(r => out.appendChild(el("div","note ok",
+    "🔒  " + r.shape + "  ·  " + r.note)));
+  // Every field off a photograph is a question, never an answer. A five read
+  // as a six moves an income by ten thousand rupees and only the person
+  // holding the paper can see that it happened.
+  data.confirm.forEach(q => out.appendChild(askRow(q, out)));
+  data.refused.forEach(r => out.appendChild(el("div","note stop",
+    r.label + ": " + (r.detail || ""))));
+}
+
+function asBase64(file) {
+  return new Promise((done, fail) => {
+    const reader = new FileReader();
+    reader.onerror = fail;
+    reader.onload = () => {
+      const url = String(reader.result);
+      const comma = url.indexOf(",");
+      comma === -1 ? fail(new Error("not a data url")) : done(url.slice(comma + 1));
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 /* ---------- questions ---------- */
@@ -563,9 +895,19 @@ async function ask() {
 
 function answer(name, val) {
   S.facts[name] = val;
+  S.sources[name] = "asked";
   S.order.push(name);
   S.asked = Math.min(10, S.asked + 1);
   ask();
+}
+
+/* Facts only ever arrive through here or through answer(), and both record
+   where they came from. The server will not accept one by any other route
+   either; see patra/guard.py. */
+function adopt(name, val, source) {
+  S.facts[name] = val;
+  S.sources[name] = source || "spoken";
+  S.result = null;
 }
 
 /* ---------- results ---------- */
@@ -629,6 +971,9 @@ function renderResult() {
     more.onclick = ask;
     b.appendChild(more);
   }
+
+  nextSection(v);
+  whatIfSection(v);
 
   if (d.paperwork && d.paperwork.steps.length) {
     heading(v, t("ui.papers_title"), t("ui.papers_summary",
@@ -726,6 +1071,214 @@ function stepBlock(s) {
   return st;
 }
 
+/* ---------- what to do next ---------- */
+
+/* Six refusals for six reasons is six explanations and no plan. This is the
+   plan: every change any correction set mentions, every paper the won schemes
+   still need, costed in one currency and ordered by what each opens up.
+
+   The counts are re-derived rather than tallied. A fact appearing in four
+   conflicts may unlock nothing on its own, because each of those schemes is
+   also blocked by something else, so every candidate is assumed and the
+   solver is asked again. "Opens up three" is a claim that was checked. */
+function nextSection(parent) {
+  heading(parent, t("ui.next_title"));
+  const band_ = band(parent);
+  band_.appendChild(el("div","sub", t("ui.checking") || "Checking"));
+
+  api("/api/next", {facts:S.facts, documents:[...S.held]}).then(d => {
+    band_.innerHTML = "";
+
+    // Whole sentences rather than a number and a stripped-down label, because
+    // pulling "{n}" out of a translated sentence leaves different wreckage in
+    // every language.
+    const sum = el("div","note ok");
+    sum.appendChild(el("div", null, t("ui.next_have", {n:d.eligible})));
+    if (d.reachable.length) {
+      sum.appendChild(el("div", null, t("ui.next_more", {n:d.reachable.length})));
+    }
+    band_.appendChild(sum);
+
+    if (!d.actions.length) {
+      band_.appendChild(el("div","note", t("ui.next_none")));
+    }
+    d.actions.forEach((a, i) => band_.appendChild(actionCard(a, i)));
+
+    if (d.hopeless.length) {
+      const box = el("div","note stop");
+      box.appendChild(el("div", null, t("ui.next_hopeless")));
+      box.appendChild(el("div","sub", d.hopeless.map(x => x.name).join(", ")));
+      band_.appendChild(box);
+    }
+  }).catch(() => {
+    band_.innerHTML = "";
+    band_.appendChild(el("div", "note stop",
+      t("ui.error_body") || "Could not work this out"));
+  });
+}
+
+function actionCard(a, index) {
+  const card = el("div", "act" + (index === 0 ? " first" : ""));
+  card.appendChild(el("div","rank", String(index + 1)));
+
+  if (a.move === "fact" && a.threshold) {
+    // A recorded figure is a limit to compare against, not a target to hit.
+    // "Earn 46,080" is nonsense; "this one allows 46,080 or less" is not.
+    card.appendChild(el("h4", null,
+      t("ui.next_threshold_" + a.threshold, {v:a.needed})));
+    card.appendChild(el("div","sub",
+      (t("ui.near_you_said") || "You told us") + ": " + a.label + " " + a.now));
+  } else if (a.move === "fact") {
+    card.appendChild(el("h4", null, a.label + ": " + a.now + " → " + a.needed));
+  } else {
+    card.appendChild(el("h4", null, a.errand ? a.errand.name : a.key));
+  }
+
+  if (a.errand) {
+    const bits = [(t("ui.papers_where") || "Go to") + ": " + a.errand.issuer];
+    bits.push(a.errand.fee ? (t("ui.papers_cost") || "Cost") + " ₹" + a.errand.fee
+                           : (t("ui.papers_free") || "Free"));
+    bits.push(a.errand.trips > 1 ? t("ui.papers_trips", {n:a.errand.trips})
+                                 : t("ui.papers_trip"));
+    card.appendChild(el("div","cost", bits.join("  ·  ")));
+  }
+  if (a.paperwork_only) card.appendChild(el("div","src", t("ui.next_paperwork")));
+
+  if (a.unlocks.length) {
+    const box = el("div","note ok");
+    box.appendChild(el("div", null, "👉  " + t("ui.papers_unlocks") + ": "
+      + a.unlocks.map(x => x.name).join(", ")));
+    card.appendChild(box);
+  }
+  if (a.toward.length) {
+    card.appendChild(el("div","src mt",
+      t("ui.next_toward") + ": " + a.toward.map(x => x.name).join(", ")));
+  }
+  if (a.loses.length) {
+    const box = el("div","note stop");
+    box.appendChild(el("div", null, t("ui.whatif_lost") + ": "
+      + a.loses.map(x => x.name).join(", ")));
+    card.appendChild(box);
+  }
+  return card;
+}
+
+/* ---------- what if ---------- */
+
+/* The same reasoner, run against a household that does not exist yet. Both
+   directions are reported, because a change that gains three schemes and
+   quietly costs two is not an improvement and somebody weighing up a
+   better-paying job is entitled to see the whole trade. */
+function whatIfSection(parent) {
+  heading(parent, t("ui.whatif_title"), t("ui.whatif_help"));
+  const wrap = plain(parent);
+  const card = el("div","card");
+
+  // The interview already ranked these: it asks what the most undecided
+  // schemes are waiting on, so the first question is the one most worth
+  // asking "what if" about. Offering "State" first, which is what the raw
+  // key order gives, is a worse opening than the app already knows how to
+  // make.
+  const asked = S.order.filter(name => name in S.facts);
+  const changeable = asked.concat(
+    Object.keys(S.facts).filter(name => !asked.includes(name)));
+  const pick = document.createElement("select");
+  pick.style.cssText = "font:inherit;font-size:17px;width:100%;padding:13px;" +
+                       "border:1px solid var(--line);border-radius:2px;margin-bottom:10px;";
+  changeable.forEach(name => {
+    const o = document.createElement("option");
+    o.value = name;
+    o.textContent = t("attr." + name + ".label") || name;
+    pick.appendChild(o);
+  });
+  card.appendChild(pick);
+
+  const box = el("div");
+  card.appendChild(box);
+  const out = el("div","mt");
+
+  const draw = () => {
+    box.innerHTML = "";
+    const name = pick.value;
+    const attr = (S.words.attr || {})[name] || {};
+    const now = S.facts[name];
+
+    if (typeof now === "boolean") {
+      const flip = el("button","cta", t("ui.whatif_run"));
+      flip.onclick = () => runWhatIf({[name]: !now}, out);
+      box.appendChild(el("div","sub",
+        (t("ui.near_you_said") || "You told us") + ": "
+        + (now ? t("ui.yes") : t("ui.no"))));
+      box.appendChild(flip);
+      return;
+    }
+    if (attr.options) {
+      Object.entries(attr.options).forEach(([value, label]) => {
+        if (value === now) return;
+        const b = el("button", null, label);
+        b.onclick = () => runWhatIf({[name]: value}, out);
+        box.appendChild(b);
+      });
+      return;
+    }
+    const inp = document.createElement("input");
+    inp.type = "number"; inp.inputMode = "numeric"; inp.value = now;
+    box.appendChild(inp);
+    const go = el("button","cta", t("ui.whatif_run"));
+    const send = () => {
+      const n = parseInt(inp.value, 10);
+      if (!Number.isNaN(n)) runWhatIf({[name]: n}, out);
+    };
+    go.onclick = send;
+    inp.onkeydown = e => { if (e.key === "Enter") send(); };
+    box.appendChild(go);
+  };
+  pick.onchange = draw;
+  draw();
+
+  card.appendChild(out);
+  wrap.appendChild(card);
+}
+
+async function runWhatIf(changes, out) {
+  out.innerHTML = "";
+  out.appendChild(el("div","sub", t("ui.checking") || "Checking"));
+  let d;
+  try { d = await api("/api/simulate", {facts:S.facts, changes:changes}); }
+  catch { out.innerHTML = ""; return; }
+  out.innerHTML = "";
+
+  if (!d.ok) {
+    const box = el("div","note stop");
+    box.appendChild(el("div", null, d.impossible
+      ? t("ui.whatif_impossible") : t("ui.assist_not_usable")));
+    if (d.detail) box.appendChild(el("div","sub", d.detail));
+    return out.appendChild(box);
+  }
+
+  d.shifts.forEach(sh => out.appendChild(el("div","fact",
+    sh.label + ": " + (sh.was == null ? "?" : sh.was) + " → " + sh.now)));
+  out.appendChild(el("div","note", t("ui.whatif_counts",
+    {before:d.before, after:d.after})));
+
+  if (d.gained.length) {
+    const box = el("div","note ok");
+    box.appendChild(el("div", null, t("ui.whatif_gained")));
+    d.gained.forEach(x => box.appendChild(el("div","sub", "+  " + x.name)));
+    out.appendChild(box);
+  }
+  if (d.lost.length) {
+    const box = el("div","note stop");
+    box.appendChild(el("div", null, t("ui.whatif_lost")));
+    d.lost.forEach(x => box.appendChild(el("div","sub",
+      "−  " + x.name + (x.because ? ": " + x.because : ""))));
+    out.appendChild(box);
+  }
+  if (!d.gained.length && !d.lost.length) {
+    out.appendChild(el("div","note", t("ui.whatif_same")));
+  }
+}
+
 /* ---------- papers ---------- */
 
 function papersTab() {
@@ -819,15 +1372,19 @@ function helpTab() {
 function openChat() {
   show("chat");
   if (!$("chat-log").childElementCount) {
+    // The fourth example only works once there are answers to reason about,
+    // so it appears when there are.
+    const egs = [t("ui.chat_eg1"), t("ui.chat_eg2"), t("ui.chat_eg3")];
+    if (Object.keys(S.facts).length) egs.push(t("ui.chat_eg4"));
     bubble("it", t("ui.chat_greet") || "Ask me about a scheme or a paper.", [],
-      [t("ui.chat_eg1"), t("ui.chat_eg2"), t("ui.chat_eg3")].filter(Boolean));
+      egs.filter(Boolean));
   }
   setTimeout(() => $("chat-in").focus(), 60);
 }
 $("fab").onclick = openChat;
 $("chat-close").onclick = () => hide("chat");
 
-function bubble(who, text, bullets, chips, steps) {
+function bubble(who, text, bullets, chips, steps, apply) {
   const log = $("chat-log");
   const b = el("div","bubble " + who);
   if (who === "it") b.appendChild(el("b", null, text));
@@ -836,6 +1393,21 @@ function bubble(who, text, bullets, chips, steps) {
   (steps || []).forEach((s, i) => b.appendChild(
     el("div","li", (i+1) + ". " + s.name + ", " + s.issuer)));
   log.appendChild(b);
+
+  // Facts read out of something somebody said are offered, not taken. The
+  // chat window is a conversation; quietly rewriting answers given on another
+  // screen would be the worst kind of helpful.
+  if (apply && Object.keys(apply).length) {
+    const take = el("button","cta", t("ui.apply_facts"));
+    take.style.width = "auto";
+    take.onclick = () => {
+      Object.entries(apply).forEach(([name, value]) => adopt(name, value, "spoken"));
+      take.remove();
+      hide("chat");
+      ask();
+    };
+    log.appendChild(take);
+  }
   if (chips && chips.length) {
     const row = el("div");
     chips.forEach(c => {
@@ -854,9 +1426,13 @@ async function sendChat(text) {
   $("chat-in").value = "";
   bubble("me", q);
   let a;
-  try { a = await api("/api/ask", {question:q, facts:{}}); }
+  // The profile goes with the question. Without it "what if our income were
+  // eighty thousand" and "what should I do next" have nothing to work on, and
+  // "am I eligible" cannot be put to the solver at all.
+  try { a = await api("/api/ask",
+    {question:q, facts:S.facts, documents:[...S.held]}); }
   catch { return bubble("it", t("ui.error_body") || "Could not answer"); }
-  bubble("it", a.text, a.bullets, a.suggestions, a.steps);
+  bubble("it", a.text, a.bullets, a.suggestions, a.steps, a.apply);
   say(a.text);
 }
 $("chat-send").onclick = () => sendChat();
@@ -866,6 +1442,7 @@ $("chat-in").addEventListener("keydown", e => { if (e.key === "Enter") sendChat(
 
 function restart() {
   S.facts = {}; S.order = []; S.held = new Set(); S.asked = 0; S.result = null;
+  S.sources = {}; S.relation = null;
   go("home");
 }
 
