@@ -1,0 +1,64 @@
+# How the twenty schemes are grouped on the front page, and the four questions
+# people actually arrive with.
+#
+# Nothing here changes a decision. It is the shape of the front door: which
+# tile a scheme sits under, which drawing goes on it, and which four doubts get
+# a shortcut. Names and descriptions live in data/i18n/ like everything else a
+# person reads.
+#
+# icon  the id of a drawing in the page. They are line drawings rather than
+#       photographs because the whole app is served off this machine, and a
+#       stock photograph would be the one thing in it that came from somewhere
+#       else.
+
+topics:
+
+  pension:
+    icon: pension
+    schemes: [ignoaps, ignwps, igndps, apy]
+
+  food:
+    icon: food
+    schemes: [ration_aay, ration_phh]
+
+  health:
+    icon: health
+    schemes: [pmjay, jsy, pmmvy]
+
+  housing:
+    icon: housing
+    schemes: [pmay_g, pmuy]
+
+  work:
+    icon: work
+    schemes: [mgnrega]
+
+  farming:
+    icon: farming
+    schemes: [pm_kisan, pmfby, kcc]
+
+  girl:
+    icon: girl
+    schemes: [sukanya]
+
+  money:
+    icon: money
+    schemes: [jan_dhan, pmjjby, pmsby, nfbs]
+
+# The four shortcuts on the front page. A document entry is answered by the
+# acquisition planner, so the steps, the offices, the fees and the number of
+# trips are derived rather than written down, and a change to documents.yaml
+# updates the answer.
+how_do_i:
+  - id: ration_card
+    kind: document
+    target: ration_card
+  - id: income_certificate
+    kind: document
+    target: income_certificate
+  - id: bank_aadhaar_seeding
+    kind: document
+    target: bank_aadhaar_seeding
+  - id: old_age_pension
+    kind: scheme
+    target: ignoaps

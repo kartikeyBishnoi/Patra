@@ -67,6 +67,8 @@ scheme they cannot have, and they have no way to tell which happened.
 | Truth maintenance | Domain axioms catch answers that cannot both be true | `reason/consistency.py` |
 | Boundary sensitivity | Which single answer would flip the verdict, and at what value | `reason/sensitivity.py` |
 | Counterfactual simulation | Re-decide every scheme against a household that does not exist yet | `reason/simulate.py` |
+| Temporal projection | Optimisation over age with the immutable facts pinned, giving the age a scheme opens and the age it closes | `reason/timeline.py` |
+| Subsumption over the rulebook | Entailment, exclusion and redundancy between schemes, proved by asking whether one set of clauses can hold while another fails | `reason/relate.py` |
 | Utility-ranked planning | Candidate actions costed in one currency and ranked by re-derived payoff | `advise.py` |
 | Symbolic information extraction | Gazetteer, positional rules, clause-scoped negation, numeral grammar across five scripts | `nlp/` |
 | Document understanding | Signature-based classification and pattern field extraction over local OCR | `vision/` |
@@ -160,6 +162,39 @@ whoever made the browser. It is off until the person says yes, the warning says
 exactly that in their own language, and typing always works instead. It is the
 only part of the app that leaves the device, and it is better to say so than to
 quietly have a privacy claim that is almost true.
+
+## Two questions asked of the rules rather than of a household
+
+Everything above decides something about a person. These two decide something
+about the rulebook, which is a different kind of question and a more unusual
+one for an application to ask itself.
+
+**Does clearing one scheme settle another?** Formally, is `A and not B`
+unsatisfiable. Where it is, anybody who satisfies A necessarily satisfies B,
+and the app can promise it rather than observe it. Two such pairs exist in
+this rulebook, and both are useful to somebody standing in a queue: PM-KISAN
+settles crop insurance, and life insurance settles accident insurance. The
+same pass finds the pairs that exclude each other and any clause a scheme's
+own other clauses already force, which is the dead weight that accumulates in
+a rulebook nobody checks.
+
+**When does the answer change?** Every other answer here is about today. A
+fifty-seven year old asking about the old age pension is told no, which is
+true and useless. The useful facts are that it opens at sixty, and, far more
+rarely said, that the Atal Pension Yojana closes at forty and somebody who is
+thirty-eight has two years left.
+
+The question has to be put carefully to be worth anything. Asking "when does
+this open if nothing changes" is answered never, because some unlinked bank
+account is also in the way and no birthday fixes that. So only the facts that
+*cannot* change are pinned, the paperwork is left free, and the answer becomes
+"once the paperwork is done, this opens at sixty". Two calls to the optimiser,
+one for the smallest age at which the clauses can hold and one for the
+largest.
+
+Both run against the same Z3 encoding the eligibility decision uses, which is
+the point: the rulebook and the reasoner are the same object, so a question
+about one is answerable with the other.
 
 ## Where this sits
 

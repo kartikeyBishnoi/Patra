@@ -17,6 +17,8 @@ import hashlib
 import json
 import threading
 import traceback
+
+import yaml
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -37,7 +39,9 @@ from ..model.household import Profile
 from ..model.scheme import say
 from ..nlp.extract import Extractor
 from ..reason.questions import Status, next_question, status
+from ..reason.relate import analyse
 from ..reason.simulate import simulate
+from ..reason.timeline import horizons
 from ..explain.phrase import criterion as say_criterion
 from ..explain.trace import decision_trace, paperwork_trace, reading_trace
 from ..reason.unlock import ladder
@@ -76,6 +80,15 @@ class Brain:
     Reasoning is therefore serialised behind a lock. Requests take
     milliseconds and the audience is one person on one phone, so the queue
     costs nothing. Serving the page stays outside the lock.
+
+    It is a *reentrant* lock, and that is not a detail. The page methods call
+    each other: a topic page builds scheme cards, a scheme card asks for an
+    age horizon. With a plain lock, whichever caller happened to take it first
+    would deadlock the second, so the helpers would have to stay unguarded and
+    rely on every caller remembering. Two of them did not remember, and the
+    process died exactly the way it did the first time. A reentrant lock lets
+    every method that reaches the solver take it for itself, which is the only
+    version that survives somebody adding a method later.
     """
 
     def __init__(self, data_dir: Path = DATA):
@@ -84,14 +97,20 @@ class Brain:
         self.documents = load_documents(data_dir / "documents.yaml")
         self.axioms = load_axioms(data_dir / "axioms.yaml", self.schema)
         self.engine = Engine(self.schema, self.axioms, self.documents)
+        self.by_id = {s.id: s for s in self.schemes}
         self.translations = Translations(data_dir / "i18n")
+        self.topics = yaml.safe_load(
+            (data_dir / "topics.yaml").read_text(encoding="utf-8"))
+        # Relations between the schemes are a property of the rulebook, not of
+        # any household, so they are proved once here rather than per request.
+        self.rulebook = analyse(self.engine, self.schemes)
         self.extractor = Extractor(self.schema)
         self.guard = Guard(self.engine, self.schema)
         self.papers = Papers(self.schema)
         # Asked once at start-up rather than per request, because it shells out
         # to tesseract and the answer cannot change while the app is running.
         self.ocr = capability()
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
 
     # ---- naming things in the chosen language ----
 
@@ -123,7 +142,8 @@ class Brain:
         return dig(words, "scheme", scheme.id, field, default=fallback)
 
     def doc_text(self, words, doc, field: str) -> str:
-        fallback = doc.name if field == "name" else doc.issuer
+        fallback = {"name": doc.name, "issuer": doc.issuer,
+                    "note": " ".join((doc.note or "").split())}.get(field, "")
         return dig(words, "doc", doc.id, field, default=fallback)
 
     def value_text(self, words, name: str, raw) -> str:
@@ -428,6 +448,230 @@ class Brain:
             return {"id": scheme_id, "name": scheme_id}
         return {"id": scheme_id, "name": self.scheme_text(words, scheme, "name")}
 
+    # ---- the front door ----
+
+    def topic_list(self, facts: dict, words) -> list[dict]:
+        """The tiles on the front page, with a count once there is one.
+
+        The count is the real screening result, not a guess from the topic, so
+        a tile that says two is two the solver stood behind.
+        """
+        claimable = set()
+        if facts:
+            with self._lock:
+                known = Profile(id="web", facts=facts)
+                claimable = {
+                    s.id for s in self.schemes
+                    if s.attributes_used <= set(facts)
+                    and self.engine.satisfiable(s, known)
+                }
+
+        out = []
+        for topic_id, spec in self.topics["topics"].items():
+            ids = [s for s in spec["schemes"] if s in self.by_id]
+            out.append({
+                "id": topic_id,
+                "icon": spec.get("icon", topic_id),
+                "name": dig(words, "topic", topic_id, "name", default=topic_id),
+                "blurb": dig(words, "topic", topic_id, "blurb", default=""),
+                "count": len(ids),
+                "yours": len([s for s in ids if s in claimable]),
+            })
+        return out
+
+    def topic_page(self, topic_id: str, facts: dict, words) -> dict:
+        spec = self.topics["topics"].get(topic_id)
+        if spec is None:
+            return {"error": "unknown topic"}
+        with self._lock:
+            return self._topic_page(topic_id, spec, facts, words)
+
+    def _topic_page(self, topic_id, spec, facts, words) -> dict:
+        return {
+            "id": topic_id,
+            "icon": spec.get("icon", topic_id),
+            "name": dig(words, "topic", topic_id, "name", default=topic_id),
+            "blurb": dig(words, "topic", topic_id, "blurb", default=""),
+            "schemes": [
+                self._scheme_card(self.by_id[s], facts, words)
+                for s in spec["schemes"] if s in self.by_id
+            ],
+        }
+
+    def how_list(self, words) -> list[dict]:
+        out = []
+        for entry in self.topics.get("how_do_i", []):
+            out.append({
+                "id": entry["id"],
+                "kind": entry["kind"],
+                "question": dig(words, "how", entry["id"], "question",
+                                default=entry["id"].replace("_", " ")),
+            })
+        return out
+
+    def how_page(self, how_id: str, held, words) -> dict:
+        entry = next((e for e in self.topics.get("how_do_i", [])
+                      if e["id"] == how_id), None)
+        if entry is None:
+            return {"error": "unknown question"}
+
+        out = {
+            "id": how_id,
+            "kind": entry["kind"],
+            "question": dig(words, "how", how_id, "question", default=how_id),
+            "answer": dig(words, "how", how_id, "answer", default=""),
+            "caution": dig(words, "how", how_id, "caution", default=""),
+            "steps": [],
+            "summary": None,
+            "scheme": None,
+        }
+
+        if entry["kind"] == "document" and entry["target"] in self.documents:
+            with self._lock:
+                route = self.brain_route(entry["target"], held)
+            if route is not None:
+                out["steps"] = [
+                    {
+                        "name": self.doc_text(words, step.document, "name"),
+                        "issuer": self.doc_text(words, step.document, "issuer"),
+                        "fee": step.document.fee,
+                        "days": step.document.days,
+                        "trips": step.document.trips,
+                        "note": self.doc_text(words, step.document, "note") or None,
+                    }
+                    for step in route.steps
+                ]
+                out["summary"] = {"trips": route.trips, "fee": route.fee,
+                                  "days": route.days}
+        elif entry["kind"] == "scheme" and entry["target"] in self.by_id:
+            with self._lock:
+                out["scheme"] = self._scheme_card(
+                    self.by_id[entry["target"]], {}, words)
+        return out
+
+    def brain_route(self, document_id: str, held):
+        from ..reason.planner import Unreachable, plan
+        try:
+            return plan(self.documents, [document_id], set(held))
+        except Unreachable:
+            return None
+
+    def scheme_page(self, scheme_id: str, facts: dict, words) -> dict:
+        scheme = self.by_id.get(scheme_id)
+        if scheme is None:
+            return {"error": "unknown scheme"}
+
+        with self._lock:
+            card = self._scheme_card(scheme, facts, words)
+            card["criteria"] = [
+                {"id": c.id, "text": self.criterion_text(words, scheme.id, c)}
+                for c in scheme.criteria
+            ]
+            card["documents"] = [
+                {"id": d, "name": self.doc_text(words, self.documents[d], "name"),
+                 "issuer": self.doc_text(words, self.documents[d], "issuer")}
+                for d in scheme.documents if d in self.documents
+            ]
+            card["authority"] = scheme.authority
+            # Proved against the rules themselves: anyone who clears this
+            # clears those, with no further test.
+            card["also_gives"] = [
+                self._named(s, words) for s in self.rulebook.implied_by(scheme_id)
+            ]
+            card["follows_from"] = [
+                self._named(s, words) for s in self.rulebook.implies_of(scheme_id)
+            ]
+            card["horizon"] = self._horizon(scheme, facts, words)
+        return card
+
+    def _scheme_card(self, scheme, facts: dict, words) -> dict:
+        # Takes the lock for itself rather than trusting its callers, which is
+        # what the reentrant lock is for.
+        with self._lock:
+            return self._card(scheme, facts, words)
+
+    def _card(self, scheme, facts: dict, words) -> dict:
+        out = {
+            "id": scheme.id,
+            "name": self.scheme_text(words, scheme, "name"),
+            "benefit": self.scheme_text(words, scheme, "benefit"),
+            "apply_at": self.scheme_text(words, scheme, "apply_at"),
+            "state": None,
+        }
+        if facts and scheme.attributes_used <= set(facts):
+            known = Profile(id="web", facts=facts)
+            out["state"] = ("yes" if self.engine.satisfiable(scheme, known)
+                            else "no")
+        elif facts:
+            out["state"] = "unknown"
+        return out
+
+    def _horizon(self, scheme, facts: dict, words) -> dict | None:
+        if not facts or "age" not in facts:
+            return None
+        from ..reason.timeline import horizon as one_horizon
+        with self._lock:
+            found = one_horizon(self.engine, self.schema, scheme, facts)
+        if found is None:
+            return None
+        opens, closes = found.years_from(facts["age"])
+        return {"opens_at": found.opens_at, "closes_at": found.closes_at,
+                "opens_in": opens, "closes_in": closes,
+                "only_age": found.only_age}
+
+    def timeline(self, facts: dict, words) -> dict:
+        """Everything a birthday changes, soonest first."""
+        if "age" not in facts:
+            return {"age": None, "entries": []}
+        with self._lock:
+            found = horizons(self.engine, self.schema, self.schemes, facts)
+        age = facts["age"]
+        entries = []
+        for h in found:
+            opens, closes = h.years_from(age)
+            entries.append({
+                **self._named(h.scheme_id, words),
+                "opens_at": h.opens_at, "opens_in": opens,
+                "closes_at": h.closes_at, "closes_in": closes,
+                "only_age": h.only_age,
+            })
+        return {"age": age, "entries": entries}
+
+    def rulebook_page(self, words) -> dict:
+        """What the app proved about its own rules, not about anybody.
+
+        An examiner's page as much as an applicant's: it is the difference
+        between a rulebook that has been checked and one that has merely been
+        typed in.
+        """
+        book = self.rulebook
+        return {
+            "schemes": len(self.schemes),
+            "criteria": sum(len(s.criteria) for s in self.schemes),
+            "documents": len(list(self.documents)),
+            "axioms": len(self.axioms),
+            "checks": book.checks,
+            "entails": [
+                {"left": self._named(r.left, words),
+                 "right": self._named(r.right, words)}
+                for r in book.entails
+            ],
+            "equivalent": [
+                {"left": self._named(r.left, words),
+                 "right": self._named(r.right, words)}
+                for r in book.equivalent
+            ],
+            "excludes": [
+                {"left": self._named(r.left, words),
+                 "right": self._named(r.right, words)}
+                for r in book.excludes
+            ],
+            "redundant": [
+                {**self._named(sid, words), "criteria": ids}
+                for sid, ids in book.redundant.items()
+            ],
+        }
+
     # ---- reading a photographed document ----
 
     def read_document(self, image: bytes, lang: str, facts: dict, words) -> dict:
@@ -663,6 +907,31 @@ class Handler(BaseHTTPRequestHandler):
             kind = "audio/wav" if clip.suffix == ".wav" else "audio/mpeg"
             return self._send(200, clip.read_bytes(), kind)
 
+        if route == "/api/how":
+            return self._json(200, self.brain.how_list(
+                self.brain.translations.bundle(self._lang())))
+
+        if route == "/api/rulebook":
+            return self._json(200, self.brain.rulebook_page(
+                self.brain.translations.bundle(self._lang())))
+
+        if route.startswith("/assets/"):
+            name = route[len("/assets/"):]
+            if "/" in name or ".." in name:
+                return self._json(404, {"error": "not found"})
+            path = (HERE / "assets" / name)
+            try:
+                path = path.resolve()
+                path.relative_to((HERE / "assets").resolve())
+            except (ValueError, OSError):
+                return self._json(404, {"error": "not found"})
+            if not path.is_file():
+                return self._json(404, {"error": "not found"})
+            kind = {".png": "image/png", ".webp": "image/webp",
+                    ".svg": "image/svg+xml", ".jpg": "image/jpeg"}.get(
+                        path.suffix, "application/octet-stream")
+            return self._send(200, path.read_bytes(), kind)
+
         if route == "/api/documents":
             words = self.brain.translations.bundle(self._lang())
             docs = [
@@ -725,6 +994,25 @@ class Handler(BaseHTTPRequestHandler):
             except (KeyError, ValueError) as exc:
                 return self._json(200, {"ok": False, "detail": str(exc)})
             return self._json(200, self.brain.what_if(facts, changes, words))
+
+        if route == "/api/topics":
+            return self._json(200, {
+                "topics": self.brain.topic_list(facts, words)})
+
+        if route == "/api/topic":
+            return self._json(200, self.brain.topic_page(
+                str(payload.get("topic", "")), facts, words))
+
+        if route == "/api/scheme":
+            return self._json(200, self.brain.scheme_page(
+                str(payload.get("scheme", "")), facts, words))
+
+        if route == "/api/how-page":
+            return self._json(200, self.brain.how_page(
+                str(payload.get("how", "")), self._documents(payload), words))
+
+        if route == "/api/timeline":
+            return self._json(200, self.brain.timeline(facts, words))
 
         if route == "/api/next":
             return self._json(200, self.brain.advice(

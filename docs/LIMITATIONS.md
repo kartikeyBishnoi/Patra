@@ -164,6 +164,29 @@ Actions are also considered one at a time. Two changes that only pay off
 together will not be found, and looking for them jointly is the same
 combinatorial problem the planner already avoids.
 
+## The age projection assumes the rest of life holds still
+
+"This opens when you turn sixty" is computed with every unchangeable fact
+pinned and the paperwork left free. It does not model the household changing
+around the person, which is what actually happens over fourteen years: income
+moves, people are born and die, a ration card is reissued under a different
+category. It is a conditional about the rules, not a forecast about a family.
+
+Closings more than ten years out are not shown at all. They are true and not
+actionable, and printing one that lands in thirty-four years buries the one
+that lands in two.
+
+## Relations between schemes are relations between our encodings
+
+"Clearing this clears that" is proved, and proved about `data/schemes/`, which
+is a simplified transcription. If a clause was dropped in transcription the
+entailment can be real in our rulebook and false in the law. The proof is
+sound; what it is sound about is a research artefact.
+
+Household-scoped and member-scoped schemes are never compared, because an
+implication across that line would be read as a promise about the wrong
+person.
+
 ## Nobody validates the answers
 
 Without a field worker present, a misheard question produces a wrong answer

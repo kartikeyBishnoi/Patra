@@ -123,6 +123,36 @@ two is not an improvement, and somebody weighing up a better-paying job is
 entitled to see the whole trade. A change that could not be true of anybody is
 refused with the rule that says so.
 
+**Answers "when", not only "whether".** Several schemes close with age rather
+than open with it, and nobody is ever told:
+
+```
+41   Atal Pension Yojana
+     Closes when you turn 41. Apply within 4 years.
+
+60   Indira Gandhi National Old Age Pension
+     Opens when you turn 60, in 14 years.
+     You will also need the paperwork done.
+```
+
+Two questions to the optimiser, not a loop: the youngest age at which the
+clauses can hold, and the first at which they cannot. Only the facts that
+cannot change are held fixed, so the answer is "once the paperwork is done,
+this opens at sixty" rather than the useless "never".
+
+**Knows how its own rules relate.** Asked of the rulebook rather than of
+anybody, when the app starts:
+
+```
+PM Kisan Samman Nidhi                    -> Pradhan Mantri Fasal Bima Yojana
+Pradhan Mantri Jeevan Jyoti Bima Yojana  -> Pradhan Mantri Suraksha Bima Yojana
+```
+
+Those arrows are proved, not noticed. Anyone who satisfies the first
+necessarily satisfies the second, so clearing one settles the other with no
+second test. The same pass finds the seventeen pairs nobody can hold together
+and any clause a scheme's own other clauses already force.
+
 **Says when nothing will help.** If a refusal rests on age or caste, the app
 names the blocker and offers no advice. A system that always has a suggestion is
 a system that sometimes lies.
@@ -142,6 +172,33 @@ isolated and at what cost, and how the repair was chosen. So does every sentence
 it reads, down to the numbers it threw away for naming nothing. A word list that
 cannot show its working is indistinguishable from a model that guessed, which is
 the whole reason for using a word list.
+
+## The interface
+
+Built after [usa.gov](https://www.usa.gov/), which is the clearest government
+service index anyone has shipped, and coloured from our own logo: the navy of
+the wordmark, the teal of the check, the gold of the rules beneath it.
+
+The structural borrowings are deliberate and each does work. A strip above the
+header saying what kind of site this is. A serif heading with a heavy rule
+under it. A tinted band behind every card grid. Square cards with a thin
+border and a dotted rule under the icon. A breadcrumb and a left rail on every
+inner page. A "How do I ..." block holding the four questions most visits are
+about. A great deal of air.
+
+The one thing it does not borrow is the sentence in that top strip. usa.gov
+says "An official website of the United States government". PATRA says the
+opposite, in the same place and as plainly, because that strip is where
+somebody decides whether to trust what follows and this is a student project.
+`tests/test_web.py` checks that the disclaimer is still there in all five
+languages.
+
+Icons are line drawings defined in the page, not emoji and not photographs.
+Emoji render differently on every machine and read as decoration; a stock
+photograph would be the only thing in the app that came from somewhere else.
+The one deliberate exception is the document pictures on the papers screen,
+where a recognisable object means something to somebody who cannot read the
+label and a line glyph does not.
 
 ## Running it
 
@@ -277,6 +334,8 @@ rather than left to whoever calls it.
 | What would fix it | minimal correction sets, restricted to changeable facts |
 | Which paper first | minimum-cost AND-OR search |
 | Which question next | adaptive test selection |
+| When, not whether | optimisation over age with the immutable facts pinned |
+| How the rules relate | entailment, exclusion and redundancy proved over the rulebook |
 | What if | counterfactual re-decision over the whole rulebook |
 | What to do next | candidate actions costed and ranked by re-derived payoff |
 | Did we mishear | domain axioms and the same conflict detection |
@@ -315,9 +374,10 @@ patra/
   nlp/        normalising, numeral grammar, fact extraction
   vision/     local OCR and document signatures
   reason/     oracle, quickxplain, marco, hitting sets, planner,
-              unlock, questions, consistency, sensitivity, simulate
+              unlock, questions, consistency, sensitivity, simulate,
+              relate, timeline
   explain/    templated rendering and the derivation traces
-  web/        local server and the app
+  web/        local server, the app, and the logo
   guard.py    the boundary: what may become a fact, what may be claimed
   advise.py   candidate actions, costed and ranked by re-derived payoff
   assist.py   the question answerer
@@ -330,9 +390,10 @@ data/
   axioms.yaml       what cannot be true of anybody
   cues.yaml         the phrases that propose a fact, in five languages
   papers.yaml       what is printed on each document, and what to read off it
+  topics.yaml       how the schemes are grouped, and the four common questions
   i18n/             five languages
   cases/            five households used for testing
-tests/        249 tests
+tests/        303 tests
 eval/         nine experiments, and the labelled sentences for one of them
 docs/         the AI argument, limitations, languages
 ```

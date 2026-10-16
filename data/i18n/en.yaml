@@ -161,6 +161,72 @@ strings:
     conf_high: 'certain'
     conf_medium: 'likely'
     conf_low: 'a hint only'
+
+    # The front door: the strip, the header, the topic
+    # tiles, the shortcuts, the timeline and the self-check page.
+    not_official: 'This is not a government website'
+    not_official_more: 'How this works'
+    not_official_1: 'A student project. The scheme rules here were copied from published criteria and simplified, so check anything important with your gram panchayat or block office before you travel.'
+    not_official_2: 'Your answers stay on this machine. Nothing is uploaded, nothing is saved, and we never ask for your Aadhaar number.'
+    not_official_3: 'Every answer shows its working. Open the panel under any result to see exactly which rule decided it.'
+    skip_to_content: 'Skip to the main content'
+    nav_home: 'Home'
+    nav_schemes: 'Schemes'
+    nav_papers: 'Papers'
+    nav_how: 'How do I'
+    nav_help: 'Help'
+    nav_trust: 'How we check'
+    hero_title: 'Find out what your family can claim'
+    hero_body: 'Answer a few questions, or just say it in your own words, and see which government schemes you qualify for, why you were refused the others, and which paper to collect first.'
+    hero_cta: 'Start'
+    hero_time: 'About three minutes'
+    how_title: 'How do I ...'
+    topics_title: 'All schemes by topic'
+    topics_blurb: 'Twenty schemes, grouped by what they are for.'
+    topic_count: '{n} schemes'
+    topic_yours: '{n} for you'
+    benefits_title: 'Check what you can claim'
+    benefits_body: 'We ask only what the remaining schemes depend on, and the questions about caste and disability come last, so most people are never asked them.'
+    benefits_cta: 'Check now'
+    foot_about_title: 'About this app'
+    foot_links_title: 'Find things'
+    foot_trust_title: 'Trust and limits'
+    foot_note: 'PATRA is a student project built for an Artificial Intelligence course. It is not affiliated with any government department. Verify every scheme against the current notification before you apply.'
+    foot_verify: 'Verify at myScheme'
+    breadcrumb_home: 'Home'
+    read_more: 'Read more'
+    scheme_what: 'What you get'
+    scheme_who: 'Who can get it'
+    scheme_papers: 'Papers you need'
+    scheme_where: 'Where to apply'
+    scheme_also: 'Clearing this clears these too'
+    scheme_also_body: 'Proved against the rules, not guessed: anything that satisfies this scheme necessarily satisfies these, so there is no second test.'
+    scheme_follows: 'These settle this one for you'
+    scheme_authority: 'Run by'
+    state_yes: 'By these rules, you qualify'
+    state_no: 'Not by these rules, not yet'
+    state_unknown: 'Answer the questions and we can check this'
+    timeline_title: 'What a birthday changes'
+    timeline_body: 'Some schemes open with age and some close with it. These are the dates worth putting somewhere.'
+    timeline_opens: 'Opens when you turn {age}, in {n} years'
+    timeline_closes: 'Closes when you turn {age}. Apply within {n} years.'
+    timeline_wait: 'Waiting is all it needs'
+    timeline_wait_paper: 'You will also need the paperwork done'
+    timeline_none: 'Nothing here changes with a birthday.'
+    timeline_age: 'Worked out from the age you gave us, {age}.'
+    how_steps: 'What to do, in order'
+    how_summary: 'About {trips} trips, Rs {fee}, {days} days in all'
+    how_important: 'Important'
+    trust_title: 'How we check ourselves'
+    trust_body: 'The rules are data, so nothing stops a wrong one being typed in. These are the checks the app runs against its own rulebook, not against anybody applying.'
+    trust_counts: '{schemes} schemes, {criteria} clauses, {documents} documents and {axioms} axioms, checked with {checks} solver queries when the app started.'
+    trust_entails: 'One scheme settling another'
+    trust_entails_body: 'Proved by asking whether the first scheme''s clauses can hold while the second''s fail. Where that is impossible, clearing the first clears the second.'
+    trust_excludes: 'Schemes nobody can hold together'
+    trust_excludes_body: 'Pairs whose clauses cannot both be true of one person. Mostly age windows that do not overlap, and schemes meant for people who lack what the other requires.'
+    trust_redundant: 'Clauses a scheme''s own other clauses already force'
+    trust_none: 'None found.'
+    trust_open: 'See the checks'
   # How each fact is asked. Written to be read aloud.
     tab_home: My claims
     tab_papers: Papers
@@ -403,18 +469,33 @@ strings:
 
   doc:
     passport_photo: {name: Passport photos, issuer: Any photo shop in the market}
-    aadhaar: {name: Aadhaar card, issuer: Aadhaar centre}
+    aadhaar:
+      name: 'Aadhaar card'
+      issuer: 'Aadhaar centre'
+      note: 'If you hold no papers at all, an approved introducer or the head of your family can vouch for you at the enrolment centre. You do not need to bring anything else first.'
     birth_certificate: {name: Birth certificate, issuer: Gram panchayat office}
     school_certificate: {name: School leaving certificate, issuer: The school you last attended}
-    electricity_bill: {name: Electricity bill, issuer: Electricity office}
+    electricity_bill:
+      name: 'Electricity bill'
+      issuer: 'Electricity office'
+      note: 'A recent bill usually works as address proof on its own.'
     voter_id: {name: Voter ID card, issuer: Booth officer or electoral office}
     pan_card: {name: PAN card, issuer: PAN service centre}
     ration_card: {name: Ration card, issuer: Block food and supplies office}
     domicile_certificate: {name: Domicile certificate, issuer: Tehsil office}
     income_certificate: {name: Income certificate, issuer: Tehsil office}
-    caste_certificate: {name: Caste certificate, issuer: Tehsil office}
-    bank_account: {name: Bank account, issuer: Any bank or village bank agent}
-    bank_aadhaar_seeding: {name: Aadhaar linked to your bank account, issuer: Your own bank branch}
+    caste_certificate:
+      name: 'Caste certificate'
+      issuer: 'Tehsil office'
+      note: 'Usually needs a parent''s caste certificate or an old school record showing the family''s category. That part varies a lot by district.'
+    bank_account:
+      name: 'Bank account'
+      issuer: 'Any bank or village bank agent'
+      note: 'A Jan Dhan account can be opened with Aadhaar alone and needs no minimum balance, which is usually the quickest route.'
+    bank_aadhaar_seeding:
+      name: 'Aadhaar linked to your bank account'
+      issuer: 'Your own bank branch'
+      note: 'Money from most schemes will not reach an unlinked account. This is the single cheapest thing that blocks the most payments.'
     disability_certificate: {name: Disability certificate, issuer: District hospital}
     death_certificate: {name: "Death certificate of your husband, wife or the family earner", issuer: Gram panchayat office}
     land_records: {name: Land record, issuer: Patwari or tehsil office}
@@ -431,3 +512,50 @@ strings:
     son: 'your son'
     grandmother: 'your grandmother'
     grandfather: 'your grandfather'
+
+  # The tiles on the front page.
+  topic:
+    pension:
+      name: 'Pension'
+      blurb: 'Monthly payments in old age, widowhood or disability, and a savings pension you join yourself.'
+    food:
+      name: 'Food and ration'
+      blurb: 'Subsidised grain through the ration shop, and the card that gets you in the queue.'
+    health:
+      name: 'Health and childbirth'
+      blurb: 'Cashless hospital treatment, and support around a delivery.'
+    housing:
+      name: 'House and home'
+      blurb: 'Help building a pucca house, and a gas connection in a woman''s name.'
+    work:
+      name: 'Work and wages'
+      blurb: 'Guaranteed paid days of unskilled work near the village.'
+    farming:
+      name: 'Farming'
+      blurb: 'Income support for landholding families, crop insurance, and cheap credit.'
+    girl:
+      name: 'Girl child'
+      blurb: 'A long savings account for a daughter, at a rate nothing else matches.'
+    money:
+      name: 'Bank and insurance'
+      blurb: 'A zero-balance account, and life and accident cover for a few rupees a year.'
+
+  # The four shortcuts, and the caution each one carries.
+  how:
+    ration_card:
+      question: 'How do I get a ration card?'
+      answer: 'The card is what gets you subsidised grain, and most other schemes ask to see it. These are the stops in the order that works.'
+      caution: 'Take the originals and one photocopy of each. The ration card itself is issued in the name of the head of the family.'
+    income_certificate:
+      question: 'How do I get an income certificate?'
+      answer: 'Almost every refusal over income is really a refusal over the certificate. This is the route to one.'
+      caution: 'It usually expires after six months to a year, so get it close to when you will actually use it.'
+    bank_aadhaar_seeding:
+      question: 'How do I link my account to Aadhaar?'
+      answer: 'Free, one visit, and it unblocks more schemes than any other single errand, because every direct payment needs it.'
+      caution: 'Ask the branch for the seeding confirmation slip. Having the account is not the same as having it seeded.'
+      note: 'Money from most schemes will not reach an unlinked account. This is the single cheapest thing that blocks the most payments.'
+    old_age_pension:
+      question: 'How do I get the old age pension?'
+      answer: 'A monthly payment for people over sixty in below-poverty-line households, paid into a seeded bank account.'
+      caution: 'Apply at the gram panchayat. If you already draw another government pension you cannot hold this one as well.'
