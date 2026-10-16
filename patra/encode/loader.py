@@ -28,7 +28,7 @@ from ..model.constraint import (
 )
 from ..model.document import Document, DocumentGraph, Need
 from ..model.household import Household, Member
-from ..model.scheme import Axiom, Criterion, Scheme
+from ..model.scheme import Axiom, Criterion, Scheme, Worth
 
 COMPARISONS = {"le", "lt", "ge", "gt", "eq", "ne"}
 
@@ -79,12 +79,25 @@ def load_scheme(path: Path, schema: Schema | None = None) -> Scheme:
         benefit=raw["benefit"],
         apply_at=raw["apply_at"],
         documents=tuple(raw.get("documents", ())),
+        worth=_worth(raw.get("worth")),
         source_url=raw.get("source_url"),
         note=raw.get("note"),
     )
     if schema is not None:
         scheme.check(schema)
     return scheme
+
+
+def _worth(spec) -> Worth:
+    if not spec:
+        return Worth()
+    return Worth(
+        kind=spec.get("kind", "cash"),
+        a_year=int(spec.get("a_year", 0) or 0),
+        once=int(spec.get("once", 0) or 0),
+        cover=int(spec.get("cover", 0) or 0),
+        basis=" ".join((spec.get("basis") or "").split()),
+    )
 
 
 def load_schemes(directory: Path, schema: Schema | None = None) -> list[Scheme]:
@@ -105,6 +118,7 @@ def load_documents(path: Path) -> DocumentGraph:
                 name=spec["name"],
                 issuer=spec["issuer"],
                 needs=needs,
+                office=spec.get("office"),
                 fee=spec.get("fee", 0),
                 days=spec.get("days", 0),
                 trips=spec.get("trips", 1),

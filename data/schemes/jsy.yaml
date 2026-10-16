@@ -13,6 +13,16 @@ note: >
   status. We model the general rule, so a refusal here is worth checking
   against the state's own list.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 0
+  once: 1400
+  cover: 0
+  basis: >
+    Rs 1,400 for a rural delivery in a health facility, paid once.
+
 documents:
   - aadhaar
   - bank_account

@@ -11,6 +11,17 @@ note: >
   Simplified encoding. The connection is issued in a woman's name, so a
   household with no adult woman cannot apply even when everything else fits.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 0
+  once: 1600
+  cover: 0
+  basis: >
+    A free connection with deposit and fittings covered, worth roughly Rs
+    1,600 once. Refill subsidy varies and is not counted.
+
 documents:
   - aadhaar
   - bank_account

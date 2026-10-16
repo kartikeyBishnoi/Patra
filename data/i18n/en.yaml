@@ -227,6 +227,69 @@ strings:
     trust_redundant: 'Clauses a scheme''s own other clauses already force'
     trust_none: 'None found.'
     trust_open: 'See the checks'
+
+    # The village camp, and the rulebook studio.
+    nav_camp: 'Village camp'
+    nav_rulebook: 'Rulebook'
+    camp_title: 'Planning a village camp'
+    camp_blurb: 'A block office can spare a few officials for one day. Which counters should come? A household gains nothing from one counter unless every counter its missing papers need also comes, so the best day is not the sum of the best counters.'
+    camp_surveying: 'Counting what the village is owed. This takes about a minute and runs once.'
+    camp_village: '{households} households, {people} people'
+    camp_waiting: '{n} households are waiting on paperwork alone'
+    camp_at_stake: 'Rs {rupees} a year within reach'
+    camp_budget: 'Officials the block can spare'
+    camp_method: 'How to choose'
+    camp_exact: 'Every option'
+    camp_greedy: 'Greedy'
+    camp_anneal: 'Local search'
+    camp_method_exact: 'Try all 2048 combinations and keep the best. Only possible because there are eleven counters.'
+    camp_method_greedy: 'Take the best value per official, again and again, never going back.'
+    camp_method_anneal: 'Start somewhere and keep swapping, accepting a worse day now and then so as not to settle in the first dip.'
+    camp_run: 'Plan the day'
+    camp_working: 'Searching'
+    camp_value: 'Rs {rupees} a year unlocked'
+    camp_served: '{n} households served'
+    camp_away: '{n} turned away at the gate'
+    camp_away_why: 'Covered on paper, but past what a counter can get through in a day.'
+    camp_optimum: 'This is the best possible day at this budget.'
+    camp_short: '{percent}% of the best possible day, which was Rs {rupees}.'
+    camp_counters: 'Counters to invite'
+    camp_queue: '{queue} of {serves} seen'
+    camp_full: 'full'
+    camp_opens: 'What the day opens'
+    camp_opens_n: '{n} households'
+    camp_blocking: 'What is in the way today'
+    camp_blocking_blurb: 'Rupees a year sitting behind each counter, across the whole village.'
+    camp_trace: 'The search, as it ran'
+    camp_trace_blurb: 'Each point is one option the search tried. The line is where it stood; the band is the best it had found. Local search goes backwards on purpose, which is what lets it get out of a dead end.'
+    camp_subsets: '{n} combinations examined'
+    camp_note: 'On this village greedy ties the optimum at every budget. That is the real result, not a tuned demonstration. It is not a guarantee: greedy on this problem is only about 63% assured, and eval/benchmark.py carries an instance where it loses.'
+    studio_title: 'Asking the rulebook about itself'
+    studio_blurb: 'Every other screen runs the rules forwards: here is a family, here is what they can claim. These run them backwards, and none of them needs a single applicant.'
+    studio_witness: 'Who would qualify?'
+    studio_witness_blurb: 'Hand the solver a scheme''s clauses and the domain axioms, and ask it to invent somebody who satisfies them. A rule with a mistake in it usually produces a witness that is obviously odd, which is the fastest way to catch one.'
+    studio_witness_go: 'Invent somebody'
+    studio_witness_none: 'Nobody could satisfy this, which means the rule has a mistake in it.'
+    studio_gap: 'Would anybody get nothing?'
+    studio_gap_blurb: 'Add the negation of all twenty schemes at once and ask whether a household exists that satisfies none of them. Pin them poor first, or the question is trivial.'
+    studio_gap_poor: 'Poor and rural'
+    studio_gap_doing_right: 'Poor, rural, and doing the paperwork right'
+    studio_gap_anyone: 'Anybody at all'
+    studio_gap_go: 'Look for them'
+    studio_gap_found: 'Found a household this rulebook has no answer for.'
+    studio_gap_none: 'No such household exists. Within these rules, everybody here qualifies for something.'
+    studio_gap_note: 'The solver chose every fact we did not pin, and it chose the worst. That is the question being asked: is there any combination that falls through.'
+    studio_fault: 'The office refused me. Why?'
+    studio_fault_blurb: 'When the app says somebody qualifies and the counter says otherwise, one of them is working from a different answer. For each clause, this finds the smallest change that would explain the refusal, which turns an argument into something checkable.'
+    studio_fault_go: 'Work out what they might have'
+    studio_fault_line: 'If they recorded {label} as {theirs} rather than {ours}'
+    studio_fault_none: 'No single changed answer would explain a refusal here.'
+    studio_fault_need: 'Answer the questions first, then pick the scheme you were refused.'
+    studio_reach: 'Every scheme is reachable'
+    studio_reach_line: '{ok} of {total} schemes can be satisfied by somebody. A scheme nobody can reach is a rule with a typo in it.'
+    camp_line_now: 'where the search stood'
+    camp_line_best: 'best it had found'
+    camp_line_top: 'the true optimum'
   # How each fact is asked. Written to be read aloud.
     tab_home: My claims
     tab_papers: Papers
@@ -559,3 +622,28 @@ strings:
       question: 'How do I get the old age pension?'
       answer: 'A monthly payment for people over sixty in below-poverty-line households, paid into a seeded bank account.'
       caution: 'Apply at the gram panchayat. If you already draw another government pension you cannot hold this one as well.'
+
+  # The counters a camp can invite.
+  office:
+    panchayat:
+      name: 'Gram panchayat counter'
+    tehsil:
+      name: 'Tehsil clerk'
+    food:
+      name: 'Food and supplies clerk'
+    bank:
+      name: 'Bank business correspondent'
+    aadhaar_kendra:
+      name: 'Aadhaar enrolment kit'
+    election:
+      name: 'Booth level officer'
+    power:
+      name: 'Electricity board clerk'
+    studio:
+      name: 'Photographer'
+    pan:
+      name: 'PAN service agent'
+    school:
+      name: 'School record clerk'
+    medical:
+      name: 'District medical board'

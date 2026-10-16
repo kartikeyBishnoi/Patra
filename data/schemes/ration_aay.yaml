@@ -13,6 +13,17 @@ note: >
   around landlessness, no assured income, and households headed by a widow or a
   person with disability. Treat the income figure as indicative only.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: grain
+  a_year: 10500
+  once: 0
+  cover: 0
+  basis: >
+    35 kg of grain a month for the household. Valued at what the same grain
+    would cost in the market, not as cash received.
+
 documents:
   - aadhaar
   - passport_photo

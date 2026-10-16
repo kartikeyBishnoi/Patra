@@ -437,6 +437,83 @@
   .empty { text-align:center; color:var(--grey); padding:34px 18px; }
   .hide { display:none !important; }
 
+  /* ---- motion ----
+     Every animation here is showing something: content arriving, a number
+     being counted, a search exploring. None of it is decoration, and all of
+     it stops when the machine says the person does not want it. */
+  @keyframes rise {
+    from { opacity:0; transform:translateY(9px); }
+    to   { opacity:1; transform:none; }
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:.45; }
+  }
+  @keyframes sweep {
+    from { stroke-dashoffset:var(--len); }
+    to   { stroke-dashoffset:0; }
+  }
+  .rise { animation:rise .34s cubic-bezier(.22,.8,.3,1) both; }
+  .waiting { animation:pulse 1.5s ease-in-out infinite; }
+
+  /* ---- the camp ---- */
+  .dials { display:grid; gap:18px; grid-template-columns:repeat(auto-fit, minmax(250px,1fr));
+           margin-bottom:18px; }
+  .dial { border:1px solid var(--line); padding:16px 18px; background:#fff; }
+  .dial h4 { margin:0 0 4px; font-size:14px; letter-spacing:.4px;
+             text-transform:uppercase; color:var(--teal-2); font-weight:700; }
+  .dial .big { font-family:var(--serif); font-size:30px; color:var(--navy);
+               line-height:1.15; font-weight:700; }
+  .dial .big.down { color:var(--stop); }
+  .dial p { margin:5px 0 0; font-size:14.5px; color:var(--grey); }
+
+  input[type=range] { width:100%; margin:10px 0 2px; accent-color:var(--teal); }
+  .slider-row { display:flex; align-items:baseline; gap:10px; }
+  .slider-row b { font-family:var(--serif); font-size:26px; color:var(--navy); }
+
+  .ways { display:flex; gap:9px; flex-wrap:wrap; margin-bottom:10px; }
+  .ways button { width:auto; margin:0; font-size:15px; font-weight:600;
+                 padding:10px 16px; }
+  .ways button.on { background:var(--navy); color:#fff; border-color:var(--navy); }
+
+  .counter { display:flex; gap:13px; align-items:center; padding:13px 0;
+             border-bottom:1px solid var(--hair); }
+  .counter:last-child { border-bottom:0; }
+  .counter .what { flex:1; }
+  .counter b { font-size:16.5px; color:var(--navy); }
+  .counter .bar { height:7px; background:var(--hair); margin-top:6px;
+                  max-width:240px; }
+  .counter .bar i { display:block; height:100%; background:var(--teal);
+                    transition:width .6s cubic-bezier(.22,.8,.3,1); }
+  .counter .bar i.full { background:var(--gold); }
+
+  .chart { width:100%; height:190px; display:block; background:#fff;
+           border:1px solid var(--line); }
+  .chart .grid-line { stroke:var(--hair); stroke-width:1; }
+  .chart .walk { fill:none; stroke:var(--teal); stroke-width:2;
+                 stroke-linejoin:round; }
+  .chart .crest { fill:none; stroke:var(--gold); stroke-width:2.5;
+                  stroke-linejoin:round; }
+  .chart .ceiling { stroke:var(--stop); stroke-width:1.5; stroke-dasharray:5 4; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:13.5px;
+            color:var(--grey); margin-top:9px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend i { width:16px; height:3px; display:inline-block; }
+
+  /* ---- the studio ---- */
+  .probe { border:1px solid var(--line); padding:20px; margin-bottom:16px;
+           background:#fff; }
+  .probe h3 { margin:0 0 7px; font-family:var(--serif); font-size:20px;
+              color:var(--navy); }
+  .probe > p { margin:0 0 14px; color:var(--grey); font-size:15.5px; }
+  .probe select { margin-bottom:10px; }
+  .card-out { background:var(--band); padding:15px; margin-top:14px; }
+  .card-out .fact b { color:var(--navy); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation:none !important; transition:none !important; }
+    html { scroll-behavior:auto; }
+  }
+
   @media (max-width: 860px) {
     .layout { grid-template-columns:1fr; gap:18px; }
     .side { order:2; }
@@ -615,7 +692,8 @@
     <button data-tab="schemes"><span id="nv-schemes"></span></button>
     <button data-tab="how"><span id="nv-how"></span></button>
     <button data-tab="papers"><span id="nv-papers"></span></button>
-    <button data-tab="trust"><span id="nv-trust"></span></button>
+    <button data-tab="camp"><span id="nv-camp"></span></button>
+    <button data-tab="trust"><span id="nv-rulebook"></span></button>
     <button data-tab="help"><span id="nv-help"></span></button>
   </div>
 </nav>
@@ -701,7 +779,8 @@ const S = {
      somebody gave from one we read off a photograph. */
   sources:{}, relation:null,
   can:{documents:false}, micOk:false, listening:null,
-  topics:[], how:[], crumbs:[]
+  topics:[], how:[], crumbs:[],
+  camp:{budget:4, method:"exact"}
 };
 const KEY = "patra.lang";
 
@@ -954,7 +1033,8 @@ async function pickLanguage(l) {
   set("lang-name",   l.name);
 
   [["home", "nav_home"], ["schemes", "nav_schemes"], ["how", "nav_how"],
-   ["papers", "nav_papers"], ["trust", "nav_trust"], ["help", "nav_help"]]
+   ["papers", "nav_papers"], ["camp", "nav_camp"], ["rulebook", "nav_rulebook"],
+   ["help", "nav_help"]]
     .forEach(([tab, key]) => { set("nv-" + tab, t("ui." + key));
                                set("tab-" + tab, t("ui." + key)); });
 
@@ -994,9 +1074,12 @@ function buildFooter() {
 
   const trust = $("ft-trust");
   trust.innerHTML = "";
-  const how = el("button", null, t("ui.nav_trust"));
+  const how = el("button", null, t("ui.nav_rulebook"));
   how.onclick = () => go("trust");
   trust.appendChild(how);
+  const camp = el("button", null, t("ui.nav_camp"));
+  camp.onclick = () => go("camp");
+  trust.appendChild(camp);
   const why = el("button", null, t("ui.not_official_more"));
   why.onclick = () => { govPanel(true); window.scrollTo(0, 0); };
   trust.appendChild(why);
@@ -1032,6 +1115,7 @@ function go(tab, arg) {
   if (tab === "scheme")  return schemeScreen(arg);
   if (tab === "how")     return arg ? howArticle(arg) : howScreen();
   if (tab === "papers")  return papersTab();
+  if (tab === "camp")    return campScreen();
   if (tab === "trust")   return trustScreen();
   if (tab === "help")    return helpTab();
 }
@@ -1382,6 +1466,294 @@ async function howArticle(howId) {
   body.appendChild(check);
 }
 
+/* ---------- animation helpers ---------- */
+
+const CALM = window.matchMedia
+  && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* A number that climbs to its value. Worth the few lines: a lakh appearing
+   instantly reads as a label, and a lakh counting up reads as a total
+   somebody arrived at. */
+function countTo(node, value, suffix) {
+  const done = () => { node.textContent = value.toLocaleString("en-IN")
+                                          + (suffix || ""); };
+  if (CALM || value < 1000) return done();
+  const span = 620, t0 = performance.now();
+  const tick = (now) => {
+    const at = Math.min(1, (now - t0) / span);
+    const eased = 1 - Math.pow(1 - at, 3);
+    node.textContent = Math.round(value * eased).toLocaleString("en-IN")
+                       + (suffix || "");
+    if (at < 1) requestAnimationFrame(tick); else done();
+  };
+  requestAnimationFrame(tick);
+}
+
+function enter(node, index) {
+  if (CALM) return node;
+  node.classList.add("rise");
+  node.style.animationDelay = Math.min(index || 0, 8) * 45 + "ms";
+  return node;
+}
+
+/* ---------- the village camp ---------- */
+
+/* Aryan's layer. The app so far answers one household at a time; a block
+   officer has a different question, and it is a harder one. A camp can be
+   held on Tuesday, a few officials can be spared, and which counters should
+   come? A household gains nothing from one counter unless every counter its
+   missing papers need also comes, so the value of a choice is not the sum of
+   its parts. That is budgeted maximum coverage, it is NP-hard, and the screen
+   lets you watch three different attacks on it. */
+async function campScreen() {
+  const v = view(), tok = drawing;
+  crumbs(v, [{name:t("ui.nav_camp")}]);
+  heading(v, t("ui.camp_title"), t("ui.camp_blurb"));
+  const body = wrapped(v, "");
+
+  let d;
+  try { d = await api("/api/camp?lang=" + S.lang); } catch { return offline(); }
+  if (stale(tok)) return;
+
+  const dials = el("div","dials");
+  [[t("ui.camp_village", d), null],
+   [d.ready ? t("ui.camp_waiting", {n:d.waiting}) : "", null],
+   [d.ready ? t("ui.camp_at_stake", {rupees:(d.at_stake||0).toLocaleString("en-IN")}) : "", null]]
+    .filter(row => row[0]).forEach(([text], i) => {
+      const cell = el("div","dial");
+      cell.appendChild(el("div","big", text));
+      dials.appendChild(enter(cell, i));
+    });
+  body.appendChild(dials);
+
+  if (!d.ready) {
+    const wait = el("div","note waiting", t("ui.camp_surveying"));
+    body.appendChild(wait);
+    // The survey runs once, behind the first page. Check back rather than
+    // making somebody reload.
+    setTimeout(() => { if (!stale(tok)) campScreen(); }, 4000);
+    return;
+  }
+
+  const controls = el("div","card");
+  controls.appendChild(el("h3", null, t("ui.camp_budget")));
+  const row = el("div","slider-row");
+  const shown = el("b", null, String(S.camp.budget));
+  const slider = document.createElement("input");
+  slider.type = "range"; slider.min = "1";
+  slider.max = String(Math.max(2, d.budget_max));
+  slider.value = String(S.camp.budget);
+  slider.oninput = () => { S.camp.budget = +slider.value;
+                           shown.textContent = slider.value; };
+  row.appendChild(shown);
+  row.appendChild(slider);
+  controls.appendChild(row);
+
+  controls.appendChild(el("h3","mt", t("ui.camp_method")));
+  const ways = el("div","ways");
+  const blurb = el("div","sub");
+  [["exact","camp_exact"], ["greedy","camp_greedy"], ["anneal","camp_anneal"]]
+    .forEach(([id, key]) => {
+      const b = el("button", S.camp.method === id ? "on" : null, t("ui." + key));
+      b.onclick = () => { S.camp.method = id; campScreen(); };
+      ways.appendChild(b);
+    });
+  controls.appendChild(ways);
+  blurb.textContent = t("ui.camp_method_" + S.camp.method);
+  controls.appendChild(blurb);
+
+  const go = el("button","cta mt", t("ui.camp_run"));
+  const out = el("div","mt");
+  go.onclick = () => runCamp(out);
+  controls.appendChild(go);
+  controls.appendChild(out);
+  body.appendChild(controls);
+
+  const blocking = el("div","card");
+  blocking.appendChild(el("h3", null, t("ui.camp_blocking")));
+  blocking.appendChild(el("p","sub", t("ui.camp_blocking_blurb")));
+  const names = {};
+  d.offices.forEach(o => { names[o.id] = o.name; });
+  const top = (d.blocking || [])[0];
+  (d.blocking || []).forEach((b, i) => {
+    const line = el("div","counter");
+    const what = el("div","what");
+    what.appendChild(el("b", null, names[b.id] || b.id));
+    const bar = el("div","bar");
+    const fill = el("i");
+    fill.style.width = "0%";
+    bar.appendChild(fill);
+    what.appendChild(bar);
+    line.appendChild(what);
+    const amount = el("div","sub");
+    line.appendChild(amount);
+    blocking.appendChild(enter(line, i));
+    setTimeout(() => {
+      fill.style.width = Math.round(100 * b.rupees / top.rupees) + "%";
+    }, 60 + i * 55);
+    countTo(amount, b.rupees, "");
+  });
+  body.appendChild(blocking);
+
+  body.appendChild(el("div","src mt", t("ui.camp_note")));
+  runCamp(out);
+}
+
+async function runCamp(out) {
+  out.innerHTML = "";
+  out.appendChild(el("div","sub waiting", t("ui.camp_working")));
+  let d;
+  try {
+    d = await api("/api/camp-plan",
+                  {budget:S.camp.budget, method:S.camp.method});
+  } catch { out.innerHTML = ""; return; }
+  out.innerHTML = "";
+  if (!d.ready) return;
+
+  const dials = el("div","dials mt");
+  const money = el("div","dial");
+  money.appendChild(el("h4", null, t("ui.camp_value", {rupees:""}).replace("{rupees}","").trim()));
+  const big = el("div","big");
+  money.appendChild(big);
+  dials.appendChild(money);
+  countTo(big, d.value, "");
+
+  const served = el("div","dial");
+  served.appendChild(el("h4", null, t("ui.camp_served", {n:""}).replace("{n}","").trim()));
+  const servedBig = el("div","big");
+  served.appendChild(servedBig);
+  dials.appendChild(served);
+  countTo(servedBig, d.households, "");
+
+  if (d.turned_away) {
+    const away = el("div","dial");
+    away.appendChild(el("h4", null, t("ui.camp_away", {n:""}).replace("{n}","").trim()));
+    const awayBig = el("div","big down");
+    away.appendChild(awayBig);
+    away.appendChild(el("p", null, t("ui.camp_away_why")));
+    dials.appendChild(away);
+    countTo(awayBig, d.turned_away, "");
+  }
+  out.appendChild(dials);
+
+  const quality = el("div", d.value >= d.optimum ? "note ok" : "note warn");
+  quality.textContent = d.value >= d.optimum
+    ? t("ui.camp_optimum")
+    : t("ui.camp_short", {percent:Math.round(100 * d.value / d.optimum),
+                          rupees:d.optimum.toLocaleString("en-IN")});
+  out.appendChild(quality);
+  out.appendChild(el("div","src", t("ui.camp_subsets", {n:d.subsets})));
+
+  const chosen = el("div","card mt");
+  chosen.appendChild(el("h3", null, t("ui.camp_counters")));
+  d.chosen.forEach((c, i) => {
+    const line = el("div","counter");
+    const what = el("div","what");
+    what.appendChild(el("b", null, c.name));
+    what.appendChild(el("div","sub",
+      t("ui.camp_queue", {queue:c.queue, serves:c.serves})
+      + (c.queue >= c.serves ? "  \u00b7  " + t("ui.camp_full") : "")));
+    const bar = el("div","bar");
+    const fill = el("i");
+    if (c.queue >= c.serves) fill.className = "full";
+    fill.style.width = "0%";
+    bar.appendChild(fill);
+    what.appendChild(bar);
+    line.appendChild(what);
+    chosen.appendChild(enter(line, i));
+    setTimeout(() => { fill.style.width =
+      Math.round(100 * c.queue / c.serves) + "%"; }, 80 + i * 70);
+  });
+  out.appendChild(chosen);
+
+  if (d.trace && d.trace.length > 2) out.appendChild(traceChart(d));
+
+  const opens = el("div","card");
+  opens.appendChild(el("h3", null, t("ui.camp_opens")));
+  d.opens.slice(0, 8).forEach((o, i) => {
+    const line = el("div","fact");
+    line.appendChild(el("b", null, o.name));
+    line.appendChild(el("span","ev", t("ui.camp_opens_n", {n:o.homes})));
+    opens.appendChild(enter(line, i));
+  });
+  out.appendChild(opens);
+}
+
+/* The search itself, drawn as it ran. A final number hides the interesting
+   part: local search climbs, stalls, takes a step backwards on purpose and
+   finds something better. The dashed line is the true optimum, which we have
+   because eleven counters is small enough to enumerate. */
+function traceChart(d) {
+  const box = el("div","card");
+  box.appendChild(el("h3", null, t("ui.camp_trace")));
+  box.appendChild(el("p","sub", t("ui.camp_trace_blurb")));
+
+  const W = 640, H = 190, pad = 10;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "chart");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("preserveAspectRatio", "none");
+
+  const top = Math.max(d.optimum, ...d.trace.map(p => p.best)) * 1.06 || 1;
+  const n = d.trace.length;
+  const x = (i) => pad + (W - 2 * pad) * (n > 1 ? i / (n - 1) : 0);
+  const y = (val) => H - pad - (H - 2 * pad) * (val / top);
+
+  for (let g = 1; g < 4; g++) {
+    const line = document.createElementNS(svg.namespaceURI, "line");
+    line.setAttribute("class", "grid-line");
+    line.setAttribute("x1", 0); line.setAttribute("x2", W);
+    line.setAttribute("y1", H * g / 4); line.setAttribute("y2", H * g / 4);
+    svg.appendChild(line);
+  }
+
+  const ceiling = document.createElementNS(svg.namespaceURI, "line");
+  ceiling.setAttribute("class", "ceiling");
+  ceiling.setAttribute("x1", 0); ceiling.setAttribute("x2", W);
+  ceiling.setAttribute("y1", y(d.optimum)); ceiling.setAttribute("y2", y(d.optimum));
+  svg.appendChild(ceiling);
+
+  const path = (key, cls) => {
+    const node = document.createElementNS(svg.namespaceURI, "polyline");
+    node.setAttribute("class", cls);
+    node.setAttribute("points",
+      d.trace.map((p, i) => `${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join(" "));
+    svg.appendChild(node);
+    return node;
+  };
+  const walk = path("value", "walk");
+  const crest = path("best", "crest");
+
+  // Drawn rather than appearing, so the search is watched instead of reported.
+  if (!CALM) {
+    [walk, crest].forEach((node, k) => {
+      const len = node.getTotalLength ? 0 : 0;
+      requestAnimationFrame(() => {
+        const total = node.getTotalLength();
+        node.style.setProperty("--len", total);
+        node.style.strokeDasharray = total;
+        node.style.strokeDashoffset = total;
+        node.style.animation = `sweep ${1.1 + k * 0.25}s ease-out forwards`;
+      });
+    });
+  }
+  box.appendChild(svg);
+
+  const key = el("div","legend");
+  [[t("ui.camp_line_now"), "var(--teal)"],
+   [t("ui.camp_line_best"), "var(--gold)"],
+   [t("ui.camp_line_top"), "var(--stop)"]].forEach(([label, colour]) => {
+    const item = el("span");
+    const swatch = el("i");
+    swatch.style.background = colour;
+    item.appendChild(swatch);
+    item.appendChild(el("span", null, label));
+    key.appendChild(item);
+  });
+  box.appendChild(key);
+  return box;
+}
+
 /* ---------- how we check ourselves ---------- */
 
 /* An examiner's page as much as an applicant's. The rules here are data, so
@@ -1393,7 +1765,7 @@ async function trustScreen() {
   try { d = await api("/api/rulebook?lang=" + S.lang); } catch { return offline(); }
   if (stale(tok)) return;
 
-  crumbs(v, [{name:t("ui.nav_trust")}]);
+  crumbs(v, [{name:t("ui.nav_rulebook")}]);
   heading(v, t("ui.trust_title"), t("ui.trust_body"));
   const body = wrapped(v, "");
 
@@ -1403,13 +1775,12 @@ async function trustScreen() {
     const card = el("div","card");
     card.appendChild(el("h3", null, title));
     card.appendChild(el("p","sub", blurb));
-    if (!rows.length) {
-      card.appendChild(el("div","sub", t("ui.trust_none")));
-    }
-    rows.forEach(r => {
+    if (!rows.length) card.appendChild(el("div","sub", t("ui.trust_none")));
+    rows.forEach((r, i) => {
       const line = el("div","fact");
-      line.appendChild(el("b", null, r.left.name + "  " + join + "  " + r.right.name));
-      card.appendChild(line);
+      line.appendChild(el("b", null,
+        r.left.name + "  " + join + "  " + r.right.name));
+      card.appendChild(enter(line, i));
     });
     body.appendChild(card);
   };
@@ -1423,9 +1794,196 @@ async function trustScreen() {
   d.redundant.forEach(r => red.appendChild(
     el("div","fact", r.name + ": " + r.criteria.join(", "))));
   body.appendChild(red);
+
+  studioSection(body);
 }
 
-/* ---------- what papers you already hold ---------- */
+/* ---------- asking the rulebook about itself ---------- */
+
+/* Om's layer. Every other screen runs the rules forwards: here is a family,
+   here is what they can claim. These three run them backwards, and not one of
+   them needs a single applicant.
+
+   Abduction, verification and diagnosis, which are three named corners of
+   classical AI and all three answerable with the solver that is already
+   here. */
+async function studioSection(body) {
+  const tok = drawing;
+  const head = el("div","head mt");
+  head.appendChild(el("h2", null, t("ui.studio_title")));
+  head.appendChild(el("div","rule"));
+  head.appendChild(el("p", null, t("ui.studio_blurb")));
+  body.appendChild(head);
+
+  let reach;
+  try { reach = await api("/api/studio-reach?lang=" + S.lang); }
+  catch { return; }
+  if (stale(tok)) return;
+
+  const ok = el("div", reach.unreachable.length ? "note stop" : "note ok");
+  ok.appendChild(el("div", null, t("ui.studio_reach")));
+  ok.appendChild(el("div","sub",
+    t("ui.studio_reach_line", {ok:reach.ok, total:reach.total})));
+  if (reach.unreachable.length) {
+    ok.appendChild(el("div","sub",
+      reach.unreachable.map(x => x.name).join(", ")));
+  }
+  body.appendChild(ok);
+
+  body.appendChild(witnessProbe(reach.schemes));
+  body.appendChild(gapProbe());
+  body.appendChild(faultProbe(reach.schemes));
+}
+
+function picker(schemes, current) {
+  const sel = document.createElement("select");
+  schemes.forEach(x => {
+    const o = document.createElement("option");
+    o.value = x.id; o.textContent = x.name;
+    sel.appendChild(o);
+  });
+  if (current) sel.value = current;
+  return sel;
+}
+
+/* Abduction: hand the solver a scheme's clauses and ask it to invent somebody
+   who satisfies them. A rule with a mistake in it produces a witness that is
+   visibly odd, which is faster than reading the rule again. */
+function witnessProbe(schemes) {
+  const box = el("div","probe");
+  box.appendChild(el("h3", null, t("ui.studio_witness")));
+  box.appendChild(el("p", null, t("ui.studio_witness_blurb")));
+  const sel = picker(schemes);
+  box.appendChild(sel);
+  const out = el("div");
+  const go = el("button","cta", t("ui.studio_witness_go"));
+  go.onclick = async () => {
+    out.innerHTML = "";
+    out.appendChild(el("div","sub waiting", t("ui.checking") || "..."));
+    let d;
+    try { d = await api("/api/studio-witness", {scheme:sel.value}); }
+    catch { out.innerHTML = ""; return; }
+    out.innerHTML = "";
+    if (!d.found) return out.appendChild(
+      el("div","note stop", t("ui.studio_witness_none")));
+    const card = el("div","card-out");
+    d.about.forEach((a, i) => {
+      const line = el("div","fact");
+      line.appendChild(el("b", null, a.label));
+      line.appendChild(el("span","ev", a.value));
+      card.appendChild(enter(line, i));
+    });
+    out.appendChild(card);
+  };
+  box.appendChild(go);
+  box.appendChild(out);
+  return box;
+}
+
+/* Verification: add the negation of every scheme at once and ask whether a
+   household exists that satisfies none of them. The answer is only
+   interesting once they are pinned poor, and more interesting still once
+   they are pinned to have done the paperwork right. */
+function gapProbe() {
+  const box = el("div","probe");
+  box.appendChild(el("h3", null, t("ui.studio_gap")));
+  box.appendChild(el("p", null, t("ui.studio_gap_blurb")));
+
+  const ways = el("div","ways");
+  const out = el("div");
+  let mode = "poor";
+
+  const run = async () => {
+    out.innerHTML = "";
+    out.appendChild(el("div","sub waiting", t("ui.checking") || "..."));
+    let d;
+    try { d = await api("/api/studio-gap", {mode:mode}); }
+    catch { out.innerHTML = ""; return; }
+    out.innerHTML = "";
+
+    const verdict = el("div", d.found ? "note stop" : "note ok");
+    verdict.textContent = d.found ? t("ui.studio_gap_found")
+                                  : t("ui.studio_gap_none");
+    out.appendChild(verdict);
+
+    if (d.found) {
+      const card = el("div","card-out");
+      d.about.forEach((a, i) => {
+        const line = el("div","fact");
+        line.appendChild(el("b", null, a.label));
+        line.appendChild(el("span","ev", a.value));
+        card.appendChild(enter(line, i));
+      });
+      out.appendChild(card);
+      out.appendChild(el("div","src mt", t("ui.studio_gap_note")));
+    }
+  };
+
+  [["anyone","studio_gap_anyone"], ["poor","studio_gap_poor"],
+   ["doing_right","studio_gap_doing_right"]].forEach(([id, key]) => {
+    const b = el("button", id === mode ? "on" : null, t("ui." + key));
+    b.onclick = () => {
+      mode = id;
+      [...ways.children].forEach(c => c.classList.remove("on"));
+      b.classList.add("on");
+      run();
+    };
+    ways.appendChild(b);
+  });
+  box.appendChild(ways);
+
+  const go = el("button","cta", t("ui.studio_gap_go"));
+  go.onclick = run;
+  box.appendChild(go);
+  box.appendChild(out);
+  return box;
+}
+
+/* Diagnosis: the app says they qualify, the counter said otherwise, so one of
+   the two is working from a different answer. Single fault first, which is
+   the ordinary assumption and the right one: a clerk mistyping one figure is
+   far likelier than two independent errors, and one cause is something
+   somebody can go and check. */
+function faultProbe(schemes) {
+  const box = el("div","probe");
+  box.appendChild(el("h3", null, t("ui.studio_fault")));
+  box.appendChild(el("p", null, t("ui.studio_fault_blurb")));
+  const sel = picker(schemes);
+  box.appendChild(sel);
+  const out = el("div");
+  const go = el("button","cta", t("ui.studio_fault_go"));
+  go.onclick = async () => {
+    out.innerHTML = "";
+    if (!Object.keys(S.facts).length) {
+      return out.appendChild(el("div","note warn", t("ui.studio_fault_need")));
+    }
+    out.appendChild(el("div","sub waiting", t("ui.checking") || "..."));
+    let d;
+    try { d = await api("/api/studio-fault",
+                        {scheme:sel.value, facts:S.facts}); }
+    catch { out.innerHTML = ""; return; }
+    out.innerHTML = "";
+    if (d.need_answers) return out.appendChild(
+      el("div","note warn", t("ui.studio_fault_need")));
+    if (!d.faults.length) return out.appendChild(
+      el("div","note", t("ui.studio_fault_none")));
+    d.faults.forEach((f, i) => {
+      const card = el("div","callout");
+      card.appendChild(icon("alert", 22, "#d89030"));
+      const txt = el("div");
+      txt.appendChild(el("b", null, t("ui.studio_fault_line",
+        {label:f.label, ours:f.ours, theirs:f.theirs})));
+      txt.appendChild(el("div", null, f.text));
+      card.appendChild(txt);
+      out.appendChild(enter(card, i));
+    });
+  };
+  box.appendChild(go);
+  box.appendChild(out);
+  return box;
+}
+
+/* ---------- what papers you already hold ---------- *//* ---------- what papers you already hold ---------- */
 
 function startScreen() {
   const v = view();

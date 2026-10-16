@@ -12,6 +12,17 @@ note: >
   permanent waiting list, so meeting the conditions here means a household
   should be on that list, not that a house follows immediately.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 0
+  once: 120000
+  cover: 0
+  basis: >
+    Rs 1,20,000 in instalments in plain areas, Rs 1,30,000 in hill and
+    difficult areas. Paid once, as the house is built.
+
 documents:
   - aadhaar
   - bank_account

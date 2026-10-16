@@ -1,0 +1,86 @@
+# The counters a paper can be obtained from, and what it costs to bring one to
+# the village for a day.
+#
+# A camp is worth holding because offices are shared. The tehsil clerk issues
+# domicile, income, caste and land records, so one chair for one morning makes
+# four papers reachable for everybody in the queue. Which chairs to fill, with
+# a fixed number of officials and one day, is a budgeted maximum coverage
+# problem, and that is what patra/camp/ solves.
+#
+# slots     how many officials that counter needs for a day. The budget is in
+#           these, because officials are what a block office can actually
+#           spare.
+# serves    households one counter can get through in a day. Beyond this the
+#           queue goes home disappointed, which is the failure a camp is
+#           supposed to prevent.
+# travels   whether the office will come to a village at all. A hospital
+#           medical board does not, so a disability certificate still means a
+#           trip to the district however good the camp is.
+
+offices:
+
+  panchayat:
+    name: Gram panchayat counter
+    slots: 1
+    serves: 60
+    travels: true
+
+  tehsil:
+    name: Tehsil clerk
+    slots: 2
+    serves: 40
+    travels: true
+
+  food:
+    name: Food and supplies clerk
+    slots: 1
+    serves: 50
+    travels: true
+
+  bank:
+    name: Bank business correspondent
+    slots: 1
+    serves: 45
+    travels: true
+
+  aadhaar_kendra:
+    name: Aadhaar enrolment kit
+    slots: 2
+    serves: 35
+    travels: true
+
+  election:
+    name: Booth level officer
+    slots: 1
+    serves: 55
+    travels: true
+
+  power:
+    name: Electricity board clerk
+    slots: 1
+    serves: 50
+    travels: true
+
+  studio:
+    name: Photographer
+    slots: 1
+    serves: 80
+    travels: true
+
+  pan:
+    name: PAN service agent
+    slots: 1
+    serves: 40
+    travels: true
+
+  school:
+    name: School record clerk
+    slots: 1
+    serves: 30
+    travels: true
+
+  medical:
+    name: District medical board
+    slots: 3
+    serves: 20
+    travels: false

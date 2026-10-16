@@ -12,6 +12,18 @@ note: >
   Simplified encoding. A family may open at most two such accounts, with an
   exception for twins, which we do not model.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: savings
+  a_year: 0
+  once: 0
+  cover: 0
+  basis: >
+    A savings account for a daughter at a rate above most others, with tax
+    relief. The gain depends entirely on what is deposited, so no figure is
+    claimed.
+
 documents:
   - aadhaar
   - birth_certificate

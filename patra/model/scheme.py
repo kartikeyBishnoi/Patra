@@ -8,7 +8,7 @@ instead of at an anonymous solver term.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from .attributes import Schema, Scope
@@ -56,6 +56,47 @@ class Axiom:
 
 
 @dataclass(frozen=True)
+class Worth:
+    """Roughly what a scheme is worth, and where the figure came from.
+
+    Three separate numbers because they are three different things and adding
+    them would be a lie. Cash in hand, a one-time payment, and a cover limit
+    that is only worth anything if the bad thing happens. An insurance scheme
+    with five lakh of cover is not five lakh of income, and a ranking that
+    pretended otherwise would put it above every pension.
+
+    `basis` is not decoration. Every figure here is indicative, most are
+    central shares that states top up, and a number without its provenance is
+    the sort of thing that ends up quoted back as fact.
+    """
+
+    kind: str = "cash"
+    a_year: int = 0
+    once: int = 0
+    cover: int = 0
+    basis: str = ""
+
+    # A one-time payment spread over this many years, so it can be compared
+    # with a monthly pension at all. Five is a judgement, not a finding, and
+    # it is here rather than buried in the ranking so it can be argued with.
+    SPREAD = 5
+
+    @property
+    def in_hand(self) -> int:
+        """Rupees a year, with one-time payments spread out."""
+        return self.a_year + self.once // self.SPREAD
+
+    @property
+    def is_money(self) -> bool:
+        return self.in_hand > 0
+
+    @property
+    def stated(self) -> bool:
+        """Whether any figure is claimed at all."""
+        return bool(self.a_year or self.once or self.cover)
+
+
+@dataclass(frozen=True)
 class Scheme:
     id: str
     name: str
@@ -65,6 +106,7 @@ class Scheme:
     benefit: str
     apply_at: str
     documents: tuple[str, ...] = ()
+    worth: Worth = field(default_factory=Worth)
     source_url: str | None = None
     note: str | None = None
 

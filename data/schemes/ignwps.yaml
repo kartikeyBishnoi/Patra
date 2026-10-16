@@ -11,6 +11,16 @@ note: >
   Simplified encoding. The upper age limit exists because a widow turning
   eighty moves to the old age pension instead, so the two do not overlap.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 3600
+  once: 0
+  cover: 0
+  basis: >
+    Central share of Rs 300 a month. States add a top-up on this.
+
 documents:
   - aadhaar
   - bank_account

@@ -12,6 +12,17 @@ note: >
   which we approximate with the ration card type. Verify against your own
   state's notification before relying on this.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 2400
+  once: 0
+  cover: 0
+  basis: >
+    Central share of Rs 200 a month for ages 60 to 79, rising to Rs 500 at
+    80. Most states add a top-up, so the real figure is usually higher.
+
 documents:
   - aadhaar
   - bank_account

@@ -12,6 +12,18 @@ note: >
   Simplified encoding. Contributions are deducted from the bank account every
   month until sixty, so this suits someone with a steady if small income.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 0
+  once: 0
+  cover: 0
+  basis: >
+    A contributory pension: you pay in now and draw between Rs 1,000 and Rs
+    5,000 a month after 60. Nothing is received today, so it is not counted
+    as income in hand.
+
 documents:
   - aadhaar
   - bank_account

@@ -19,11 +19,17 @@
 # These are simplified and vary by state. Verify against your own district
 # before relying on any of it. See docs/LIMITATIONS.md.
 
+# office  which counter issues it. Several papers share one, and that sharing
+#         is what makes a camp worth holding: bring the tehsil clerk to the
+#         village once and three certificates become reachable in a morning.
+#         See data/offices.yaml.
+
 documents:
 
   passport_photo:
     name: Passport photographs
     issuer: Any photo studio in the market
+    office: studio
     fee: 60
     days: 0
     trips: 1
@@ -31,6 +37,7 @@ documents:
   aadhaar:
     name: Aadhaar card
     issuer: Aadhaar enrolment centre
+    office: aadhaar_kendra
     fee: 0
     days: 30
     trips: 2
@@ -42,6 +49,7 @@ documents:
   birth_certificate:
     name: Birth certificate
     issuer: Gram panchayat or municipal office
+    office: panchayat
     fee: 20
     days: 15
     trips: 2
@@ -49,6 +57,7 @@ documents:
   school_certificate:
     name: School leaving certificate
     issuer: The school last attended
+    office: school
     fee: 0
     days: 7
     trips: 1
@@ -56,6 +65,7 @@ documents:
   electricity_bill:
     name: Electricity bill in the family name
     issuer: Electricity board office
+    office: power
     fee: 0
     days: 0
     trips: 1
@@ -64,6 +74,7 @@ documents:
   voter_id:
     name: Voter ID card
     issuer: Booth level officer or the electoral office
+    office: election
     fee: 0
     days: 30
     trips: 2
@@ -76,6 +87,7 @@ documents:
   pan_card:
     name: PAN card
     issuer: PAN service centre
+    office: pan
     fee: 110
     days: 15
     trips: 1
@@ -88,6 +100,7 @@ documents:
   ration_card:
     name: Ration card
     issuer: Block food and supplies office
+    office: food
     fee: 25
     days: 30
     trips: 2
@@ -102,6 +115,7 @@ documents:
   domicile_certificate:
     name: Domicile certificate
     issuer: Tehsil office
+    office: tehsil
     fee: 30
     days: 21
     trips: 2
@@ -114,6 +128,7 @@ documents:
   income_certificate:
     name: Income certificate
     issuer: Tehsildar or SDM office
+    office: tehsil
     fee: 30
     days: 21
     trips: 2
@@ -131,6 +146,7 @@ documents:
   caste_certificate:
     name: Caste certificate
     issuer: Tehsil office
+    office: tehsil
     fee: 30
     days: 30
     trips: 3
@@ -148,6 +164,7 @@ documents:
   bank_account:
     name: Bank account in your own name
     issuer: Any bank branch or business correspondent
+    office: bank
     fee: 0
     days: 7
     trips: 1
@@ -163,6 +180,7 @@ documents:
   bank_aadhaar_seeding:
     name: Aadhaar linked to the bank account
     issuer: Your own bank branch
+    office: bank
     fee: 0
     days: 3
     trips: 1
@@ -178,6 +196,7 @@ documents:
   disability_certificate:
     name: Disability certificate
     issuer: District hospital medical board
+    office: medical
     fee: 0
     days: 45
     trips: 3
@@ -190,6 +209,7 @@ documents:
   death_certificate:
     name: Death certificate of the person who died
     issuer: Gram panchayat or municipal office
+    office: panchayat
     fee: 20
     days: 21
     trips: 2
@@ -200,6 +220,7 @@ documents:
   land_records:
     name: Land record (khatauni or record of rights)
     issuer: Patwari or tehsil office
+    office: tehsil
     fee: 20
     days: 15
     trips: 2
@@ -210,6 +231,7 @@ documents:
   job_card:
     name: MGNREGA job card
     issuer: Gram panchayat
+    office: panchayat
     fee: 0
     days: 15
     trips: 2

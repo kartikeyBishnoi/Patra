@@ -39,6 +39,14 @@ class Document:
     name: str
     issuer: str
     needs: tuple[Need, ...] = ()
+    office: str | None = None
+    """Which counter issues it, from data/offices.yaml.
+
+    Several documents share one, and that sharing is what makes a village
+    camp worth holding: the tehsil clerk brings four certificates with one
+    chair. See patra/camp/.
+    """
+
     fee: int = 0
     days: int = 0
     trips: int = 1

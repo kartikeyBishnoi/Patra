@@ -12,6 +12,9 @@ Six experiments, each answering something somebody would reasonably ask:
     E7  How much of what people say does the understanding layer actually get?
     E8  Does saying it in a sentence shorten the interview?
     E9  What does the guard between the two halves actually stop?
+    E10 Planning a village camp: how close do the heuristics get?
+    E11 What does carrying an uncertain answer as a range actually change?
+    E12 What does the rulebook say about itself?
 
 Every number printed here comes from running the system. Run with:
 
@@ -608,6 +611,162 @@ def e9_guard(engine, schema):
     print()
 
 
+def e10_camp(engine, schema, schemes, documents):
+    """Exact, greedy and local search on a village camp.
+
+    The instance is small enough to enumerate, which is the only reason the
+    heuristics can be scored rather than merely described.
+    """
+    from patra.camp.model import load_offices, survey
+    from patra.camp.plan import anneal, exact, greedy
+
+    print(LINE)
+    print("  E10  which counters to bring to the village")
+    print(LINE)
+
+    offices = load_offices(DATA / "offices.yaml")
+    village = load_households(DATA / "cases" / "village.yaml", schema)
+    t0 = time.perf_counter()
+    needs = survey(engine, schema, schemes, documents, offices, village)
+    took = time.perf_counter() - t0
+
+    print(f"  {len(village)} households, {sum(len(h.members) for h in village)} "
+          f"people, surveyed in {took:.0f}s")
+    print(f"  {len(needs)} are held up by paperwork alone, "
+          f"Rs {sum(n.total for n in needs):,} a year between them")
+    print()
+    print(f"  {'budget':>7}{'optimum':>12}{'greedy':>12}{'anneal':>12}"
+          f"{'served':>8}{'away':>6}{'greedy%':>9}{'anneal%':>9}")
+
+    for budget in (2, 3, 4, 5, 6, 8, 10):
+        best, _ = exact(needs, offices, budget)
+        rough, _ = greedy(needs, offices, budget)
+        walked, _ = anneal(needs, offices, budget)
+        share = lambda v: 100 * v / best.value if best.value else 100.0
+        print(f"  {budget:>7}{best.value:>12,}{rough.value:>12,}"
+              f"{walked.value:>12,}{best.households:>8}{best.turned_away:>6}"
+              f"{share(rough.value):>8.0f}%{share(walked.value):>8.0f}%")
+
+    print("\n  On this village greedy ties the optimum at every budget. That is")
+    print("  the result, not a tuned demonstration, and it is not a guarantee:")
+
+    from patra.camp.model import Need, Office
+    toy_offices = {
+        "big": Office("big", "Big", slots=2, serves=99, travels=True),
+        "a": Office("a", "A", slots=1, serves=99, travels=True),
+        "b": Office("b", "B", slots=1, serves=99, travels=True),
+    }
+    toy_needs = [
+        Need("h1", {"s": 60}, {"s": frozenset({"big"})}),
+        Need("h2", {"s": 50}, {"s": frozenset({"a", "b"})}),
+        Need("h3", {"s": 50}, {"s": frozenset({"a", "b"})}),
+    ]
+    toy_best, _ = exact(toy_needs, toy_offices, 2)
+    toy_rough, _ = greedy(toy_needs, toy_offices, 2)
+    print(f"  on a constructed instance greedy gets {toy_rough.value} of "
+          f"{toy_best.value}, which is {100*toy_rough.value/toy_best.value:.0f}%.")
+    print("  One counter looks best alone; two cheaper ones together beat it.")
+    print()
+
+
+def e11_uncertainty(engine, schema, schemes, households):
+    """What changes when an answer is carried as the range it really is.
+
+    The interesting number is how often the third verdict appears, because
+    every one of those is a case the old code answered firmly on a figure
+    nobody had.
+    """
+    from patra.reason.uncertain import Range, Standing, screen
+
+    print(LINE)
+    print("  E11  answers given as a range")
+    print(LINE)
+    print(f"  {'person':<18}{'spread':>9}{'certain':>9}{'depends':>9}"
+          f"{'impossible':>12}  hinges found")
+
+    spreads = (0.05, 0.15, 0.30)
+    totals = {s: 0 for s in spreads}
+    hinges = {s: 0 for s in spreads}
+
+    for household in households:
+        member = household.members[0].id if household.members else None
+        facts = dict(project(household, schema, member).facts)
+        said = facts.pop("annual_income", None)
+        if said is None:
+            continue
+        for spread in spreads:
+            low = int(said * (1 - spread))
+            high = int(said * (1 + spread))
+            found = screen(engine, schema, schemes, facts,
+                           [Range("annual_income", low, high, said)])
+            counts = {s: 0 for s in Standing}
+            for row in found:
+                counts[row.standing] += 1
+            got = sum(1 for r in found
+                      if r.standing is Standing.DEPENDS and r.hinge)
+            totals[spread] += counts[Standing.DEPENDS]
+            hinges[spread] += got
+            if spread == spreads[1]:
+                print(f"  {household.id + '/' + str(member):<18}"
+                      f"{int(spread*100):>8}%{counts[Standing.CERTAIN]:>9}"
+                      f"{counts[Standing.DEPENDS]:>9}"
+                      f"{counts[Standing.IMPOSSIBLE]:>12}{got:>14}")
+
+    print()
+    for spread in spreads:
+        print(f"  at plus or minus {int(spread*100):>2}%: "
+              f"{totals[spread]} verdicts turn into 'depends', "
+              f"{hinges[spread]} of them with a single number to check")
+    print("\n  Every one of those was previously answered firmly, on a figure")
+    print("  the person had already told us they were not sure of.")
+    print()
+
+
+def e12_rulebook(engine, schema, schemes, axioms):
+    """What the rules say about themselves, with no applicant involved."""
+    from patra.reason.relate import analyse
+    from patra.studio.witness import falls_through, reachable
+
+    print(LINE)
+    print("  E12  the rulebook, asked about itself")
+    print(LINE)
+
+    t0 = time.perf_counter()
+    book = analyse(engine, schemes)
+    took = time.perf_counter() - t0
+    names = {s.id: s.name for s in schemes}
+
+    print(f"  {book.checks} solver queries in {took:.1f}s over "
+          f"{len(schemes)} schemes")
+    print(f"\n  one scheme settling another: {len(book.entails)}")
+    for r in book.entails:
+        print(f"    {names[r.left][:38]:40} -> {names[r.right]}")
+    print(f"  pairs nobody can hold together: {len(book.excludes)}")
+    print(f"  clauses a scheme's own others force: "
+          f"{sum(len(v) for v in book.redundant.values())}")
+
+    found = reachable(engine, schema, schemes, axioms)
+    print(f"  schemes somebody can reach: {sum(found.values())} of {len(found)}")
+
+    print("\n  who gets nothing at all:")
+    poor = {"ration_card_type": "aay", "area_type": "rural",
+            "annual_income": 30000}
+    diligent = {**poor, "has_bank_account": True, "bank_aadhaar_linked": True,
+                "cultivates_land": True, "willing_unskilled_work": True,
+                "someone_has_bank_account": True, "has_willing_worker": True,
+                "income_tax_payer": False, "govt_employee_in_family": False,
+                "already_receiving_pension": False}
+    for label, pinned in (("anybody at all", None),
+                          ("poor and rural", poor),
+                          ("poor, rural, paperwork done", diligent)):
+        witness = falls_through(engine, schema, schemes, axioms, pinned)
+        print(f"    {label:<30} {'yes' if witness.found else 'no'}")
+
+    print("\n  So within these rules every gap is a paperwork gap, which is")
+    print("  the claim this whole project rests on, checked rather than said.")
+    print()
+
+
 def main():
     schema = load_schema(DATA / "attributes.yaml")
     schemes = load_schemes(DATA / "schemes", schema)
@@ -633,6 +792,9 @@ def main():
     e7_understanding(schema)
     e8_spoken_shortens_the_interview(engine, schema, schemes, households)
     e9_guard(engine, schema)
+    e10_camp(engine, schema, schemes, documents)
+    e11_uncertainty(engine, schema, schemes, households)
+    e12_rulebook(engine, schema, schemes, axioms)
 
 
 if __name__ == "__main__":

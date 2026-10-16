@@ -26,6 +26,7 @@ from urllib.parse import parse_qs, urlparse
 from ..encode.loader import (
     load_axioms,
     load_documents,
+    load_households,
     load_schema,
     load_schemes,
 )
@@ -39,7 +40,15 @@ from ..model.household import Profile
 from ..model.scheme import say
 from ..nlp.extract import Extractor
 from ..reason.questions import Status, next_question, status
+from ..camp.model import load_offices, survey
+from ..camp.plan import anneal, evaluate, exact, greedy
 from ..reason.relate import analyse
+from ..studio.witness import (
+    falls_through,
+    reachable,
+    single_faults,
+    who_qualifies,
+)
 from ..reason.simulate import simulate
 from ..reason.timeline import horizons
 from ..explain.phrase import criterion as say_criterion
@@ -101,6 +110,11 @@ class Brain:
         self.translations = Translations(data_dir / "i18n")
         self.topics = yaml.safe_load(
             (data_dir / "topics.yaml").read_text(encoding="utf-8"))
+        self.offices = load_offices(data_dir / "offices.yaml")
+        self.village = load_households(data_dir / "cases" / "village.yaml",
+                                       self.schema)
+        self._needs = None
+        self._survey_error = None
         # Relations between the schemes are a property of the rulebook, not of
         # any household, so they are proved once here rather than per request.
         self.rulebook = analyse(self.engine, self.schemes)
@@ -111,6 +125,13 @@ class Brain:
         # to tesseract and the answer cannot change while the app is running.
         self.ocr = capability()
         self._lock = threading.RLock()
+
+        # Surveying a hundred and fifty households against twenty schemes is
+        # the better part of a minute, and nobody should watch a start-up
+        # banner for that. It runs behind the first page instead, and the camp
+        # screen says it is still counting if somebody arrives before it is
+        # done. The lock has to exist before the thread does.
+        threading.Thread(target=self._do_survey, daemon=True).start()
 
     # ---- naming things in the chosen language ----
 
@@ -447,6 +468,195 @@ class Brain:
         if scheme is None:
             return {"id": scheme_id, "name": scheme_id}
         return {"id": scheme_id, "name": self.scheme_text(words, scheme, "name")}
+
+    # ---- asking the rulebook about itself ----
+
+    # What a household plausibly looks like when it is poor, and what it looks
+    # like when it has also done everything the paperwork asks. Pinning these
+    # is what turns "does anybody get nothing" from a trivial yes into a real
+    # question about the rules.
+    POOR = {"ration_card_type": "aay", "area_type": "rural",
+            "annual_income": 30000}
+    DILIGENT = {**POOR, "has_bank_account": True, "bank_aadhaar_linked": True,
+                "cultivates_land": True, "willing_unskilled_work": True,
+                "someone_has_bank_account": True, "has_willing_worker": True,
+                "income_tax_payer": False, "govt_employee_in_family": False,
+                "already_receiving_pension": False}
+
+    def _witness_json(self, witness, words) -> dict:
+        return {
+            "found": witness.found,
+            "about": [
+                {"label": self.attr_label(words, shown.attribute),
+                 "value": self.value_text(words, shown.attribute, shown.value)}
+                for shown in witness.about
+            ],
+        }
+
+    def studio_witness(self, scheme_id: str, words) -> dict:
+        scheme = self.by_id.get(scheme_id)
+        if scheme is None:
+            return {"error": "unknown scheme"}
+        with self._lock:
+            found = who_qualifies(self.engine, self.schema, scheme, self.axioms)
+        out = self._witness_json(found, words)
+        out["scheme"] = self._named(scheme_id, words)
+        return out
+
+    def studio_gap(self, mode: str, words) -> dict:
+        pinned = {"poor": self.POOR, "doing_right": self.DILIGENT}.get(mode)
+        with self._lock:
+            found = falls_through(self.engine, self.schema, self.schemes,
+                                  self.axioms, pinned)
+        out = self._witness_json(found, words)
+        out["mode"] = mode
+        out["pinned"] = [
+            {"label": self.attr_label(words, name),
+             "value": self.value_text(words, name, value)}
+            for name, value in (pinned or {}).items()
+        ]
+        return out
+
+    def studio_fault(self, scheme_id: str, facts: dict, words) -> dict:
+        scheme = self.by_id.get(scheme_id)
+        if scheme is None:
+            return {"error": "unknown scheme"}
+        if not scheme.attributes_used <= set(facts):
+            return {"faults": [], "need_answers": True,
+                    "scheme": self._named(scheme_id, words)}
+        with self._lock:
+            found = single_faults(self.engine, self.schema, scheme, facts)
+        return {
+            "scheme": self._named(scheme_id, words),
+            "need_answers": False,
+            "faults": [
+                {
+                    "criterion": f.criterion,
+                    "label": self.attr_label(words, f.attribute),
+                    "ours": self.value_text(words, f.attribute, f.ours),
+                    "theirs": self.value_text(words, f.attribute, f.theirs),
+                    "text": self.criterion_text(
+                        words, scheme_id,
+                        next(c for c in scheme.criteria if c.id == f.criterion)),
+                }
+                for f in found
+            ],
+        }
+
+    def studio_reach(self, words) -> dict:
+        with self._lock:
+            found = reachable(self.engine, self.schema, self.schemes,
+                              self.axioms)
+        return {
+            "total": len(found),
+            "ok": sum(1 for v in found.values() if v),
+            "unreachable": [self._named(k, words)
+                            for k, v in found.items() if not v],
+            "schemes": [self._named(s.id, words) for s in self.schemes],
+        }
+
+    # ---- the village camp ----
+
+    def _do_survey(self):
+        try:
+            # The lock is taken per household, not around the whole survey.
+            # Held for the full minute it would stall every other page in the
+            # app, and the point of running it in the background is that
+            # nobody should notice it at all.
+            found = survey(self.engine, self.schema, self.schemes,
+                           self.documents, self.offices, self.village,
+                           guard=lambda: self._lock)
+            self._needs = found
+        except Exception as exc:          # a background thread must not die quietly
+            self._survey_error = str(exc)
+
+    @property
+    def camp_ready(self) -> bool:
+        return self._needs is not None
+
+    def camp_summary(self, words) -> dict:
+        people = sum(len(h.members) for h in self.village)
+        out = {
+            "ready": self.camp_ready,
+            "error": self._survey_error,
+            "households": len(self.village),
+            "people": people,
+            "offices": [
+                {"id": o.id, "name": dig(words, "office", o.id, "name",
+                                         default=o.name),
+                 "slots": o.slots, "serves": o.serves, "travels": o.travels}
+                for o in self.offices.values()
+            ],
+            "budget_max": sum(o.slots for o in self.offices.values()
+                              if o.travels),
+        }
+        if self.camp_ready:
+            out["waiting"] = len(self._needs)
+            out["at_stake"] = sum(n.total for n in self._needs)
+            blocking = {}
+            for need in self._needs:
+                for scheme_id, offs in need.missing.items():
+                    for office in offs:
+                        blocking[office] = blocking.get(office, 0) + \
+                            need.wants[scheme_id]
+            out["blocking"] = sorted(
+                ({"id": k, "rupees": v} for k, v in blocking.items()),
+                key=lambda row: -row["rupees"])
+        return out
+
+    def camp_plan(self, budget: int, method: str, words) -> dict:
+        if not self.camp_ready:
+            return {"ready": False}
+        needs = self._needs
+        budget = max(1, min(int(budget), 40))
+
+        trace, looked = [], 0
+        if method == "greedy":
+            outcome, steps = greedy(needs, self.offices, budget)
+            trace = [{"round": i + 1, "value": st["value"], "best": st["value"],
+                      "chosen": None, "took": True, "office": st["office"]}
+                     for i, st in enumerate(steps)]
+        elif method == "anneal":
+            outcome, trace = anneal(needs, self.offices, budget)
+        else:
+            method = "exact"
+            outcome, looked = exact(needs, self.offices, budget)
+
+        best_value = outcome.value
+        if method != "exact":
+            # Always measured against the true optimum, because a heuristic
+            # with nothing to compare against is an opinion with a runtime.
+            perfect, looked = exact(needs, self.offices, budget)
+            best_value = perfect.value
+
+        names = {o.id: dig(words, "office", o.id, "name", default=o.name)
+                 for o in self.offices.values()}
+        scheme_names = {s.id: self.scheme_text(words, s, "name")
+                        for s in self.schemes}
+
+        return {
+            "ready": True,
+            "method": method,
+            "budget": budget,
+            "subsets": looked,
+            "optimum": best_value,
+            "value": outcome.value,
+            "slots": outcome.slots,
+            "households": outcome.households,
+            "turned_away": outcome.turned_away,
+            "chosen": [
+                {"id": o, "name": names[o], "slots": self.offices[o].slots,
+                 "serves": self.offices[o].serves,
+                 "queue": outcome.load.get(o, 0)}
+                for o in outcome.chosen
+            ],
+            "trace": trace,
+            "opens": sorted(
+                ({"id": sid, "name": scheme_names.get(sid, sid),
+                  "homes": sum(1 for s in outcome.served if sid in s.schemes)}
+                 for sid in {s for row in outcome.served for s in row.schemes}),
+                key=lambda row: -row["homes"]),
+        }
 
     # ---- the front door ----
 
@@ -911,6 +1121,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, self.brain.how_list(
                 self.brain.translations.bundle(self._lang())))
 
+        if route == "/api/camp":
+            return self._json(200, self.brain.camp_summary(
+                self.brain.translations.bundle(self._lang())))
+
+        if route == "/api/studio-reach":
+            return self._json(200, self.brain.studio_reach(
+                self.brain.translations.bundle(self._lang())))
+
         if route == "/api/rulebook":
             return self._json(200, self.brain.rulebook_page(
                 self.brain.translations.bundle(self._lang())))
@@ -1010,6 +1228,30 @@ class Handler(BaseHTTPRequestHandler):
         if route == "/api/how-page":
             return self._json(200, self.brain.how_page(
                 str(payload.get("how", "")), self._documents(payload), words))
+
+        if route == "/api/studio-witness":
+            return self._json(200, self.brain.studio_witness(
+                str(payload.get("scheme", "")), words))
+
+        if route == "/api/studio-gap":
+            mode = str(payload.get("mode", "poor"))
+            if mode not in ("anyone", "poor", "doing_right"):
+                return self._json(400, {"error": "unknown mode"})
+            return self._json(200, self.brain.studio_gap(mode, words))
+
+        if route == "/api/studio-fault":
+            return self._json(200, self.brain.studio_fault(
+                str(payload.get("scheme", "")), facts, words))
+
+        if route == "/api/camp-plan":
+            try:
+                budget = int(payload.get("budget", 4))
+            except (TypeError, ValueError):
+                return self._json(400, {"error": "bad budget"})
+            method = str(payload.get("method", "exact"))
+            if method not in ("exact", "greedy", "anneal"):
+                return self._json(400, {"error": "unknown method"})
+            return self._json(200, self.brain.camp_plan(budget, method, words))
 
         if route == "/api/timeline":
             return self._json(200, self.brain.timeline(facts, words))

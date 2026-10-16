@@ -12,6 +12,16 @@ note: >
   child is a girl, which we do not model. A woman refused here on the
   first-child test may still qualify under that extension.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 0
+  once: 5000
+  cover: 0
+  basis: >
+    Rs 5,000 across instalments for the first living child.
+
 documents:
   - aadhaar
   - bank_account

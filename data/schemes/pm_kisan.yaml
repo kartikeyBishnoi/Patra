@@ -12,6 +12,16 @@ note: >
   higher-income pensioners than we model here; we cover the exclusions a rural
   household is actually likely to trip.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 6000
+  once: 0
+  cover: 0
+  basis: >
+    Rs 2,000 three times a year, paid straight to the bank account.
+
 documents:
   - aadhaar
   - bank_account

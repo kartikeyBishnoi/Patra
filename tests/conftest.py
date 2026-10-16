@@ -85,3 +85,29 @@ def profile_of(schema, households):
         return project(household, schema, member_id)
 
     return make
+
+
+@pytest.fixture(scope="session")
+def offices():
+    from patra.camp.model import load_offices
+    return load_offices(DATA / "offices.yaml")
+
+
+@pytest.fixture(scope="session")
+def village(schema):
+    return load_households(DATA / "cases" / "village.yaml", schema)
+
+
+@pytest.fixture(scope="session")
+def needs(schema, schemes, documents, offices, village, axioms):
+    """The village survey, computed once for the whole session.
+
+    It is the better part of a minute, so a per-test fixture would make the
+    suite unusable. A cut-down village keeps it to a few seconds while still
+    exercising the same code.
+    """
+    from patra.camp.model import survey
+    from patra.engine import Engine
+
+    engine = Engine(schema, axioms, documents)
+    return survey(engine, schema, schemes, documents, offices, village[:30])

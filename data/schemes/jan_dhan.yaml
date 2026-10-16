@@ -13,6 +13,18 @@ note: >
   what makes it the usual way out of the paperwork trap for somebody holding
   almost nothing.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: enabler
+  a_year: 0
+  once: 0
+  cover: 30000
+  basis: >
+    No payment of its own. It carries accident cover and a small overdraft,
+    and it is the account most other schemes pay into, which is where its
+    value is.
+
 documents:
   - aadhaar
   - passport_photo

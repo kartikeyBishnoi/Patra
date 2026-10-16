@@ -13,6 +13,17 @@ note: >
   lower threshold from their own funds, so somebody refused here may still
   qualify under a state scheme.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 3600
+  once: 0
+  cover: 0
+  basis: >
+    Central share of Rs 300 a month, rising to Rs 500 at 80. States add a
+    top-up.
+
 documents:
   - aadhaar
   - bank_account

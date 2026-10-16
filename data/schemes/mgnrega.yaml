@@ -12,6 +12,18 @@ note: >
   whose adult members volunteer for manual work, so the criteria here are
   deliberately short. There is no income test.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 25000
+  once: 0
+  cover: 0
+  basis: >
+    Up to a hundred days at the state's notified wage. Taken here at
+    roughly Rs 250 a day, which varies by state, and only if the full
+    hundred days are worked.
+
 documents:
   - aadhaar
   - passport_photo

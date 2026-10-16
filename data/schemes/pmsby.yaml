@@ -9,6 +9,17 @@ apply_at: The bank where you hold your account
 source_url: https://jansuraksha.gov.in/
 note: Simplified encoding. Cover renews every year on the first of June.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cover
+  a_year: 0
+  once: 0
+  cover: 200000
+  basis: >
+    Rs 2 lakh of accident cover for a premium of about Rs 20 a year. Cover,
+    not income.
+
 documents:
   - aadhaar
   - bank_account

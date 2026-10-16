@@ -12,6 +12,16 @@ note: >
   the death, and the person who died must have been of working age. Families
   often miss this one entirely because nobody tells them it exists.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: cash
+  a_year: 0
+  once: 20000
+  cover: 0
+  basis: >
+    Rs 20,000 paid once after the death of the household's main earner.
+
 documents:
   - aadhaar
   - bank_account

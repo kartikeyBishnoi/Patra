@@ -13,6 +13,17 @@ note: >
   exclusion tests rather than a single income line. Treat the income figure
   here as indicative.
 
+# Indicative only, and the basis says where it came from. Figures are central
+# shares at the time of writing; states add top-ups we do not model.
+worth:
+  kind: grain
+  a_year: 7200
+  once: 0
+  cover: 0
+  basis: >
+    5 kg of grain per person a month. Valued for a household of four at
+    market prices, not as cash.
+
 documents:
   - aadhaar
   - passport_photo
