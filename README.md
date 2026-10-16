@@ -334,6 +334,14 @@ rather than left to whoever calls it.
 | What would fix it | minimal correction sets, restricted to changeable facts |
 | Which paper first | minimum-cost AND-OR search |
 | Which question next | adaptive test selection |
+| Which paper first, four ways | breadth first, depth first, uniform cost, A* with an admissible heuristic |
+| What follows without asking | forward and backward chaining over the domain axioms |
+| Which counters to bring | budgeted maximum coverage, exhaustive and by local search |
+| Who is seen when | a CSP with AC-3, forward checking, MRV, degree and LCV |
+| Who would qualify at all | abduction: a witness generated from a scheme's clauses |
+| Does anybody get nothing | verification over the whole rulebook at once |
+| Why did the office refuse | single-fault diagnosis |
+| How sure are we really | interval reasoning, with a third verdict |
 | When, not whether | optimisation over age with the immutable facts pinned |
 | How the rules relate | entailment, exclusion and redundancy proved over the rulebook |
 | What if | counterfactual re-decision over the whole rulebook |
@@ -375,7 +383,11 @@ patra/
   vision/     local OCR and document signatures
   reason/     oracle, quickxplain, marco, hitting sets, planner,
               unlock, questions, consistency, sensitivity, simulate,
-              relate, timeline
+              relate, timeline, chain, uncertain
+  search/     the same route by breadth, depth, uniform cost and A*
+  csp/        a constraint solver written out, and the camp day it schedules
+  camp/       a village, the counters that could visit, and which should
+  studio/     witnesses, gaps and diagnoses, asked of the rules
   explain/    templated rendering and the derivation traces
   web/        local server, the app, and the logo
   guard.py    the boundary: what may become a fact, what may be claimed
@@ -391,11 +403,15 @@ data/
   cues.yaml         the phrases that propose a fact, in five languages
   papers.yaml       what is printed on each document, and what to read off it
   topics.yaml       how the schemes are grouped, and the four common questions
+  offices.yaml      which counter issues each paper, and what it costs to visit
+  course.yaml       every topic on the course handout, and where it lives
+  agents.yaml       a PEAS description per agent, and the expert-system parts
+  cases/village.yaml  a synthetic village of 150 households to plan for
   i18n/             five languages
   cases/            five households used for testing
-tests/        303 tests
-eval/         nine experiments, and the labelled sentences for one of them
-docs/         the AI argument, limitations, languages
+tests/        437 tests
+eval/         fifteen experiments, and the labelled sentences for one
+docs/         the AI argument, limitations, languages, the course map
 ```
 
 ## Tests and measurements
@@ -417,11 +433,43 @@ Measured by running the system, nothing hard-coded:
 | Reading a sentence | 61 labelled sentences across five languages, no fact invented from the 17 that carry none |
 | Describing your family in words | 21 of 120 interview questions skipped |
 | The guard | 70 readings proposed, 66 used, 2 read back, 2 refused |
+| A* against uniform cost | same optimum on every target, 12 times fewer states expanded, 43 times on the hardest |
+| The camp planner | greedy ties the optimum at every budget here, and loses 60 to 100 on a constructed instance |
+| Scheduling the camp day | plain backtracking does not finish 93 households; with MRV it never backtracks |
+| Chaining over the axioms | 3 of 206 questions skipped |
+| The rulebook | 2 entailments and 17 exclusions proved in 343 queries; every scheme reachable |
+| Who falls through | somebody, until the paperwork is done, and then nobody |
 
 The reading figure is the weakest number here and the harness says so when it
 prints it: the labelled sentences and the cue vocabulary were written by the
 same hand, so it measures coverage of phrasings we thought of rather than
 generalisation. It is the first number that should be replaced with field data.
+
+## What the course asked for
+
+The handout lists ten topics. Six are built, one is partly built, and three
+are deliberately absent. All ten are on
+[data/course.yaml](data/course.yaml) and on the **Course map** screen, each
+naming the module and the page to open, because a map with no gaps on it is
+not a map of anything.
+
+| | Topic | Where |
+|---|---|---|
+| 1 | Introduction to AI | the argument for a solver over a model, `docs/AI.md` |
+| 2 | Search and problem solving | `patra/search/` and `patra/camp/plan.py` |
+| 3 | Planning and CSP | `patra/reason/planner.py`, `patra/encode/z3enc.py`, `patra/csp/` |
+| 4 | Knowledge representation and reasoning | `data/schemes/`, `patra/reason/chain.py`, `patra/reason/relate.py` |
+| 5 | Intelligent agents and expert systems | `data/agents.yaml`, and the parts named in it |
+| 6 | Generative AI fundamentals | generation without learning: `patra/explain/phrase.py`, `patra/studio/witness.py` |
+| 7 | Generative AI models | absent, and argued: no outcome data exists to learn from |
+| 8 | Transformers | absent, and argued: the reader must be able to cite its evidence |
+| 9 | Large language models | absent, and enforced: `patra/guard.py` will not let one be the judge |
+| 10 | Responsible AI | the disclaimer strip, the privacy architecture, the redaction, the caveats |
+
+The three absences are the part worth defending rather than apologising for.
+Each is a decision with a reason, and in the case of language models the
+reason is enforced in code: nothing can state an entitlement that the solver
+did not derive, whatever is added later.
 
 ## Adding a scheme
 

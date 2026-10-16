@@ -75,6 +75,14 @@ scheme they cannot have, and they have no way to tell which happened.
 | Intent matching | Keyword intent plus a three-pass subject index over the knowledge base | `assist.py` |
 | Natural language generation | Criterion sentences composed from the constraint tree, not translated | `explain/phrase.py` |
 | Verification boundary | Every claim re-derived; disagreement reported as unverified | `guard.py` |
+| Uninformed and informed search | Breadth, depth, uniform cost and A* over the same state space, with an admissible heuristic | `search/graph.py` |
+| Local search | Simulated annealing over camp plans, measured against the enumerated optimum | `camp/plan.py` |
+| Constraint satisfaction, written out | AC-3, forward checking, MRV, degree and LCV on the camp day | `csp/solve.py` |
+| Production rules | Forward and backward chaining over the axioms, three-valued | `reason/chain.py` |
+| Abduction | A household generated from a scheme's clauses | `studio/witness.py` |
+| Model-based diagnosis | Single-fault explanation of a refusal at the counter | `studio/witness.py` |
+| Interval reasoning | A third verdict, and the number the answer turns on | `reason/uncertain.py` |
+| Agent design | PEAS for each of eight agents, all four types represented | `data/agents.yaml` |
 
 ## Reading a sentence
 

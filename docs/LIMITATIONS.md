@@ -187,6 +187,41 @@ Household-scoped and member-scoped schemes are never compared, because an
 implication across that line would be read as a promise about the wrong
 person.
 
+## The money figures are indicative and say so
+
+Every scheme carries a worth with the basis it came from, and most of those
+are central shares that states top up by amounts we do not model. One-time
+payments are spread over five years to be comparable with a monthly pension,
+which is a judgement written into `Worth.SPREAD` rather than buried, so it
+can be argued with. Insurance cover is never added to income, because five
+lakh of hospital cover is not five lakh in hand and a ranking that pretended
+otherwise would put insurance above every pension.
+
+## The village is synthetic and the camp numbers are about it
+
+`data/cases/village.yaml` is drawn by `tools/village.py` from a seed. The
+correlations in it are ours, chosen to be plausible. Nothing measured on it
+is a finding about any real village; it is a load for an algorithm, and the
+rupee totals on the camp screen are arithmetic over invented households.
+
+Greedy ties the optimum at every budget there. That is a property of this
+instance and not a guarantee, which is why the harness also carries a
+constructed instance where greedy loses.
+
+## Chaining saves three questions, not thirty
+
+Running the axioms forwards shortens the interview by 3 of 206 questions on
+our households. The saving only arrives when an axiom's condition happens to
+be asked before its conclusion, and the question ordering is chosen for a
+different reason. The value is less in the questions saved than in facts
+arriving with a proof attached.
+
+## The course map is a claim about this repository
+
+`data/course.yaml` says which topic lives where. A test checks every file it
+cites exists, which catches a stale path and not a generous reading. Whether
+a module really discharges a topic is a judgement, and it is ours.
+
 ## Nobody validates the answers
 
 Without a field worker present, a misheard question produces a wrong answer

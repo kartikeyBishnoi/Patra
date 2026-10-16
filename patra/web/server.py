@@ -111,6 +111,14 @@ class Brain:
         self.topics = yaml.safe_load(
             (data_dir / "topics.yaml").read_text(encoding="utf-8"))
         self.offices = load_offices(data_dir / "offices.yaml")
+        # Examiner-facing, and in English only. These describe the code
+        # rather than speak to an applicant, and translating twenty
+        # paragraphs of architecture into five languages would be effort
+        # spent where nobody reads it.
+        self.course = yaml.safe_load(
+            (data_dir / "course.yaml").read_text(encoding="utf-8"))
+        self.agents = yaml.safe_load(
+            (data_dir / "agents.yaml").read_text(encoding="utf-8"))
         self.village = load_households(data_dir / "cases" / "village.yaml",
                                        self.schema)
         self._needs = None
@@ -468,6 +476,110 @@ class Brain:
         if scheme is None:
             return {"id": scheme_id, "name": scheme_id}
         return {"id": scheme_id, "name": self.scheme_text(words, scheme, "name")}
+
+    # ---- how this maps to the course, and what the agents are ----
+
+    def course_map(self) -> dict:
+        return {
+            "topics": self.course["topics"],
+            "built": sum(1 for t in self.course["topics"]
+                         if t["status"] == "built"),
+            "total": len(self.course["topics"]),
+        }
+
+    def agent_list(self) -> dict:
+        return {"agents": self.agents["agents"],
+                "expert_system": self.agents["expert_system"]}
+
+    def search_compare(self, targets, held, words) -> dict:
+        """The same route found four ways, so the strategies can be compared.
+
+        Nothing here changes the answer the papers screen gives. It is the
+        same problem, solved again by each strategy, to show what a heuristic
+        is worth.
+        """
+        from ..reason.planner import Unreachable, plan
+        from ..search.graph import STRATEGIES
+
+        targets = [t for t in targets if t in self.documents]
+        if not targets:
+            return {"rows": [], "optimum": 0}
+
+        with self._lock:
+            try:
+                route = plan(self.documents, targets, set(held))
+                optimum = route.effort
+            except Unreachable:
+                optimum = 0
+
+            rows = []
+            for name, find in STRATEGIES.items():
+                found = find(self.documents, targets, held)
+                rows.append({
+                    "strategy": name,
+                    "cost": found.cost,
+                    "papers": len(found.order),
+                    "expanded": found.stats.expanded,
+                    "generated": found.stats.generated,
+                    "optimal": bool(found.found and found.cost == optimum),
+                    "route": [self.doc_text(words, self.documents[d], "name")
+                              for d in found.order],
+                })
+        return {"rows": rows, "optimum": optimum,
+                "targets": [self.doc_text(words, self.documents[t], "name")
+                            for t in targets]}
+
+    def inference(self, facts: dict, words) -> dict:
+        """What the axioms force, and why.
+
+        Forward chaining after every answer is what lets the interview stop
+        asking for something it has already been told sideways.
+        """
+        from ..reason.chain import backward, forward
+
+        with self._lock:
+            found = forward(self.schema, self.axioms, facts)
+
+        proofs = []
+        for mark in found.derived:
+            step = backward(self.schema, self.axioms, found.facts,
+                            mark.attribute)
+            proofs.append(self._proof(step, words) if step else None)
+
+        return {
+            "conflict": found.conflict,
+            "rounds": found.rounds,
+            "derived": [
+                {
+                    "attribute": d.attribute,
+                    "label": self.attr_label(words, d.attribute),
+                    "value": self.value_text(words, d.attribute, d.value),
+                    "raw": d.value,
+                    "axiom": d.axiom,
+                    "because": [self.attr_label(words, b) for b in d.because],
+                    "proof": proofs[i],
+                }
+                for i, d in enumerate(found.derived)
+            ],
+            "bounds": [
+                {
+                    "label": self.attr_label(words, b.attribute),
+                    "low": b.low, "high": b.high,
+                    "axioms": list(b.axioms),
+                }
+                for b in found.bounds
+            ],
+        }
+
+    def _proof(self, step, words) -> dict:
+        return {
+            "label": self.attr_label(words, step.goal),
+            "value": self.value_text(words, step.goal, step.value),
+            "axiom": step.axiom,
+            "axiom_text": next((a.text for a in self.axioms
+                                if a.id == step.axiom), None),
+            "children": [self._proof(k, words) for k in step.children],
+        }
 
     # ---- asking the rulebook about itself ----
 
@@ -1125,6 +1237,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, self.brain.camp_summary(
                 self.brain.translations.bundle(self._lang())))
 
+        if route == "/api/course":
+            return self._json(200, self.brain.course_map())
+
+        if route == "/api/agents":
+            return self._json(200, self.brain.agent_list())
+
         if route == "/api/studio-reach":
             return self._json(200, self.brain.studio_reach(
                 self.brain.translations.bundle(self._lang())))
@@ -1228,6 +1346,16 @@ class Handler(BaseHTTPRequestHandler):
         if route == "/api/how-page":
             return self._json(200, self.brain.how_page(
                 str(payload.get("how", "")), self._documents(payload), words))
+
+        if route == "/api/search-compare":
+            targets = payload.get("targets", [])
+            if not isinstance(targets, list):
+                return self._json(400, {"error": "bad targets"})
+            return self._json(200, self.brain.search_compare(
+                targets, self._documents(payload), words))
+
+        if route == "/api/infer":
+            return self._json(200, self.brain.inference(facts, words))
 
         if route == "/api/studio-witness":
             return self._json(200, self.brain.studio_witness(

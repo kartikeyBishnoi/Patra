@@ -15,6 +15,9 @@ Six experiments, each answering something somebody would reasonably ask:
     E10 Planning a village camp: how close do the heuristics get?
     E11 What does carrying an uncertain answer as a range actually change?
     E12 What does the rulebook say about itself?
+    E13 What is a heuristic worth in the paper search?
+    E14 What is each CSP technique worth on the camp day?
+    E15 Does chaining over the axioms shorten the interview?
 
 Every number printed here comes from running the system. Run with:
 
@@ -767,6 +770,160 @@ def e12_rulebook(engine, schema, schemes, axioms):
     print()
 
 
+def e13_search(documents):
+    """The same route found four ways, so a heuristic can be priced.
+
+    A* and uniform cost must agree on every instance. If they ever differ the
+    heuristic is inadmissible, which produces a fast answer rather than an
+    error and would otherwise go unnoticed.
+    """
+    from patra.reason.planner import Unreachable, plan
+    from patra.search.graph import STRATEGIES
+
+    print(LINE)
+    print("  E13  collecting papers as a state-space search")
+    print(LINE)
+    print("  heuristic: the summed effort of the targets not yet held.")
+    print("  Admissible, because each must still be obtained and each costs")
+    print("  at least its own effort.\n")
+
+    targets = [
+        ["ration_card"],
+        ["income_certificate"],
+        ["bank_aadhaar_seeding"],
+        ["ration_card", "income_certificate"],
+        ["job_card", "bank_aadhaar_seeding"],
+        ["caste_certificate", "domicile_certificate", "income_certificate"],
+    ]
+    print(f"  {'target':<38}{'strategy':<10}{'effort':>7}{'expanded':>10}"
+          f"{'generated':>11}  optimal")
+
+    saved_fast = saved_slow = 0
+    for group in targets:
+        try:
+            best = plan(documents, group, set()).effort
+        except Unreachable:
+            continue
+        label = ",".join(group)[:36]
+        for name in ("breadth", "depth", "uniform", "astar"):
+            route = STRATEGIES[name](documents, group)
+            mark = "yes" if route.cost == best else "NO"
+            print(f"  {label:<38}{name:<10}{route.cost:>7}"
+                  f"{route.stats.expanded:>10}{route.stats.generated:>11}"
+                  f"  {mark}")
+            label = ""
+            if name == "astar":
+                saved_fast += route.stats.expanded
+            if name == "uniform":
+                saved_slow += route.stats.expanded
+        print()
+
+    print(f"  across these targets A* expanded {saved_fast} states against "
+          f"{saved_slow} for uniform cost,")
+    print(f"  which is {saved_slow / max(saved_fast, 1):.0f} times fewer for "
+          f"the identical answer.")
+    print()
+
+
+def e14_csp(engine, schema, schemes, documents):
+    """Scheduling the camp day, with each technique switched on in turn."""
+    from patra.camp.model import load_offices, survey
+    from patra.camp.plan import exact
+    from patra.csp.schedule import build
+    from patra.csp.solve import solve
+
+    print(LINE)
+    print("  E14  the camp day as a constraint satisfaction problem")
+    print(LINE)
+
+    offices = load_offices(DATA / "offices.yaml")
+    village = load_households(DATA / "cases" / "village.yaml", schema)
+    needs = survey(engine, schema, schemes, documents, offices, village)
+    best, _ = exact(needs, offices, 4)
+    problem, wanted, per_session = build(best, offices, needs, sessions=4)
+
+    binary = sum(1 for c in problem.constraints if c.binary)
+    print(f"  {len(problem.domains)} households, 4 sessions, "
+          f"{len(problem.constraints)} constraints "
+          f"({binary} binary, {len(problem.constraints) - binary} n-ary)")
+    print(f"  per session: " + ", ".join(f"{k} {v}"
+                                         for k, v in sorted(per_session.items())))
+    print()
+    print(f"  {'configuration':<34}{'assigns':>9}{'backtracks':>12}"
+          f"{'pruned':>9}{'arcs':>8}{'solved':>8}{'secs':>7}")
+
+    ladder = [
+        ("plain backtracking",
+         dict(mrv=False, degree=False, lcv=False, forward=False, arc=False)),
+        ("with forward checking",
+         dict(mrv=False, degree=False, lcv=False, forward=True, arc=False)),
+        ("with MRV",
+         dict(mrv=True, degree=False, lcv=False, forward=True, arc=False)),
+        ("with MRV and degree",
+         dict(mrv=True, degree=True, lcv=False, forward=True, arc=False)),
+        ("with MRV, degree and LCV",
+         dict(mrv=True, degree=True, lcv=True, forward=True, arc=False)),
+        ("and AC-3 as well",
+         dict(mrv=True, degree=True, lcv=True, forward=True, arc=True)),
+    ]
+    for label, options in ladder:
+        start = time.perf_counter()
+        found = solve(problem, cap=40000, **options)
+        took = time.perf_counter() - start
+        c = found.counters
+        print(f"  {label:<34}{c.assignments:>9}{c.backtracks:>12}"
+              f"{c.pruned:>9}{c.revisions:>8}{str(found.found):>8}{took:>7.2f}")
+
+    print("\n  Branching on the most constrained variable is the whole story")
+    print("  here. It turns a search that does not finish into one that never")
+    print("  backtracks. Degree, LCV and AC-3 cost more than they save on this")
+    print("  instance, which is worth reporting rather than hiding.")
+    print()
+
+
+def e15_chaining(engine, schema, schemes, axioms, households):
+    """Whether running the axioms forwards shortens the interview."""
+    from patra.model.household import Profile
+    from patra.reason.chain import forward
+    from patra.reason.questions import interview, next_question
+
+    print(LINE)
+    print("  E15  inference over the axioms, against asking")
+    print(LINE)
+    print(f"  {'person':<18}{'asked':>8}{'with chaining':>15}{'saved':>8}")
+
+    plain_total = chained_total = 0
+    for household in households:
+        for member in household.members:
+            full = project(household, schema, member.id).facts
+            plain = len(interview(engine, schema, schemes, full))
+
+            known, asked = {}, 0
+            while True:
+                question = next_question(engine, schema, schemes,
+                                         Profile(id="x", facts=known))
+                if question is None or question.attribute not in full:
+                    break
+                known[question.attribute] = full[question.attribute]
+                asked += 1
+                known = forward(schema, axioms, known).facts
+
+            plain_total += plain
+            chained_total += asked
+            print(f"  {household.id + '/' + member.id:<18}{plain:>8}"
+                  f"{asked:>15}{plain - asked:>8}")
+
+    saved = plain_total - chained_total
+    print(f"\n  {saved} of {plain_total} questions skipped, "
+          f"{100 * saved / plain_total:.0f}%")
+    print("  A modest number, and the honest one. It depends on the order:")
+    print("  the saving only arrives when an axiom's condition is asked before")
+    print("  its conclusion, and the adaptive ordering is chosen for a")
+    print("  different reason. The value is less in the questions saved than")
+    print("  in the facts arriving with a proof attached.")
+    print()
+
+
 def main():
     schema = load_schema(DATA / "attributes.yaml")
     schemes = load_schemes(DATA / "schemes", schema)
@@ -795,6 +952,9 @@ def main():
     e10_camp(engine, schema, schemes, documents)
     e11_uncertainty(engine, schema, schemes, households)
     e12_rulebook(engine, schema, schemes, axioms)
+    e13_search(documents)
+    e14_csp(engine, schema, schemes, documents)
+    e15_chaining(engine, schema, schemes, axioms, households)
 
 
 if __name__ == "__main__":

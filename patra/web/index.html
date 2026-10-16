@@ -694,6 +694,7 @@
     <button data-tab="papers"><span id="nv-papers"></span></button>
     <button data-tab="camp"><span id="nv-camp"></span></button>
     <button data-tab="trust"><span id="nv-rulebook"></span></button>
+    <button data-tab="course"><span id="nv-course"></span></button>
     <button data-tab="help"><span id="nv-help"></span></button>
   </div>
 </nav>
@@ -1034,7 +1035,7 @@ async function pickLanguage(l) {
 
   [["home", "nav_home"], ["schemes", "nav_schemes"], ["how", "nav_how"],
    ["papers", "nav_papers"], ["camp", "nav_camp"], ["rulebook", "nav_rulebook"],
-   ["help", "nav_help"]]
+   ["course", "nav_course"], ["help", "nav_help"]]
     .forEach(([tab, key]) => { set("nv-" + tab, t("ui." + key));
                                set("tab-" + tab, t("ui." + key)); });
 
@@ -1080,6 +1081,9 @@ function buildFooter() {
   const camp = el("button", null, t("ui.nav_camp"));
   camp.onclick = () => go("camp");
   trust.appendChild(camp);
+  const course = el("button", null, t("ui.nav_course"));
+  course.onclick = () => go("course");
+  trust.appendChild(course);
   const why = el("button", null, t("ui.not_official_more"));
   why.onclick = () => { govPanel(true); window.scrollTo(0, 0); };
   trust.appendChild(why);
@@ -1116,6 +1120,7 @@ function go(tab, arg) {
   if (tab === "how")     return arg ? howArticle(arg) : howScreen();
   if (tab === "papers")  return papersTab();
   if (tab === "camp")    return campScreen();
+  if (tab === "course")  return courseScreen();
   if (tab === "trust")   return trustScreen();
   if (tab === "help")    return helpTab();
 }
@@ -1464,6 +1469,122 @@ async function howArticle(howId) {
   const check = el("button","cta mt", t("ui.benefits_cta"));
   check.onclick = () => go("check");
   body.appendChild(check);
+}
+
+/* ---------- how this maps to the course ---------- */
+
+/* An examiner's page. Every topic on the handout, where it lives, and for
+   the three that are deliberately absent, the argument instead. A map with
+   no gaps on it is not a map of anything, so the gaps are on it. */
+async function courseScreen() {
+  const v = view(), tok = drawing;
+  crumbs(v, [{name:t("ui.nav_course")}]);
+  heading(v, t("ui.course_title"), t("ui.course_blurb"));
+  const body = wrapped(v, "");
+
+  let d, agents;
+  try {
+    d = await api("/api/course");
+    agents = await api("/api/agents");
+  } catch { return offline(); }
+  if (stale(tok)) return;
+
+  body.appendChild(el("div","note ok",
+    t("ui.course_built_n", {n:d.built, total:d.total})));
+  body.appendChild(el("div","src mt", t("ui.course_english")));
+
+  d.topics.forEach((topic, i) => {
+    const card = el("div","card");
+    const head = el("div");
+    head.style.cssText = "display:flex;align-items:baseline;gap:10px;flex-wrap:wrap";
+    const number = el("span","rank", String(topic.number));
+    head.appendChild(number);
+    head.appendChild(el("h3", null, topic.name));
+    const pill = el("span","pill " + (topic.status === "built" ? "yes"
+      : topic.status === "part" ? "unknown" : "no"));
+    pill.textContent = t("ui.course_status_" + topic.status);
+    pill.style.margin = "0";
+    head.appendChild(pill);
+    card.appendChild(head);
+    card.appendChild(el("div","sub mt",
+      t("ui.course_covers") + ": " + topic.covers));
+
+    topic.features.forEach(f => {
+      const line = el("div","callout");
+      line.style.background = topic.status === "argued"
+        ? "var(--gold-soft)" : "var(--teal-soft)";
+      line.style.borderLeftColor = topic.status === "argued"
+        ? "var(--gold)" : "var(--teal)";
+      line.appendChild(icon(topic.status === "argued" ? "alert" : "tick",
+                            20, topic.status === "argued" ? "#d89030" : "#098493"));
+      const txt = el("div");
+      txt.appendChild(el("div", null, f.what));
+      txt.appendChild(el("div","src mt",
+        t("ui.course_where") + ": " + f.where + "   \u00b7   "
+        + t("ui.course_code") + ": " + f.code));
+      line.appendChild(txt);
+      card.appendChild(line);
+    });
+    body.appendChild(enter(card, i));
+  });
+
+  agentSection(body, agents);
+}
+
+/* PEAS, written out for each agent. Two of these were rewritten because the
+   honest answer to "what is it measured on" turned out to be nothing in
+   particular, which is the point of the exercise. */
+function agentSection(body, d) {
+  const head = el("div","head mt");
+  head.appendChild(el("h2", null, t("ui.agents_title")));
+  head.appendChild(el("div","rule"));
+  head.appendChild(el("p", null, t("ui.agents_blurb")));
+  body.appendChild(head);
+
+  d.agents.forEach((a, i) => {
+    const card = el("div","card");
+    const top = el("div");
+    top.style.cssText = "display:flex;align-items:baseline;gap:10px;flex-wrap:wrap";
+    top.appendChild(el("h3", null, a.name));
+    const kind = el("span","pill unknown", a.kind);
+    kind.style.margin = "0";
+    top.appendChild(kind);
+    card.appendChild(top);
+    card.appendChild(el("div","sub", a.performance));
+
+    [[t("ui.agents_p"), a.measure], [t("ui.agents_e"), a.environment],
+     [t("ui.agents_a"), a.actuators], [t("ui.agents_s"), a.sensors]]
+      .forEach(([label, text]) => {
+        const row = el("div","fact");
+        row.appendChild(el("b", null, label));
+        row.appendChild(el("span","ev", text));
+        card.appendChild(row);
+      });
+
+    const why = el("div","callout");
+    why.appendChild(icon("info", 20, "#098493"));
+    const txt = el("div");
+    txt.appendChild(el("b", null, t("ui.agents_why")));
+    txt.appendChild(el("div", null, a.why));
+    txt.appendChild(el("div","src mt", a.code));
+    why.appendChild(txt);
+    card.appendChild(why);
+    body.appendChild(enter(card, i));
+  });
+
+  const parts = el("div","card");
+  parts.appendChild(el("h3", null, t("ui.agents_parts")));
+  parts.appendChild(el("p","sub", t("ui.agents_parts_blurb")));
+  d.expert_system.forEach(p => {
+    const row = el("div","counter");
+    const what = el("div","what");
+    what.appendChild(el("b", null, p.part));
+    what.appendChild(el("div","sub", p.is));
+    what.appendChild(el("div","src", p.code));
+    row.appendChild(what);
+    parts.appendChild(row);
+  });
+  body.appendChild(parts);
 }
 
 /* ---------- animation helpers ---------- */
@@ -2483,6 +2604,7 @@ function renderResult() {
     b.appendChild(more);
   }
 
+  inferenceSection(v);
   nextSection(v);
   timelineSection(v);
   whatIfSection(v);
@@ -2684,6 +2806,75 @@ function actionCard(a, index) {
     card.appendChild(box);
   }
   return card;
+}
+
+/* ---------- what followed without being asked ---------- */
+
+/* An axiom whose condition is known runs forwards. Somebody who says they are
+   expecting has told us their gender, and asking anyway is the kind of thing
+   that makes a form feel like it is not listening. Shown with the rule that
+   produced each fact, because a derived answer the person did not give should
+   be visible rather than quietly present. */
+function inferenceSection(parent) {
+  if (!Object.keys(S.facts).length) return;
+  const tok = drawing;
+  const head = heading(parent, t("ui.infer_title"), t("ui.infer_blurb"));
+  const band_ = band(parent);
+  band_.appendChild(el("div","sub", t("ui.checking") || "..."));
+
+  api("/api/infer", {facts:S.facts}).then(d => {
+    if (stale(tok)) return;
+    band_.innerHTML = "";
+    if (!d.derived.length && !d.bounds.length) {
+      head.remove();
+      return band_.parentElement.remove();
+    }
+    const card = el("div","card");
+    card.style.margin = "0";
+
+    d.derived.forEach((x, i) => {
+      const box = el("div","callout");
+      box.appendChild(icon("tick", 20, "#1b7a4b"));
+      const txt = el("div");
+      txt.appendChild(el("b", null, x.label + ": " + x.value));
+      txt.appendChild(el("div","sub", t("ui.infer_by", {axiom:x.axiom})));
+      if (x.proof) txt.appendChild(proofTree(x.proof, 0));
+      box.appendChild(txt);
+      card.appendChild(enter(box, i));
+    });
+
+    d.bounds.forEach((b, i) => {
+      const line = el("div","fact");
+      const range = (b.low == null ? "" : b.low) + " .. "
+                  + (b.high == null ? "" : b.high);
+      line.appendChild(el("b", null, b.label + ": " + range));
+      line.appendChild(el("span","ev",
+        t("ui.infer_bound") + "  \u00b7  " + b.axioms.join(", ")));
+      card.appendChild(enter(line, d.derived.length + i));
+    });
+
+    band_.appendChild(card);
+  }).catch(() => {
+    if (stale(tok)) return;
+    head.remove();
+    band_.parentElement.remove();
+  });
+}
+
+/* Backward chaining, drawn as the proof it is: the rule, then the same
+   question asked of everything that rule stood on. */
+function proofTree(node, depth) {
+  const box = el("div");
+  box.style.cssText = "margin-left:" + (depth * 14) + "px;font-size:14.5px";
+  const line = node.axiom
+    ? `${node.label} = ${node.value}  \u2190  ${node.axiom}`
+    : `${node.label} = ${node.value}  (${t("ui.infer_told")})`;
+  box.appendChild(el("div","src", line));
+  if (node.axiom_text) {
+    box.appendChild(el("div","src", "\u00a0\u00a0" + node.axiom_text));
+  }
+  (node.children || []).forEach(k => box.appendChild(proofTree(k, depth + 1)));
+  return box;
 }
 
 /* ---------- what a birthday changes ---------- */
@@ -2902,6 +3093,7 @@ function papersTab() {
   list.appendChild(ol);
   list.appendChild(paperWorking());
   v.appendChild(list);
+  v.appendChild(searchCard());
 
   const pr = el("div","card");
   const b = labelled(null, "print", t("ui.print") || "Print", 19);
@@ -2909,6 +3101,61 @@ function papersTab() {
   b.onclick = () => window.print();
   pr.appendChild(b);
   v.appendChild(pr);
+}
+
+/* The same route, found four ways. Nothing here changes the answer above; it
+   is the identical problem solved again by each strategy, so what a heuristic
+   is actually worth can be seen rather than asserted. */
+function searchCard() {
+  const card = el("div","card");
+  card.appendChild(el("h3", null, t("ui.search_title")));
+  card.appendChild(el("p","sub", t("ui.search_blurb")));
+  const out = el("div","mt");
+  const go_ = el("button","cta", t("ui.search_run"));
+  go_.onclick = async () => {
+    out.innerHTML = "";
+    out.appendChild(el("div","sub waiting", t("ui.camp_working")));
+    let d;
+    try {
+      d = await api("/api/search-compare",
+                    {targets:(S.result && S.result.targets) || [],
+                     documents:[...S.held]});
+    } catch { out.innerHTML = ""; return; }
+    out.innerHTML = "";
+    if (!d.rows.length) return;
+
+    const most = Math.max(...d.rows.map(r => r.expanded)) || 1;
+    d.rows.forEach((r, i) => {
+      const row = el("div","counter");
+      const what = el("div","what");
+      const head = el("div");
+      head.style.cssText = "display:flex;align-items:baseline;gap:9px;flex-wrap:wrap";
+      head.appendChild(el("b", null, t("ui.search_" + r.strategy)));
+      const pill = el("span","pill " + (r.optimal ? "yes" : "no"));
+      pill.style.margin = "0";
+      pill.textContent = r.optimal ? t("ui.search_optimal") + " \u2713"
+                                   : t("ui.search_cost") + " " + r.cost;
+      head.appendChild(pill);
+      what.appendChild(head);
+      what.appendChild(el("div","sub",
+        t("ui.search_cost") + " " + r.cost + "  \u00b7  "
+        + t("ui.search_papers") + " " + r.papers + "  \u00b7  "
+        + t("ui.search_expanded") + " " + r.expanded));
+      const bar = el("div","bar");
+      const fill = el("i");
+      if (!r.optimal) fill.className = "full";
+      fill.style.width = "0%";
+      bar.appendChild(fill);
+      what.appendChild(bar);
+      row.appendChild(what);
+      out.appendChild(enter(row, i));
+      setTimeout(() => { fill.style.width =
+        Math.max(2, Math.round(100 * r.expanded / most)) + "%"; }, 70 + i * 70);
+    });
+  };
+  card.appendChild(go_);
+  card.appendChild(out);
+  return card;
 }
 
 function paperWorking() {

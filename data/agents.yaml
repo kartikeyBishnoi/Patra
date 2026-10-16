@@ -1,0 +1,230 @@
+# The agents in this system, each described the way the course describes one.
+#
+# PEAS is Performance, Environment, Actuators, Sensors. It is a discipline
+# rather than a formality: writing one out forces the question of what an
+# agent is actually being measured on, and two of these were rewritten
+# because the honest answer turned out to be "nothing in particular".
+#
+# The type matters too. A reflex agent that is allowed to conclude is the
+# failure mode this whole project is built to prevent, so the two agents that
+# read the world are reflex agents with no opinion, and everything that
+# concludes keeps a model and is checked against it.
+
+agents:
+
+  - id: reader
+    name: The reader
+    kind: simple reflex
+    performance: >-
+        Turn a sentence somebody typed or said into proposed facts.
+    measure: >-
+        Facts proposed that the person then confirms, against facts
+        invented that they do not.
+    environment: >-
+        A sentence in one of five languages, with the cue vocabulary
+        and the schema.
+    sensors: >-
+        A typed or spoken sentence, already normalised.
+    actuators: >-
+        Proposed facts, each with the words it came from and a
+        confidence.
+    code: patra/nlp/extract.py
+    why: >-
+        Reflex because it maps percepts straight to proposals with
+        no model of the world and no goal of its own. It cannot be
+        wrong about eligibility because it has no opinion about
+        eligibility.
+
+  - id: eye
+    name: The document reader
+    kind: simple reflex
+    performance: >-
+        Say which paper a photograph shows, and read the fields off
+        it.
+    measure: >-
+        Documents identified correctly, fields read correctly, and
+        identity numbers never retained.
+    environment: >-
+        A photograph, local OCR, and a file of printed signatures.
+    sensors: >-
+        An image, through tesseract running on this machine.
+    actuators: >-
+        A ranked guess with the phrase that produced it, and fields
+        proposed for confirmation.
+    code: patra/vision/papers.py
+    why: >-
+        Reflex for the same reason as the reader, and held to a
+        stricter rule: every field it reads is confirmed before use,
+        without exception.
+
+  - id: guard
+    name: The guard
+    kind: model-based reflex
+    performance: >-
+        Admit a proposed fact only if it can be true, and let no
+        claim out that the solver did not derive.
+    measure: >-
+        Nothing impossible admitted; nothing unverified stated.
+    environment: >-
+        Proposals from the reader and the eye, the schema, and the
+        domain axioms.
+    sensors: >-
+        Proposed facts, and claims other layers would like to make.
+    actuators: >-
+        Admitted, held for confirmation, or refused with the rule
+        that refused it.
+    code: patra/guard.py
+    why: >-
+        Model-based because it keeps a model of what can be true of
+        anybody, which is what the axioms are, and checks every
+        proposal against it.
+
+  - id: interviewer
+    name: The interviewer
+    kind: goal-based
+    performance: >-
+        Settle every scheme while asking as little as possible, and
+        asking the intrusive questions last.
+    measure: >-
+        Questions asked against questions needed, and how often
+        caste and disability come up at all.
+    environment: >-
+        The household's answers so far, and the schemes still
+        undecided.
+    sensors: >-
+        Each answer as it arrives, plus whatever the chainer derives
+        from it.
+    actuators: >-
+        The next question, or the decision that nothing is left to
+        ask.
+    code: patra/reason/questions.py
+    why: >-
+        Goal-based because it chooses the question that moves
+        furthest towards a settled rulebook, rather than following a
+        fixed form.
+
+  - id: adjudicator
+    name: The adjudicator
+    kind: model-based reflex
+    performance: >-
+        Decide every scheme, and when the answer is no, say the
+        smallest true reason and the cheapest honest remedy.
+    measure: >-
+        Minimality of the reason, actionability of the remedy, and
+        never advising somebody to give something up.
+    environment: >-
+        A complete profile and the encoded rulebook.
+    sensors: >-
+        Facts, through the Z3 encoding.
+    actuators: >-
+        A verdict, the minimal conflicts behind it, and correction
+        sets over the facts that can change.
+    code: patra/engine.py
+    why: >-
+        Model-based rather than goal-based: it has no preference
+        about the outcome, only a model of the rules and an
+        obligation to report what follows.
+
+  - id: guide
+    name: The guide
+    kind: goal-based
+    performance: >-
+        Get the household from where they are to the papers they
+        need, for the least effort.
+    measure: >-
+        Trips, fees and waiting days along the route, against the
+        cheapest route that exists.
+    environment: >-
+        The document graph, and what the household already holds.
+    sensors: >-
+        The set of papers held.
+    actuators: >-
+        An ordered route, and which scheme each stop unlocks.
+    code: patra/reason/planner.py
+    why: >-
+        Goal-based, and the clearest example in the project: a goal
+        state, a successor function, a cost, and a search.
+
+  - id: organiser
+    name: The camp organiser
+    kind: utility-based
+    performance: >-
+        Choose which counters come to the village, and when each
+        household is seen.
+    measure: >-
+        Rupees a year unlocked against officials spent, and how many
+        people are turned away at the gate.
+    environment: >-
+        A village of households, the counters that could travel, and
+        a budget.
+    sensors: >-
+        Each household's remaining paperwork, surveyed once.
+    actuators: >-
+        A set of counters, and a session for every household served.
+    code: patra/camp/plan.py, patra/csp/schedule.py
+    why: >-
+        Utility-based because it is not satisfied by any valid day.
+        It ranks days by what they are worth and searches for the
+        best one it can find.
+
+  - id: examiner
+    name: The examiner
+    kind: goal-based
+    performance: >-
+        Ask the rulebook about itself: who would qualify, who would
+        get nothing, and which rule the office might have applied.
+    measure: >-
+        Rules found unreachable, households found to fall through,
+        and refusals explained by a single changed answer.
+    environment: >-
+        The rulebook and the axioms. No applicant at all.
+    sensors: >-
+        Nothing from the world. It reads only the rules.
+    actuators: >-
+        Witness households, gaps, and single-fault diagnoses.
+    code: patra/studio/witness.py
+    why: >-
+        Goal-based, with the unusual property that its environment
+        is the knowledge base rather than anything outside the
+        program.
+
+# The parts a textbook expert system is made of, and where each one is. The
+# explanation facility is the part most of them skimped on, and the part this
+# project is mostly about.
+expert_system:
+
+  - part: Knowledge base
+    is: >-
+        Twenty schemes, seventeen documents, seven axioms and thirty-three
+        declared facts, all as YAML rather than code.
+    code: data/
+
+  - part: Inference engine
+    is: >-
+        Z3 for satisfiability, QuickXPlain and MARCO for the reasons, hitting
+        sets for the remedies, and a production-rule chainer over the axioms.
+    code: patra/reason/
+
+  - part: Working memory
+    is: >-
+        The profile being built during one interview, which exists only in
+        the browser and is never written anywhere.
+    code: patra/model/household.py
+
+  - part: Explanation facility
+    is: >-
+        A derivation panel under every answer, down to the solver query
+        counts, and a second one for how a sentence was read.
+    code: patra/explain/
+
+  - part: Knowledge acquisition
+    is: >-
+        The rulebook studio, which invents witnesses, finds unreachable
+        rules and names clauses a scheme's own other clauses already force.
+    code: patra/studio/
+
+  - part: User interface
+    is: >-
+        Five languages, pre-recorded speech, a camera, and a chatbot that
+        declines to answer what the solver has not settled.
+    code: patra/web/

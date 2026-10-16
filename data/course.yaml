@@ -1,0 +1,263 @@
+# Every topic on the course handout, and where it lives in this project.
+#
+# Written to be checked rather than claimed. Each entry names the module and
+# the screen, so both can be opened. Where a topic is deliberately not
+# covered it says so and says why, because a map with no gaps on it is not a
+# map of anything.
+#
+# status  built   in the code, with tests and a screen
+#         part    partly, and the entry says which part
+#         argued  deliberately not built, and the reasoning is the
+#                 contribution rather than the omission
+
+topics:
+
+  - id: intro
+    number: 1
+    name: Introduction to Artificial Intelligence
+    covers: >-
+        AI versus non-AI problems, application domains, contemporary
+        AI
+    status: built
+    features:
+      - what: >-
+          The whole project is an argument about which problems
+          are AI problems and which are not. Eligibility looks
+          like a classification task and is not one. The rules are
+          published, so the right tool is a solver that can
+          explain itself, not a model that learns the rules back
+          from examples.
+        where: docs/AI.md, and the self-check screen
+        code: docs/AI.md
+
+  - id: search
+    number: 2
+    name: Search and Problem Solving
+    covers: >-
+        state-space representation, uninformed search, heuristic
+        functions, A*, optimality
+    status: built
+    features:
+      - what: >-
+          Collecting papers laid out as a state space, with four
+          strategies over it. Breadth first, depth first, uniform
+          cost, and A* with an admissible heuristic that finds the
+          same optimum as uniform cost while expanding a fraction
+          of the nodes. On the hardest target it is 31 expansions
+          against 1335.
+        where: the papers screen, and experiment E13
+        code: patra/search/graph.py
+      - what: >-
+          Local search by simulated annealing for the camp, with
+          its trace drawn as it ran, so the backward steps that
+          get it out of a dead end are visible rather than
+          described.
+        where: the village camp screen
+        code: patra/camp/plan.py
+
+  - id: planning
+    number: 3
+    name: Planning and Constraint Satisfaction
+    covers: >-
+        search versus planning, state-space planning, CSPs,
+        applications of CSP techniques
+    status: built
+    features:
+      - what: >-
+          Minimum-cost AND-OR search over document prerequisites.
+          A requirement is a disjunction and a document needs all
+          of its requirements, which is what makes this planning
+          rather than sorting.
+        where: the papers screen
+        code: patra/reason/planner.py
+      - what: >-
+          Eligibility as a constraint satisfaction problem, solved
+          by Z3 over a declared schema with assumption literals.
+        where: every result
+        code: patra/encode/z3enc.py
+      - what: >-
+          A CSP solver written out rather than called, scheduling
+          the camp day into sessions. Backtracking, forward
+          checking, AC-3, and the MRV, degree and LCV orderings,
+          each switchable so its cost can be measured. Plain
+          backtracking fails on 93 households; MRV solves it in 93
+          assignments with no backtracking at all.
+        where: the village camp screen
+        code: patra/csp/solve.py
+
+  - id: knowledge
+    number: 4
+    name: Knowledge Representation and Reasoning
+    covers: >-
+        representation schemes, logical reasoning, inference
+        mechanisms, intelligent decision-making
+    status: built
+    features:
+      - what: >-
+          Rules as data. Every scheme is a constraint tree in
+          YAML, so a clause can be checked against the
+          notification it came from without reading any Python.
+        where: data/schemes/
+        code: patra/model/constraint.py
+      - what: >-
+          Forward and backward chaining over the domain axioms.
+          Somebody who says they are expecting has told us their
+          gender, so the chainer asserts it and the interview
+          stops asking. Backward chaining answers why it believes
+          what it believes, as a proof rather than a claim.
+        where: the derivation panel under any result
+        code: patra/reason/chain.py
+      - what: >-
+          Entailment between schemes, proved by asking whether one
+          set of clauses can hold while another fails. Where it
+          cannot, clearing the first settles the second with no
+          further test.
+        where: the rulebook screen
+        code: patra/reason/relate.py
+
+  - id: agents
+    number: 5
+    name: Intelligent Agents and Expert Systems
+    covers: >-
+        PEAS framework, types of intelligent agents, agent
+        architectures, components of expert systems
+    status: built
+    features:
+      - what: >-
+          Seven agents with a PEAS description each, and the type
+          of each stated. The interviewer is goal-based, the
+          adjudicator is a model-based reflex agent over a
+          knowledge base, the camp planner is utility-based.
+        where: the agents screen
+        code: data/agents.yaml
+      - what: >-
+          The classical expert-system parts, each in its own
+          module. A knowledge base, an inference engine, a working
+          memory, and an explanation facility, which is the part
+          most expert systems skimped on and the part this project
+          is mostly about.
+        where: the agents screen
+        code: patra/engine.py
+
+  - id: genai
+    number: 6
+    name: Generative AI Fundamentals
+    covers: >-
+        types of generative models, principles of data generation,
+        applications, customisation
+    status: part
+    features:
+      - what: >-
+          Generation without learning. Criterion sentences are
+          generated from the constraint tree rather than
+          translated, so a scheme added tomorrow reads correctly
+          in five languages. Witness households are generated by
+          abduction from a scheme's clauses. The village is
+          generated from the schema.
+        where: any refusal, and the rulebook screen
+        code: patra/explain/phrase.py
+      - what: >-
+          What is not here, and why. A learned generative model
+          produces fluent text that cannot be traced to a rule,
+          and the argument of this project is that an explanation
+          which cannot be traced is worse than none.
+        where: docs/AI.md
+        code: docs/AI.md
+
+  - id: genmodels
+    number: 7
+    name: Generative AI Models
+    covers: >-
+        autoencoders, variational autoencoders, generative
+        adversarial networks
+    status: argued
+    features:
+      - what: >-
+          Not used. These learn a distribution from data, and we
+          have no outcome data. Nobody has given us a record of
+          who applied and what happened. A model trained on
+          nothing is a model that invents, and inventing an
+          entitlement is the one failure this project exists to
+          prevent.
+        where: docs/LIMITATIONS.md
+        code: docs/LIMITATIONS.md
+
+  - id: transformer
+    number: 8
+    name: Introduction to Transformer
+    covers: >-
+        encoder-decoder architecture, attention, masked and
+        autoregressive models
+    status: argued
+    features:
+      - what: >-
+          Not used for the reading. The understanding layer is a
+          gazetteer with positional rules, chosen because it can
+          point at the words behind every fact it proposes. A
+          transformer reads phrasing far better and cannot show
+          its evidence, and on this problem the evidence is the
+          product.
+        where: docs/AI.md
+        code: patra/nlp/extract.py
+
+  - id: llm
+    number: 9
+    name: Large Language Models
+    covers: >-
+        prompting, context windows, training, evaluation,
+        application frameworks
+    status: argued
+    features:
+      - what: >-
+          Deliberately absent, and the reasoning is enforced in
+          code rather than argued in prose. The guard will not let
+          a statement of entitlement out unless the solver derived
+          it, so a language model added tomorrow still could not
+          be the judge. The one place one would earn its keep is
+          proposing rule encodings from a government notification
+          for a human to verify, which is named as future work
+          rather than claimed as done.
+        where: docs/AI.md, and the chatbot answering that it could not verify
+        code: patra/guard.py
+
+  - id: responsible
+    number: 10
+    name: Responsible AI
+    covers: >-
+        ethical AI, bias, misinformation, responsible practice
+    status: built
+    features:
+      - what: >-
+          Privacy as a property of the architecture rather than a
+          promise in a policy. The reasoning is a solver and some
+          YAML, so answers about caste, income and disability
+          never leave the machine. The one exception is the
+          microphone, which is off until the person says yes and
+          says why in their own language.
+        where: the strip above every page
+        code: patra/web/server.py
+      - what: >-
+          Refusing to impersonate. The layout is a government
+          service index, and the top strip says, in the same place
+          the original claims authority, that this is not a
+          government website. A test checks it in all five
+          languages.
+        where: the strip above every page
+        code: tests/test_web.py
+      - what: >-
+          Refusing to invent. Aadhaar numbers are read to
+          recognise a card and then discarded. Every field off a
+          photograph is confirmed before use. Advice that would
+          have somebody give something up is thrown away. A
+          refusal nothing can change is named rather than dressed
+          up as a suggestion.
+        where: any refusal, and the camera card
+        code: patra/guard.py
+      - what: >-
+          Saying what it does not know. Marathi, Bengali and Tamil
+          are marked unreviewed in the picker. The reading
+          accuracy figure prints its own caveat. The encoded rules
+          are labelled research artefacts on every screen that
+          matters.
+        where: the language picker, docs/LIMITATIONS.md
+        code: docs/LIMITATIONS.md
